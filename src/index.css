@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ========== VARIÁVEIS SEMÂNTICAS ========== */
+:root {
+  /* DARK (SEU PREFERIDO - PADRÃO) */
+  /* Ajustei o nome para --bg-background para bater com o código React */
+  --bg-background: #0f172a;    /* slate-950 */
+  --bg-panel: #1e293b;     /* slate-800 */
+  --bg-input: #020617;     /* slate-950 (input mais escuro que o painel) */
+  --bg-hover: #334155;     /* slate-700 (para hovers) */
+  
+  --text-main: #f8fafc;    /* slate-50 */
+  --text-muted: #94a3b8;   /* slate-400 */
+  
+  --border-color: #334155; /* slate-700 */
+  --border-input: #475569; /* slate-600 */
+  
+  --accent: #10b981;       /* emerald-500 */
+  --accent-fg: #ffffff;
+}
+
+.light {
+  /* LIGHT MODE - AJUSTADO PARA CONTRASTE */
+  /* Fundo levemente cinza (slate-100) para destacar os cards brancos */
+  --bg-background: #f1f5f9;      
+  --bg-panel: #ffffff;     
+  --bg-input: #ffffff;     
+  --bg-hover: #f8fafc;     /* slate-50 */
+  
+  --text-main: #0f172a;    
+  --text-muted: #64748b;   
+  
+  --border-color: #e2e8f0; 
+  --border-input: #cbd5e1; 
+  
+  --accent: #059669;       
+  --accent-fg: #ffffff;
+}
+
+.high-contrast {
+  /* ALTO CONTRASTE */
+  --bg-background: #000000;
+  --bg-panel: #000000;
+  --bg-input: #000000;
+  --bg-hover: #1a1a1a;
+  
+  --text-main: #ffffff;
+  --text-muted: #ffff00;   
+  
+  --border-color: #ffff00; 
+  --border-input: #ffff00;
+  
+  --accent: #ffff00;
+  --accent-fg: #000000;
+}
+
+/* ========== BASE GLOBAL ========== */
+html, body {
+  background-color: var(--bg-background); /* Agora usa a variável correta */
+  color: var(--text-main);
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Garante que o #root ou container principal ocupe altura total */
+#root {
+  min-height: 100vh;
+  background-color: var(--bg-background);
+}
+
+input, select, textarea {
+  background-color: var(--bg-input);
+  border-color: var(--border-input);
+  color: var(--text-main);
+  border-width: 1px;
+}
+
+/* ========== OVERRIDES (MANTIDOS MAS COM CUIDADO) ========== */
+/* Isso ajuda a forçar componentes antigos a obedecerem o tema */
+
+/* --- TEMA CLARO: Força componentes hardcoded com slate-900 a ficarem brancos --- */
+.light .bg-slate-800,
+.light .bg-slate-900,
+.light .bg-slate-950, 
+.light .bg-gray-800,
+.light .bg-gray-900,
+.light .bg-gray-950 {
+  background-color: var(--bg-panel) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-main) !important;
+}
+
+/* Corrige bordas escuras no modo claro */
+.light .border-slate-700,
+.light .border-slate-800,
+.light .border-gray-700 {
+  border-color: var(--border-color) !important;
+}
+
+/* --- ALTO CONTRASTE --- */
+.high-contrast * {
+  transition: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.high-contrast .border,
+.high-contrast input,
+.high-contrast select,
+.high-contrast button {
+  border-color: var(--border-color) !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+}
