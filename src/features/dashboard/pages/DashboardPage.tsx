@@ -10,7 +10,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { ROLES_CONFIG } from '@/config/roles';
 
 export const DashboardPage = () => {
-  const { user, role } = useAuth();
+  const { user, role, table } = useAuth();
   const currentRoleConfig = ROLES_CONFIG.find(r => r.id === role);
   const RoleIcon = currentRoleConfig?.icon || FileText;
 
@@ -60,7 +60,7 @@ export const DashboardPage = () => {
            
            <p className="text-[var(--text-muted)] text-sm lg:text-base ml-1">
              Olá, <span className="font-medium text-[var(--text-main)]">{user?.name}</span>. 
-             Setor ativo: <span className="text-emerald-500 font-medium">{currentRoleConfig?.description}</span>
+             Mesa ativa: <span className="text-emerald-500 font-medium">{table?.code} - {table?.name}</span>
            </p>
         </div>
 

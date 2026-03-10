@@ -2,13 +2,19 @@
 export interface User {
   id: string;
   name: string;
+  table: string;
   email: string;
   password?: string;
   avatar?: string;
 }
+export interface Table {
+  id: string;
+  name: string;
+  code: string;
+}
 
-export type UserRole = 'bt' | 'mt' | 'at' | 'pre_op' | 'admin' | null;
-export type OperationTable = string | null;
+export type UserRole = string;
+export type OperationTable = Table | null;
 
 export interface AuthState {
   user: User | null;
@@ -19,7 +25,7 @@ export interface AuthState {
   isLoading: boolean;
 
   login: (email: string, password: string) => Promise<void>;
-  selectRole: (role: UserRole) => void;
-  selectTable: (tableId: string) => void;
+  selectRole: (role: UserRole | null) => void;
+  selectTable: (table: string | null) => void;
   logout: () => Promise<void>; 
 }

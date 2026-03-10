@@ -36,16 +36,17 @@ export const useAuth = create<AuthState>()(
           const data = await response.json();
 
           if (!response.ok) {
-            // Lança o erro vindo direto do Laravel (ex: "Email ou senha inválidos.")
             throw new Error(data.message || 'Erro de autenticação'); 
           }
 
-          set({
-            user: data.usuario,
-            token: data.token,
-            isAuthenticated: true,
-            isLoading: false,
-          });
+        set({
+          user: data.usuario,
+          token: data.token,
+          isAuthenticated: true,
+          isLoading: false,
+          role: data.active_shift ? data.active_shift.role : null,
+          table: data.active_shift ? data.active_shift.desk : null,
+        });
 
         } catch (error) {
           set({ isLoading: false });
@@ -53,15 +54,10 @@ export const useAuth = create<AuthState>()(
         }
       },
 
-      verify2FA: (code: string) => {
-        // Mantenha sua lógica de 2FA aqui
-        if (code === '123456') {
-          return true;
-        }
-        return false;
-      },
-
-      selectRole: (role: UserRole) => set({ role }),
+      selectRole: (role: UserRole | null) => set((state) => ({ 
+        role: role, 
+        table: role === null ? null : state.table 
+      })),
       selectTable: (table) => set({ table }),
 
       logout: async () => {
@@ -109,7 +105,7 @@ export const useAuth = create<AuthState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({ 
         user: state.user, 
-        token: state.token, // Salva o token para sobreviver ao F5
+        token: state.token,
         role: state.role, 
         table: state.table,
         isAuthenticated: state.isAuthenticated,

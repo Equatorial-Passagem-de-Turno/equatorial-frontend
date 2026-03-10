@@ -15,6 +15,9 @@ import { ShiftHistoryModal } from '../components/history/ShiftHistoryModal';
 import { ShiftDetailModal } from '../components/history/ShiftDetailModal';
 import { type HistoryItem } from '../components/history/HistoryTable';
 
+// Importação do serviço de API
+import { finishShiftApi } from '../../occurrences/services/shiftService'; // Ajuste o caminho conforme sua estrutura
+
 export const ShiftControlPage = () => {
   const { 
     user, 
@@ -33,8 +36,9 @@ export const ShiftControlPage = () => {
   const [selectedShiftForDetail, setSelectedShiftForDetail] = useState<HistoryItem | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   
-  // Estado para o Modal de Confirmação de Encerramento
+  // Estado para o Modal de Confirmação de Encerramento e Loading da API
   const [isFinishModalOpen, setIsFinishModalOpen] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
 
   // Estado para o Modal de Confirmação de Reabertura
   const [isReopenModalOpen, setIsReopenModalOpen] = useState(false);
@@ -110,50 +114,61 @@ export const ShiftControlPage = () => {
     ? availableOperators.find(op => op.id === nextOperator)?.name 
     : "MESA";
 
-  // Abertura do Modal de confirmação de encerramento
   const handleAttemptFinish = () => {
     setIsFinishModalOpen(true);
   };
 
-  // Ação real de encerramento
-  const handleConfirmFinish = () => {
+  // === Ação real de encerramento com a API ===
+  const handleConfirmFinish = async () => {
     const itensResolvidos = allPendingItems.filter(i => resolvedItems.includes(i.id));
     const itensParaRepasse = allPendingItems.filter(i => !resolvedItems.includes(i.id));
 
-    // 1. Criamos o snapshot dos dados finais
-    const snapshotDados = {
-        ...turnoAtual,
-        briefingFinal: briefing,
-        pendenciasResolvidas: itensResolvidos,
-        pendenciasRepassadas: itensParaRepasse,
-        proximoOperador: nextOperator || 'MESA',
-        dataFechamento: new Date()
-    };
+    try {
+      setIsFinishing(true);
 
-    // 2. Salvamos localmente
-    setFinishedShiftState(snapshotDados);
+      // Chamada real para o Laravel
+      await finishShiftApi({
+        briefing: briefing,
+        proximoOperador: nextOperator || null,
+        pendenciasResolvidas: resolvedItems
+      });
 
-    // 3. Chamamos a função do backend
-    encerrarTurno(); 
-    
-    setIsFinishModalOpen(false);
+      // 1. Criamos o snapshot dos dados finais
+      const snapshotDados = {
+          ...turnoAtual,
+          briefingFinal: briefing,
+          pendenciasResolvidas: itensResolvidos,
+          pendenciasRepassadas: itensParaRepasse,
+          proximoOperador: nextOperator || 'MESA',
+          dataFechamento: new Date()
+      };
+
+      // 2. Salvamos localmente
+      setFinishedShiftState(snapshotDados);
+
+      // 3. Chamamos a função do hook de navegação/estado
+      encerrarTurno(); 
+      
+      setIsFinishModalOpen(false);
+    } catch (error) {
+      console.error("Erro ao encerrar o turno:", error);
+      alert("Houve um erro ao encerrar o turno. Verifique o console ou a conexão.");
+    } finally {
+      setIsFinishing(false);
+    }
   };
 
-  // Lógica de tentativa de reabertura (abre modal)
   const handleAttemptReopen = () => {
     setIsReopenModalOpen(true);
   };
 
-  // Lógica real de reabertura (reseta o estado finalizado)
   const handleConfirmReopen = () => {
     setFinishedShiftState(null);
     setIsReopenModalOpen(false);
-    // Resetar estado do email ao reabrir
     setSelectedRecipients([]);
     setIsSendingEmail(false);
   };
 
-  // === Toggle de destinatários (Multi-select) ===
   const toggleRecipient = (id: string) => {
     setSelectedRecipients(prev => {
         if (prev.includes(id)) {
@@ -164,13 +179,11 @@ export const ShiftControlPage = () => {
     });
   };
 
-  // === Handler de Envio de Email ===
   const handleSendEmail = () => {
     if (selectedRecipients.length === 0) return;
     
     setIsSendingEmail(true);
     
-    // Simulação de chamada API
     setTimeout(() => {
         setIsSendingEmail(false);
         const names = emailRecipients
@@ -179,31 +192,22 @@ export const ShiftControlPage = () => {
             .join(', ');
             
         alert(`E-mail enviado com sucesso para: ${names}`);
-        setSelectedRecipients([]); // Reseta seleção
+        setSelectedRecipients([]); 
         setIsEmailDropdownOpen(false);
     }, 2000);
   };
 
-  // === Handler de Logout (CORRIGIDO) ===
   const handleLogoutSystem = () => {
     if (window.confirm("Tem certeza que deseja sair do sistema?")) {
-        // Agora usamos a função logout que foi desestruturada do hook
         if (logout) {
             logout();
         } else {
-            // Fallback caso a função não exista no hook (mock)
             console.log("Logout function not implemented in hook");
             window.location.reload();
         }
     }
   };
 
-  const handleViewShiftDetail = (shift: HistoryItem) => {
-    setSelectedShiftForDetail(shift);
-    setIsDetailModalOpen(true);
-  };
-
-  // Helper para calcular duração entre string "HH:mm" e objeto Date
   const calculateDuration = (startTimeStr: string, endDate: Date) => {
     if (!startTimeStr || !endDate) return "0h 00m";
     
@@ -223,10 +227,10 @@ export const ShiftControlPage = () => {
     return `${hours}h ${minutes.toString().padStart(2, '0')}m`;
   };
 
-  // Se não tem turno ativo E não tem turno recém encerrado, não mostra nada
   if (!turnoAtual && !finishedShiftState) return null;
 
   const dadosRelatorio = turnoAtual ? { ...turnoAtual, briefing } : finishedShiftState;
+  const isAnyModalOpen = isHistoryOpen || isDetailModalOpen || isFinishModalOpen;
 
   // --- TELA: TURNO ENCERRADO (Exibida se finishedShiftState existe) ---
   if (finishedShiftState) {
@@ -285,7 +289,6 @@ export const ShiftControlPage = () => {
                             </div>
                             
                             <div className="flex gap-2 items-start" ref={dropdownRef}>
-                                {/* Custom Dropdown Trigger */}
                                 <div className="relative flex-1">
                                     <button
                                         onClick={() => setIsEmailDropdownOpen(!isEmailDropdownOpen)}
@@ -300,7 +303,6 @@ export const ShiftControlPage = () => {
                                         <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isEmailDropdownOpen ? 'rotate-180' : ''}`} />
                                     </button>
 
-                                    {/* Dropdown Menu */}
                                     {isEmailDropdownOpen && (
                                         <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto animate-fade-in-up">
                                             {emailRecipients.map(recipient => {
@@ -324,7 +326,6 @@ export const ShiftControlPage = () => {
                                     )}
                                 </div>
 
-                                {/* Botão de Envio */}
                                 <button
                                     onClick={handleSendEmail}
                                     disabled={selectedRecipients.length === 0 || isSendingEmail}
@@ -348,7 +349,6 @@ export const ShiftControlPage = () => {
                                 </button>
                             </div>
                             
-                            {/* Tags dos selecionados para visualização rápida */}
                             {selectedRecipients.length > 0 && (
                                 <div className="mt-2 flex flex-wrap gap-1">
                                     {selectedRecipients.map(id => (
@@ -389,7 +389,6 @@ export const ShiftControlPage = () => {
                             Voltar para o Dashboard
                         </button>
 
-                        {/* BOTÃO DE SAIR NO FOOTER */}
                         <button 
                             onClick={handleLogoutSystem}
                             className="text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
@@ -464,8 +463,6 @@ export const ShiftControlPage = () => {
   }
 
   // --- TELA NORMAL (TURNO EM ANDAMENTO) ---
-  const isAnyModalOpen = isHistoryOpen || isDetailModalOpen || isFinishModalOpen;
-
   return (
     <>
       {dadosRelatorio && (
@@ -722,7 +719,7 @@ export const ShiftControlPage = () => {
             <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
               <div 
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
-                onClick={() => setIsFinishModalOpen(false)}
+                onClick={() => !isFinishing && setIsFinishModalOpen(false)}
               />
               <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-800 animate-fade-in-up overflow-hidden">
                 
@@ -734,7 +731,8 @@ export const ShiftControlPage = () => {
                   </h3>
                   <button 
                     onClick={() => setIsFinishModalOpen(false)}
-                    className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-500"
+                    disabled={isFinishing}
+                    className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-500 disabled:opacity-50"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -771,15 +769,21 @@ export const ShiftControlPage = () => {
                 <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex gap-3">
                   <button 
                     onClick={() => setIsFinishModalOpen(false)}
-                    className="flex-1 px-4 py-2.5 rounded-lg font-medium text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700 transition-colors"
+                    disabled={isFinishing}
+                    className="flex-1 px-4 py-2.5 rounded-lg font-medium text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
                   >
                     Cancelar
                   </button>
                   <button 
                     onClick={handleConfirmFinish}
-                    className="flex-1 px-4 py-2.5 rounded-lg font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
+                    disabled={isFinishing}
+                    className="flex-1 px-4 py-2.5 rounded-lg font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                   >
-                    <Check className="w-4 h-4" /> Confirmar
+                    {isFinishing ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <><Check className="w-4 h-4" /> Confirmar</>
+                    )}
                   </button>
                 </div>
               </div>
