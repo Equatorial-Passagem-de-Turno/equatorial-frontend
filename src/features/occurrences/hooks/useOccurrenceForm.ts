@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../auth/hooks/useAuth';
 import { useOccurrenceStore } from '../stores/useOccurrenceStore';
-import { type OccurrencePriority, type OccurrenceStatus, type Occurrence } from '../types/index';
+import { type Occurrence, type OccurrencePriority, type OccurrenceStatus } from '../types/index';
 
 // Estado inicial com TODOS os campos do formulário atualizado
 const INITIAL_STATE = {
@@ -26,7 +25,6 @@ const INITIAL_STATE = {
 
 export const useOccurrenceForm = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [formData, setFormData] = useState(INITIAL_STATE);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,7 +49,6 @@ export const useOccurrenceForm = () => {
   };
 
   // Remove arquivo do estado e libera objectURL do preview correspondente
-  // Renomeado para 'handleRemoveFile' para bater com o componente
   const handleRemoveFile = (index: number) => {
     setFormData(prev => {
       const at = [...(prev.attachments ?? [])];
@@ -66,7 +63,7 @@ export const useOccurrenceForm = () => {
     });
   };
 
-  // Converte File para Base64 (para persistir no store/localStorage)
+  // Converte File para Base64 (para enviar via JSON para a API)
   const convertFileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -81,40 +78,31 @@ export const useOccurrenceForm = () => {
     setIsSubmitting(true);
 
     try {
-      // Processa anexos
+      // Pega a função da store que bate na API
+      const { createOccurrence } = useOccurrenceStore.getState();
+
+      // Processa os anexos para Base64 antes de enviar para o Laravel
       const processedAttachments = await Promise.all(
         (formData.attachments || []).map(file => convertFileToBase64(file))
       );
 
-      // Gera ID no mesmo padrão do display
-      const now = new Date();
-      const random = Math.floor(1000 + Math.random() * 9000);
-      const generatedId = `OC-${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}-${random}`;
-
-      const newOcc: Occurrence = {
-        id: generatedId,
+      const newOcc: Partial<Occurrence> = {
         title: formData.title,
         category: formData.category,
         priority: formData.priority,
         status: formData.status,
         description: formData.description,
-        // Passamos o objeto completo de location. 
-        // O type Occurrence deve suportar 'any' ou a interface correta em 'location'.
         location: formData.location as any, 
-        createdAt: new Date().toLocaleString('pt-BR'),
-        createdBy: user?.name ?? 'ANÔNIMO',
-        linkType: formData.osNumero ? 'OS' : undefined,
+        linkType: formData.osNumero ? ('OS' as const) : undefined,
+        
         linkValue: formData.osNumero || undefined,
-        attachments: processedAttachments,
-        comments: [], // Inicia lista de comentários vazia
-        reminders: [] // Inicia lista de lembretes vazia
+        attachments: processedAttachments, 
       };
 
-      // Persiste na store
-      useOccurrenceStore.getState().addOccurrences([newOcc]);
-
-      console.log('Ocorrência Registrada:', newOcc);
+      // Envia para o Laravel!
+      await createOccurrence(newOcc);
       
+      console.log('Ocorrência Registrada com Sucesso no Banco!');
       navigate('/');
     } catch (error) {
       console.error("Erro ao salvar ocorrência:", error);
@@ -131,7 +119,7 @@ export const useOccurrenceForm = () => {
     handleChange,
     handleLocationChange,
     handleFileAdd,
-    handleRemoveFile, // Exportando com o nome correto
+    handleRemoveFile,
     handleSubmit,
   };
 };

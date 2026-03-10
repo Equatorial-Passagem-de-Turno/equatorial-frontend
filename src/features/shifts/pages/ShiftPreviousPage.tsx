@@ -1,46 +1,78 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, AlertTriangle, XCircle } from "lucide-react";
+import { ArrowRight, AlertTriangle, XCircle, RefreshCcw } from "lucide-react";
 import type { ShiftHandoverData } from "@/features/occurrences/services/occurrenceService";
 import { getShiftHandoverData } from "@/features/occurrences/services/occurrenceService";
 
 export const ShiftPreviousPage = () => {
   const navigate = useNavigate();
   const [data, setData] = useState<ShiftHandoverData | null>(null);
+  const [error, setError] = useState<string | null>(null); // ESTADO DE ERRO ADICIONADO
 
   useEffect(() => {
     const loadData = async () => {
       try {
+        setError(null); // Limpa erros anteriores
         const result = await getShiftHandoverData();
         setData(result);
-      } catch (error) {
-        console.error("Erro ao carregar turno anterior:", error);
+      } catch (err: any) {
+        console.error("Erro completo da API:", err);
+        // Capturamos o erro aqui para mostrar na tela
+        setError(err.message || "Erro desconhecido ao tentar conectar com a API do Laravel.");
       }
     };
 
     loadData();
   }, []);
 
-  if (!data) {
+  // SE DEU ERRO, MOSTRA ESSA TELA EM VEZ DE FICAR CARREGANDO INFINITAMENTE
+  if (error) {
     return (
-      <div className="min-h-screen w-full flex items-center justify-center bg-theme-bg text-theme-text">
-        <p>Carregando passagem de turno anterior...</p>
+      <div className="min-h-screen w-full flex flex-col items-center justify-center bg-theme-bg text-theme-text p-4">
+        <div className="bg-red-500/10 border border-red-500/20 p-8 rounded-2xl flex flex-col items-center max-w-md text-center">
+          <AlertTriangle className="w-16 h-16 text-red-500 mb-4" />
+          <h2 className="text-xl font-bold text-red-500 mb-2">Falha na Comunicação</h2>
+          <p className="text-theme-muted mb-6">{error}</p>
+          <p className="text-sm text-theme-muted mb-6">
+            Dica: Verifique se o servidor Laravel está rodando (php artisan serve) e se o CORS está configurado.
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="flex items-center gap-2 px-6 py-2 bg-theme-panel border border-theme-border hover:bg-slate-800 rounded-lg transition-colors"
+          >
+            <RefreshCcw className="w-4 h-4" />
+            Tentar Novamente
+          </button>
+        </div>
       </div>
     );
   }
 
+  // ENQUANTO NÃO TEM DADOS NEM ERRO, MOSTRA O CARREGANDO
+  if (!data) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-theme-bg text-theme-text">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-theme-muted animate-pulse">Buscando dados no servidor...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // SE DEU TUDO CERTO, RENDERIZA A PÁGINA NORMAL
   return (
     <div className="min-h-screen bg-theme-bg text-theme-text p-8 max-w-7xl mx-auto animate-fade-in">
       {/* HEADER DA PÁGINA */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
-         <button 
-              onClick={() => navigate(-1)} 
-              className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white shadow-sm hover:shadow-md transition-all duration-300 group"
-            >
-              <ArrowRight className="w-4 h-4 rotate-180 group-hover:-translate-x-1 transition-transform" /> 
-              <span className="font-medium text-sm">Voltar</span>
-            </button>
+          <button 
+            onClick={() => navigate(-1)} 
+            className="flex-shrink-0 inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white shadow-sm hover:shadow-md transition-all duration-300 group"
+          >
+            <ArrowRight className="w-4 h-4 rotate-180 group-hover:-translate-x-1 transition-transform" /> 
+            <span className="font-medium text-sm">Voltar</span>
+          </button>
           <div>
           </div>
         </div>

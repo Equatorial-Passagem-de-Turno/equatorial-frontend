@@ -1,64 +1,19 @@
-import { useState, useMemo } from 'react';
-
-export interface ShiftOccurrence {
-  id: string;
-  title: string;
-  description: string;
-  priority: 'crítica' | 'alta' | 'média' | 'baixa';
-  status: 'Pendente' | 'Em Análise' | 'Resolvida' | 'Transferida';
-  mesa: string;
-  base: string;
-  
-  category: string;     
-  createdAt: string;     
-  createdBy: string;     
-  authorId: string;
-}
-
-const MOCK_DATA: ShiftOccurrence[] = [
-  { 
-    id: '1', 
-    title: 'Falha no servidor', 
-    description: 'Servidor principal parou de responder...', 
-    priority: 'crítica', 
-    status: 'Pendente', 
-    mesa: 'Mesa 1', 
-    base: 'Matriz', 
-    category: 'Infraestrutura',  
-    createdAt: '2023-10-27T10:00:00', 
-    createdBy: 'João Silva',     
-    authorId: '123' 
-  },
-  { 
-    id: '2', 
-    title: 'Troca de turno', 
-    description: 'Passagem de bastão realizada sem ocorrências...', 
-    priority: 'média', 
-    status: 'Resolvida', 
-    mesa: 'Supervisão', 
-    base: 'Norte', 
-    category: 'Operacional',     
-    createdAt: '2023-10-26T18:30:00', 
-    createdBy: 'Maria Santos',   
-    authorId: '456' 
-  },
-  { 
-    id: '3', 
-    title: 'Queda de energia', 
-    description: 'Queda momentânea na região sul...', 
-    priority: 'alta', 
-    status: 'Em Análise', 
-    mesa: 'Mesa 1', 
-    base: 'Sul', 
-    category: 'Infraestrutura',  
-    createdAt: '2023-10-25T14:15:00', 
-    createdBy: 'João Silva',     
-    authorId: '123' 
-  },
-];
+import { useState, useMemo, useEffect } from 'react';
+import { useOccurrenceStore } from '../stores/useOccurrenceStore';
+import { useAuth } from '../../auth/hooks/useAuth';
 
 export const useShiftOccurrences = () => {
-  const user = { id: '123', name: 'João Silva' };
+  const { user } = useAuth();
+  
+  // PEGANDO OS DADOS REAIS DO BANCO DA STORE
+  const { occurrences, fetchOccurrences } = useOccurrenceStore();
+
+  // Garante que os dados sejam buscados ao abrir a tela
+  useEffect(() => {
+    if (fetchOccurrences) {
+      fetchOccurrences();
+    }
+  }, [fetchOccurrences]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [author, setAuthor] = useState('');
@@ -68,31 +23,32 @@ export const useShiftOccurrences = () => {
   const [base, setBase] = useState('todas');
   const [onlyMine, setOnlyMine] = useState(false);
 
-  // Lógica de Filtragem
+  // Lógica de Filtragem Segura
   const filteredData = useMemo(() => {
-    return MOCK_DATA.filter((item) => {
-      // Busca por Texto
-      const matchesSearch = 
-        item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.description.toLowerCase().includes(searchTerm.toLowerCase());
+    // Evita erros caso occurrences ainda não tenha carregado e seja undefined
+    if (!Array.isArray(occurrences)) return [];
 
-      // Filtro de Autor
-      const matchesAuthor = item.createdBy.toLowerCase().includes(author.toLowerCase());
+    return occurrences.filter((item) => {
+      // Usamos (item.campo || '') para evitar erro de .toLowerCase() em valores nulos do banco
+      const titleMatch = (item.title || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const descMatch = (item.description || '').toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = titleMatch || descMatch;
 
-      // Filtros de Select
+      const matchesAuthor = (item.createdBy || '').toLowerCase().includes(author.toLowerCase());
       const matchesPriority = priority === 'todas' || item.priority === priority;
       const matchesStatus = status === 'todas' || item.status === status;
-      const matchesMesa = mesa === 'todas' || item.mesa === mesa;
-      const matchesBase = base === 'todas' || item.base === base;
+      
+      // Se houver campos 'mesa' e 'base' reais no banco, descomente abaixo:
+      // const matchesMesa = mesa === 'todas' || item.mesa === mesa; 
+      // const matchesBase = base === 'todas' || item.base === base; 
 
-      // Filtro "Minhas"
-      const matchesMine = !onlyMine || item.authorId === user.id;
+      const matchesMine = !onlyMine || item.authorId === user?.id;
 
-      return matchesSearch && matchesAuthor && matchesPriority && matchesStatus && matchesMesa && matchesBase && matchesMine;
+      return matchesSearch && matchesAuthor && matchesPriority && matchesStatus && matchesMine;
     });
-  }, [searchTerm, author, priority, status, mesa, base, onlyMine, user.id]);
+  }, [occurrences, searchTerm, author, priority, status, onlyMine, user?.id]);
 
-  // Estatísticas
+  // Estatísticas baseadas no filtro atual
   const stats = useMemo(() => ({
     total: filteredData.length,
     criticas: filteredData.filter(i => i.priority === 'crítica').length,
