@@ -9,8 +9,8 @@ import type { Occurrence } from '@/features/occurrences/types';
 
 export const useDashboard = () => {
   const navigate = useNavigate();
-  const { user, table } = useAuth(); // Usando table.id para identificar o ciclo atual
-  const { occurrences, fetchOccurrences, isLoading, addOccurrences } = useOccurrenceStore();
+  const { user, table } = useAuth();
+  const { occurrences, fetchOccurrences, isLoading } = useOccurrenceStore();
 
   const [handoverData, setHandoverData] = useState<ShiftHandoverData | null>(null);
   const [isHandoverOpen, setIsHandoverOpen] = useState(false);
@@ -19,30 +19,26 @@ export const useDashboard = () => {
   const [priority, setPriority] = useState('todas');
   const [status, setStatus] = useState('todas');
 
-  // 1. Busca inicial de ocorrências do banco
   useEffect(() => {
     fetchOccurrences();
   }, [fetchOccurrences]);
 
-  // 2. Lógica do Modal (Aparece apenas UMA vez por sessão de mesa ativa)
   useEffect(() => {
     const checkHandover = async () => {
       if (!user?.id || !table?.id) return;
 
-      // Chave única: Se mudar o usuário ou a mesa, o modal pode aparecer de novo
-      const storageKey = `handover_done_${user.id}_${table.id}`;
-      const alreadyDone = localStorage.getItem(storageKey);
-
-      if (alreadyDone === 'true') return;
-
       try {
         const data = await getShiftHandoverData();
+
+        // Toda a lógica de localStorage foi removida daqui!
+        // Agora confiamos 100% no Back-end: se ele enviou pendências, nós abrimos.
+        // Se já assumimos antes, ele envia vazio e o modal não abre.
         if (data && data.occurrences && data.occurrences.length > 0) {
           setHandoverData(data);
           setIsHandoverOpen(true);
         }
       } catch (error) {
-        console.error("Erro ao buscar dados de herança:", error);
+        // Silenciado propositalmente
       }
     };
 
@@ -51,10 +47,7 @@ export const useDashboard = () => {
 
   const filteredOccurrences = useMemo(() => {
     return occurrences.filter((occ) => {
-      const title = occ.title || '';
-      const desc = occ.description || '';
-      const matchesSearch = title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            desc.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = (occ.title || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesPriority = priority === 'todas' || occ.priority === priority;
       const matchesStatus = status === 'todas' || occ.status === status;
       return matchesSearch && matchesPriority && matchesStatus;
@@ -79,7 +72,6 @@ export const useDashboard = () => {
       data: handoverData,
       handleAcknowledge: async (observation: string, selectedIds: string[]) => {
         if (handoverData?.occurrences && user?.id) {
-          // Filtra apenas o que o usuário marcou no checkbox do modal
           const mapped = handoverData.occurrences
             .filter(inherited => selectedIds.includes(inherited.id))
             .map(inherited => {
@@ -89,10 +81,11 @@ export const useDashboard = () => {
               }
               return {
                 ...inherited,
+                id: inherited.id,
                 user_id: user.id,
                 authorId: user.id,
                 createdBy: inherited.reportedBy || handoverData.previousOperator || 'Sistema',
-                description: `${inherited.description}\n\n[HERDADA DO TURNO ANTERIOR]`,
+                description: inherited.description,
                 createdAt: new Date().toLocaleString('pt-BR'),
                 linkType: validLinkType,
                 comments: observation ? [{
@@ -106,12 +99,12 @@ export const useDashboard = () => {
             });
 
           try {
+            await api.post('/occurrences/bulk', { occurrences: mapped });
+            
             if (mapped.length > 0) {
-              await api.post('/occurrences/bulk', { occurrences: mapped });
-              addOccurrences(mapped);
+              fetchOccurrences();
             }
-            // MARCA COMO FINALIZADO: Impede que o modal reabra no F5
-            localStorage.setItem(`handover_done_${user.id}_${table?.id}`, 'true');
+            
           } catch (error) {
             console.error("Erro ao salvar herança:", error);
           }

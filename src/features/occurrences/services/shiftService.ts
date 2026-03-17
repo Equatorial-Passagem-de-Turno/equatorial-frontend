@@ -14,8 +14,17 @@ export const startShiftApi = async (deskId: string, role: string) => {
   return response.data;
 };
 
-export const finishShiftApi = async (data: FinishShiftPayload) => {
+export const finishShiftApi = async (data: {
+  briefing: string;
+  proximoOperador: string | null;
+  pendenciasResolvidas: string[];
+}) => {
   const response = await api.post('/shifts/finish', data);
+  return response.data;
+};
+
+export const getShiftHandoverData = async () => {
+  const response = await api.get('/shifts/handover/previous');
   return response.data;
 };
 

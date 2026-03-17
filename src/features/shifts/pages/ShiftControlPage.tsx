@@ -22,6 +22,8 @@ export const ShiftControlPage = () => {
   const { 
     user, 
     turnoAtual, 
+    setTurnoAtual,
+    todaysShifts,
     briefing, 
     setBriefing, 
     encerrarTurno, 
@@ -30,9 +32,10 @@ export const ShiftControlPage = () => {
     logout 
   } = useShiftControl();
 
+  
+
   // Estados de UI
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [todaysShifts, setTodaysShifts] = useState<HistoryItem[]>([]);
   const [selectedShiftForDetail, setSelectedShiftForDetail] = useState<HistoryItem | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   
@@ -83,22 +86,14 @@ export const ShiftControlPage = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Mock Turnos
-  useEffect(() => {
-    const mockTodaysShifts: HistoryItem[] = [
-      { id: 'TUR-1401-A', operador: 'JOÃO SILVA', horario: '06:00 - 14:00', tipo: 'MT', status: 'Fechado' },
-      { id: 'TUR-1401-B', operador: 'MARIA DOS SANTOS', horario: '14:00 - ...', tipo: turnoAtual?.funcao || 'MT', status: 'Aberto' },
-      { id: 'TUR-1653-C', operador: user.name, horario: `${turnoAtual?.inicio} - ...`, tipo: turnoAtual?.funcao || 'MT', status: 'Aberto' }
-    ];
-    setTodaysShifts(mockTodaysShifts);
-  }, [user.name, turnoAtual]);
-
   const allPendingItems = useMemo(() => {
     if (!turnoAtual) return [];
-    return [
-        ...turnoAtual.pendenciasHerdadas.map(p => ({ ...p, origem: 'Herdada' })),
-        ...turnoAtual.pendenciasDeixadas.map(p => ({ ...p, origem: 'Atual' }))
-    ];
+        
+        // Adicionamos ( || [] ) para garantir que o .map não quebre a tela se a API não mandar o array
+      return [
+        ...(turnoAtual.pendenciasHerdadas || []).map(p => ({ ...p, origem: 'Herdada' })),
+        ...(turnoAtual.pendenciasDeixadas || []).map(p => ({ ...p, origem: 'Atual' }))
+        ];
   }, [turnoAtual]);
 
   const toggleResolution = (id: string) => {
@@ -119,44 +114,37 @@ export const ShiftControlPage = () => {
   };
 
   // === Ação real de encerramento com a API ===
-  const handleConfirmFinish = async () => {
-    const itensResolvidos = allPendingItems.filter(i => resolvedItems.includes(i.id));
-    const itensParaRepasse = allPendingItems.filter(i => !resolvedItems.includes(i.id));
+    const handleConfirmFinish = async () => {
+        try {
+        setIsFinishing(true);
 
-    try {
-      setIsFinishing(true);
+        await finishShiftApi({
+            briefing: briefing,
+            proximoOperador: nextOperator || null,
+            pendenciasResolvidas: resolvedItems
+        });
 
-      // Chamada real para o Laravel
-      await finishShiftApi({
-        briefing: briefing,
-        proximoOperador: nextOperator || null,
-        pendenciasResolvidas: resolvedItems
-      });
+        setFinishedShiftState({
+            ...turnoAtual,
+            briefingFinal: briefing,
+            pendenciasResolvidas: allPendingItems.filter(i => resolvedItems.includes(i.id)),
+            pendenciasRepassadas: allPendingItems.filter(i => !resolvedItems.includes(i.id)),
+            proximoOperador: nextOperator || 'MESA',
+            dataFechamento: new Date(),
+            fim: format(new Date(), 'HH:mm')
+        });
 
-      // 1. Criamos o snapshot dos dados finais
-      const snapshotDados = {
-          ...turnoAtual,
-          briefingFinal: briefing,
-          pendenciasResolvidas: itensResolvidos,
-          pendenciasRepassadas: itensParaRepasse,
-          proximoOperador: nextOperator || 'MESA',
-          dataFechamento: new Date()
-      };
-
-      // 2. Salvamos localmente
-      setFinishedShiftState(snapshotDados);
-
-      // 3. Chamamos a função do hook de navegação/estado
-      encerrarTurno(); 
-      
-      setIsFinishModalOpen(false);
-    } catch (error) {
-      console.error("Erro ao encerrar o turno:", error);
-      alert("Houve um erro ao encerrar o turno. Verifique o console ou a conexão.");
-    } finally {
-      setIsFinishing(false);
-    }
-  };
+        encerrarTurno(); 
+        setIsFinishModalOpen(false);
+        } catch (error: any) {
+            console.error("Erro da API:", error.response?.data);
+            
+            const mensagemErro = error.response?.data?.message || error.response?.data?.error || "Erro desconhecido no servidor.";
+            alert(`Falha ao encerrar turno:\n${mensagemErro}`);
+        } finally {
+        setIsFinishing(false);
+        }
+    };
 
   const handleAttemptReopen = () => {
     setIsReopenModalOpen(true);
