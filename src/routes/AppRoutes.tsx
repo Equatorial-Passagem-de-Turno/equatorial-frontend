@@ -6,6 +6,8 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { AuthPage } from '@/features/auth/pages/AuthPage'; 
 import { RoleSelector } from '@/features/auth/components/RoleSelector';
 import { TableSelector } from "@/features/auth/components/TableSelector";
+import { HandoverRouteGuard } from '@/features/auth/components/HandoverRouteGuard';
+import { ShiftFinishLockGuard } from '@/features/auth/components/ShiftFinishLockGuard';
 
 // Pages
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
@@ -30,21 +32,21 @@ export const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<MainLayout />}>
+      <Route path="/" element={<ShiftFinishLockGuard><MainLayout /></ShiftFinishLockGuard>}>
         {/* Dashboard Principal */}
-        <Route index element={<DashboardPage />} />
+        <Route index element={<ShiftFinishLockGuard><DashboardPage /></ShiftFinishLockGuard>} />
         
         {/* Módulo de Ocorrências */}
         <Route path="occurrences">
-          <Route path="new" element={<NewOccurrencePage />} />
-          <Route path="my-shift" element={<MyShiftOccurrencesPage />} />
-          <Route path=":id" element={<OccurrenceDetailPage />} />
+          <Route path="new" element={<ShiftFinishLockGuard><HandoverRouteGuard><NewOccurrencePage /></HandoverRouteGuard></ShiftFinishLockGuard>} />
+          <Route path="my-shift" element={<ShiftFinishLockGuard><HandoverRouteGuard><MyShiftOccurrencesPage /></HandoverRouteGuard></ShiftFinishLockGuard>} />
+          <Route path=":id" element={<ShiftFinishLockGuard><HandoverRouteGuard><OccurrenceDetailPage /></HandoverRouteGuard></ShiftFinishLockGuard>} />
         </Route>
 
         {/* Módulo de Turnos */}
         <Route path="shifts">
-          <Route path="control" element={<ShiftControlPage />} />
-          <Route path="previous" element={<ShiftPreviousPage />} />
+          <Route path="control" element={<HandoverRouteGuard><ShiftControlPage /></HandoverRouteGuard>} />
+          <Route path="previous" element={<ShiftFinishLockGuard><HandoverRouteGuard><ShiftPreviousPage /></HandoverRouteGuard></ShiftFinishLockGuard>} />
         </Route>
       </Route>
 

@@ -4,6 +4,13 @@ import { useOccurrenceStore } from '@/features/occurrences/stores/useOccurrenceS
 import { getShiftHandoverData } from '@/features/occurrences/services/occurrenceService';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { api } from '@/services/api';
+import {
+  getCreatedThisShiftOccurrenceIds,
+  getSelectedInheritedIds,
+  hasCompletedInheritedSelection,
+  setInheritedSelectionCompleted,
+  setSelectedInheritedIds,
+} from '@/features/occurrences/utils/handoverPersistence';
 import type { ShiftHandoverData } from '@/features/occurrences/services/occurrenceService';
 import type { Occurrence } from '@/features/occurrences/types';
 
@@ -14,6 +21,9 @@ export const useDashboard = () => {
 
   const [handoverData, setHandoverData] = useState<ShiftHandoverData | null>(null);
   const [isHandoverOpen, setIsHandoverOpen] = useState(false);
+  const [selectedInheritedIds, setSelectedInheritedIdsState] = useState<string[]>([]);
+  const [createdThisShiftIds, setCreatedThisShiftIds] = useState<string[]>([]);
+  const [isHandoverRequired, setIsHandoverRequired] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [priority, setPriority] = useState('todas');
@@ -22,6 +32,17 @@ export const useDashboard = () => {
   useEffect(() => {
     fetchOccurrences();
   }, [fetchOccurrences]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setSelectedInheritedIdsState([]);
+      setCreatedThisShiftIds([]);
+      return;
+    }
+
+    setSelectedInheritedIdsState(getSelectedInheritedIds(String(user.id)));
+    setCreatedThisShiftIds(getCreatedThisShiftOccurrenceIds(String(user.id)));
+  }, [user?.id]);
 
   useEffect(() => {
     const checkHandover = async () => {
@@ -35,7 +56,13 @@ export const useDashboard = () => {
         // Se já assumimos antes, ele envia vazio e o modal não abre.
         if (data && data.occurrences && data.occurrences.length > 0) {
           setHandoverData(data);
-          setIsHandoverOpen(true);
+          setIsHandoverRequired(true);
+          const alreadyCompleted = hasCompletedInheritedSelection(String(user.id));
+          setIsHandoverOpen(!alreadyCompleted);
+        } else {
+          setHandoverData(null);
+          setIsHandoverRequired(false);
+          setIsHandoverOpen(false);
         }
       } catch (error) {
         // Silenciado propositalmente
@@ -65,51 +92,75 @@ export const useDashboard = () => {
     navigate,
     isLoading,
     filteredOccurrences,
+    selectedInheritedIds,
+    createdThisShiftIds,
+    isHandoverRequired,
     stats,
     filters: { searchTerm, setSearchTerm, priority, setPriority, status, setStatus },
     handover: {
       isOpen: isHandoverOpen,
       data: handoverData,
       handleAcknowledge: async (observation: string, selectedIds: string[]) => {
-        if (handoverData?.occurrences && user?.id) {
-          const mapped = handoverData.occurrences
-            .filter(inherited => selectedIds.includes(inherited.id))
-            .map(inherited => {
-              let validLinkType: "OS" | "External" | undefined = undefined;
-              if (inherited.linkType === "OS" || inherited.linkType === "External") {
-                validLinkType = inherited.linkType;
-              }
-              return {
-                ...inherited,
-                id: inherited.id,
-                user_id: user.id,
-                authorId: user.id,
-                createdBy: inherited.reportedBy || handoverData.previousOperator || 'Sistema',
-                description: inherited.description,
-                createdAt: new Date().toLocaleString('pt-BR'),
-                linkType: validLinkType,
-                comments: observation ? [{
-                  id: `obs-${Date.now()}`,
-                  author: user.name,
-                  text: `Observação no recebimento: ${observation}`,
-                  type: 'Geral',
-                  createdAt: new Date().toISOString()
-                }] : []
-              } as Occurrence;
-            });
-
-          try {
-            await api.post('/occurrences/bulk', { occurrences: mapped });
-            
-            if (mapped.length > 0) {
-              fetchOccurrences();
-            }
-            
-          } catch (error) {
-            console.error("Erro ao salvar herança:", error);
-          }
+        if (!handoverData?.occurrences || !user?.id) {
+          return;
         }
-        setIsHandoverOpen(false);
+
+        const normalizedSelectedIds = selectedIds.map((id) => String(id));
+        if (normalizedSelectedIds.length === 0) {
+          return;
+        }
+
+        const mapped = handoverData.occurrences
+          .filter(inherited => normalizedSelectedIds.includes(String(inherited.id)))
+          .map(inherited => {
+            let validLinkType: "OS" | "External" | undefined = undefined;
+            if (inherited.linkType === "OS" || inherited.linkType === "External") {
+              validLinkType = inherited.linkType;
+            }
+            return {
+              ...inherited,
+              id: inherited.id,
+              user_id: user.id,
+              authorId: user.id,
+              createdBy: inherited.reportedBy || handoverData.previousOperator || 'Sistema',
+              description: inherited.description,
+              createdAt: new Date().toLocaleString('pt-BR'),
+              linkType: validLinkType,
+              comments: observation ? [{
+                id: `obs-${Date.now()}`,
+                author: user.name,
+                text: `Observação no recebimento: ${observation}`,
+                type: 'Geral',
+                createdAt: new Date().toISOString()
+              }] : []
+            } as Occurrence;
+          });
+
+        try {
+          const response = await api.post('/occurrences/bulk', { occurrences: mapped });
+
+          const responseList =
+            (Array.isArray(response?.data?.data) && response.data.data) ||
+            (Array.isArray(response?.data?.occurrences) && response.data.occurrences) ||
+            [];
+
+          const persistedIds = responseList.length > 0
+            ? responseList.map((occ: { id: string | number }) => String(occ.id))
+            : normalizedSelectedIds;
+
+          setSelectedInheritedIds(String(user.id), persistedIds);
+          setInheritedSelectionCompleted(String(user.id));
+          setSelectedInheritedIdsState(persistedIds);
+
+          if (mapped.length > 0) {
+            fetchOccurrences();
+          }
+
+          setIsHandoverOpen(false);
+        } catch (error) {
+          console.error("Erro ao salvar herança:", error);
+          alert('Não foi possível salvar as ocorrências herdadas no banco de dados. Tente novamente.');
+        }
       }
     }
   };

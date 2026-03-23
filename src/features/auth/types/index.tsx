@@ -20,12 +20,12 @@ export interface AuthState {
   user: User | null;
   token: string | null; 
   role: UserRole | null;
-  table: OperationTable | null; 
+  table: OperationTable; 
   isAuthenticated: boolean;
   isLoading: boolean;
 
   login: (email: string, password: string) => Promise<void>;
   selectRole: (role: UserRole | null) => void;
-  selectTable: (table: string | null) => void;
+  selectTable: (table: OperationTable) => void;
   logout: () => Promise<void>; 
 }

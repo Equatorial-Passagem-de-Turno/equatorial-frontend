@@ -14,14 +14,81 @@ export const DashboardPage = () => {
   const currentRoleConfig = ROLES_CONFIG.find(r => r.id === role);
   const RoleIcon = currentRoleConfig?.icon || FileText;
 
-  const { navigate, isLoading, filteredOccurrences, stats, filters, handover } = useDashboard();
+  const { navigate, isLoading, filteredOccurrences, selectedInheritedIds, createdThisShiftIds, filters, handover } = useDashboard();
+  const isFlowLocked = handover.isOpen;
 
   const myWorkload = useMemo(() => {
-    const ownedByMe = filteredOccurrences.filter(occ => 
-      occ.authorId === user?.id || occ.user_id === user?.id
-    );
-    return ownedByMe.length > 0 ? ownedByMe : filteredOccurrences;
-  }, [filteredOccurrences, user?.id]);
+    const normalizeText = (value: string) =>
+      value
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+
+    const closedStatuses = new Set(['resolvida', 'finalizada', 'cancelada', 'fechada', 'encerrada']);
+    const selectedSet = new Set(selectedInheritedIds.map((id) => String(id)));
+    const createdSet = new Set(createdThisShiftIds.map((id) => String(id)));
+    const currentUserId = user?.id ? String(user.id) : '';
+
+    const isCreatedToday = (createdAtRaw?: string) => {
+      if (!createdAtRaw) return false;
+      const createdDate = new Date(createdAtRaw);
+      if (Number.isNaN(createdDate.getTime())) return false;
+
+      const now = new Date();
+      return (
+        createdDate.getDate() === now.getDate() &&
+        createdDate.getMonth() === now.getMonth() &&
+        createdDate.getFullYear() === now.getFullYear()
+      );
+    };
+
+    const ownedOpenByMe = filteredOccurrences.filter((occ) => {
+      const authorId = occ.authorId != null ? String(occ.authorId) : '';
+      const userId = occ.user_id != null ? String(occ.user_id) : '';
+      const isMine = Boolean(currentUserId) && (authorId === currentUserId || userId === currentUserId);
+      const normalizedStatus = normalizeText(String(occ.status || ''));
+      const apiIsOpen = (occ as { is_open?: boolean }).is_open;
+      const isOpen = typeof apiIsOpen === 'boolean'
+        ? apiIsOpen
+        : normalizedStatus.length === 0 || !closedStatuses.has(normalizedStatus);
+      return isMine && isOpen;
+    });
+
+    return ownedOpenByMe.filter((occ) => {
+      const occurrenceId = String(occ.id);
+      const categoryNormalized = normalizeText(String(occ.category || ''));
+      const apiIsInherited = (occ as { is_inherited?: boolean }).is_inherited;
+      const apiOrigin = normalizeText(String((occ as { origin?: string }).origin || ''));
+      const isInherited = typeof apiIsInherited === 'boolean'
+        ? apiIsInherited
+        : apiOrigin === 'herdada' || categoryNormalized.includes('herdad');
+
+      // Ocorrências herdadas abertas devem permanecer visíveis para o operador.
+      if (isInherited) {
+        return true;
+      }
+
+      if (selectedSet.has(occurrenceId) || createdSet.has(occurrenceId)) {
+        return true;
+      }
+
+      // Fallback seguro para ocorrências criadas no momento atual que ainda não foram mapeadas no localStorage.
+      if (createdSet.size === 0) {
+        const rawCreatedAt = (occ as { created_at?: string }).created_at;
+        return isCreatedToday(rawCreatedAt);
+      }
+
+      return false;
+    });
+  }, [filteredOccurrences, selectedInheritedIds, createdThisShiftIds, user?.id]);
+
+  const visibleStats = useMemo(() => ({
+    total: myWorkload.length,
+    criticas: myWorkload.filter(o => o.priority === 'crítica').length,
+    pendentes: myWorkload.filter(o => o.status === 'Pendente' || o.status === 'Aberta').length,
+    analise: myWorkload.filter(o => o.status === 'Em Análise').length,
+  }), [myWorkload]);
 
   return (
     <div className="w-full bg-transparent p-4 md:p-8 space-y-6 lg:space-y-8 animate-fade-in relative transition-colors duration-300">
@@ -44,13 +111,24 @@ export const DashboardPage = () => {
         </div>
 
         <button 
-          onClick={() => navigate('/occurrences/new')} 
-          className="flex items-center justify-center gap-2 px-5 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all active:scale-95"
+          onClick={() => navigate('/occurrences/new')}
+          disabled={isFlowLocked}
+          className={`flex items-center justify-center gap-2 px-5 py-3 text-white font-semibold rounded-xl transition-all active:scale-95 ${
+            isFlowLocked
+              ? 'bg-slate-500 cursor-not-allowed opacity-70'
+              : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:shadow-lg'
+          }`}
         >
           <Plus className="w-5 h-5" /> 
           <span>Nova Ocorrência</span>
         </button>
       </div>
+
+      {isFlowLocked && (
+        <div className="border border-amber-400/50 bg-amber-100/60 dark:bg-amber-900/20 rounded-xl px-4 py-3 text-sm text-amber-800 dark:text-amber-300">
+          Fluxo obrigatório: conclua a seleção das ocorrências herdadas para liberar as demais funcionalidades do sistema.
+        </div>
+      )}
 
       <div className="rounded-2xl overflow-hidden shadow-sm border border-[var(--border-color)]">
          <ShiftTimer shiftStartTime={new Date()} shiftDurationHours={8} />
@@ -58,10 +136,10 @@ export const DashboardPage = () => {
       
       {/* STATS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard icon={FileText} label="Total" value={stats.total} color="from-blue-500 to-cyan-500" onClick={() => { filters.setPriority('todas'); filters.setStatus('todas'); }} />
-        <StatCard icon={AlertTriangle} label="Críticas" value={stats.criticas} color="from-red-500 to-orange-500" onClick={() => { filters.setPriority('crítica'); filters.setStatus('todas'); }} />
-        <StatCard icon={Clock} label="Pendentes" value={stats.pendentes} color="from-amber-500 to-orange-400" onClick={() => { filters.setPriority('todas'); filters.setStatus('Pendente'); }} />
-        <StatCard icon={CheckCircle} label="Em Análise" value={stats.analise} color="from-emerald-500 to-teal-500" onClick={() => { filters.setPriority('todas'); filters.setStatus('Em Análise'); }} />
+        <StatCard icon={FileText} label="Total" value={visibleStats.total} color="from-blue-500 to-cyan-500" onClick={() => { filters.setPriority('todas'); filters.setStatus('todas'); }} />
+        <StatCard icon={AlertTriangle} label="Críticas" value={visibleStats.criticas} color="from-red-500 to-orange-500" onClick={() => { filters.setPriority('crítica'); filters.setStatus('todas'); }} />
+        <StatCard icon={Clock} label="Pendentes" value={visibleStats.pendentes} color="from-amber-500 to-orange-400" onClick={() => { filters.setPriority('todas'); filters.setStatus('Pendente'); }} />
+        <StatCard icon={CheckCircle} label="Em Análise" value={visibleStats.analise} color="from-emerald-500 to-teal-500" onClick={() => { filters.setPriority('todas'); filters.setStatus('Em Análise'); }} />
       </div>
 
       <DashboardFilters 

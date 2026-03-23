@@ -1,6 +1,20 @@
 import { create } from 'zustand';
 import { api } from '@/services/api';
 import { type Occurrence } from '../types/index';
+import { addCreatedThisShiftOccurrenceId } from '@/features/occurrences/utils/handoverPersistence';
+
+const getCurrentUserIdFromStorage = (): string | null => {
+  try {
+    const raw = localStorage.getItem('auth-storage');
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw);
+    const userId = parsed?.state?.user?.id;
+    return userId ? String(userId) : null;
+  } catch {
+    return null;
+  }
+};
 
 interface OccurrenceState {
   occurrences: Occurrence[];
@@ -50,11 +64,29 @@ export const useOccurrenceStore = create<OccurrenceState>((set) => ({
   createOccurrence: async (data) => {
     try {
       const response = await api.post('/occurrences', data);
-      // Se a API retornar sucesso, adiciona na lista local para atualizar a tela
-      if (response.data.success) {
+
+      const createdOccurrence =
+        (response.data?.success && response.data?.data) ||
+        response.data?.data ||
+        response.data;
+
+      if (createdOccurrence && createdOccurrence.id) {
+        const normalizedCreated = {
+          ...createdOccurrence,
+          authorId: createdOccurrence.user_id || createdOccurrence.authorId,
+          createdAt: createdOccurrence.created_at
+            ? new Date(createdOccurrence.created_at).toLocaleString('pt-BR')
+            : createdOccurrence.createdAt,
+        };
+
         set((state) => ({
-          occurrences: [response.data.data, ...state.occurrences]
+          occurrences: [normalizedCreated, ...state.occurrences]
         }));
+
+        const userId = getCurrentUserIdFromStorage();
+        if (userId) {
+          addCreatedThisShiftOccurrenceId(userId, String(createdOccurrence.id));
+        }
       }
     } catch (err) {
       console.error('Erro ao criar ocorrência:', err);

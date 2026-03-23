@@ -22,6 +22,12 @@ export interface Occurrence {
   createdBy: string;
   authorId?: string; 
   user_id?: string | number;
+  shift_id?: string | number;
+  created_at?: string;
+  updated_at?: string;
+  is_inherited?: boolean;
+  is_open?: boolean;
+  origin?: 'Herdada' | 'Atual' | string;
   
   description: string;
   location?: string | OccurrenceLocation;

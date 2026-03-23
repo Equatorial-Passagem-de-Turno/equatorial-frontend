@@ -24,7 +24,7 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: UserCog 
   },
   { 
-    label: 'Verificar Pendências', 
+    label: 'Historico de Ocorrências', 
     path: '/occurrences/my-shift', 
     icon: History 
   },

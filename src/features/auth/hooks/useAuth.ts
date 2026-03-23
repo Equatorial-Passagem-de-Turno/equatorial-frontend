@@ -82,6 +82,9 @@ export const useAuth = create<AuthState>()(
         if (user?.id) {
             sessionStorage.removeItem(`handover_viewed_${user.id}`);
             sessionStorage.removeItem(`inherited_viewed_${user.id}`);
+          localStorage.removeItem(`shift_finish_locked_${user.id}`);
+          localStorage.removeItem(`shift_finish_snapshot_${user.id}`);
+          window.dispatchEvent(new Event('shift-lock-changed'));
         }
 
         // 3. Limpa as ocorrências herdadas
