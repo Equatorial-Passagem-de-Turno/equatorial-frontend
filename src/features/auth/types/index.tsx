@@ -4,6 +4,7 @@ export interface User {
   name: string;
   table: string;
   email: string;
+  role?: string;
   password?: string;
   avatar?: string;
 }

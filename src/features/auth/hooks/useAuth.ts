@@ -39,13 +39,18 @@ export const useAuth = create<AuthState>()(
             throw new Error(data.message || 'Erro de autenticação'); 
           }
 
+        const accountRole = String(data?.usuario?.role || '').toLowerCase();
+        const isSupervisor = accountRole === 'supervisor';
+
         set({
           user: data.usuario,
           token: data.token,
           isAuthenticated: true,
           isLoading: false,
-          role: data.active_shift ? data.active_shift.role : null,
-          table: data.active_shift ? data.active_shift.desk : null,
+          // Supervisor entra direto no dashboard geral de supervisão.
+          // Operador sempre escolhe perfil e mesa ao entrar.
+          role: isSupervisor ? 'supervisor' : null,
+          table: isSupervisor ? (data.active_shift ? data.active_shift.desk : null) : null,
         });
 
         } catch (error) {

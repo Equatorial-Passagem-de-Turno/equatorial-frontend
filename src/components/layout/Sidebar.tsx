@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LogOut, Menu, X, Radio, Sun, Moon, ChevronLeft } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -65,16 +65,17 @@ export const Sidebar = ({ operatorName, stats, onLogout }: SidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const readShiftLock = () => {
-    if (!user?.id) {
-      setIsShiftLocked(false);
-      return;
-    }
-    const key = `shift_finish_locked_${user.id}`;
-    setIsShiftLocked(localStorage.getItem(key) === '1');
-  };
-
   useEffect(() => {
+    const readShiftLock = () => {
+      if (!user?.id) {
+        setIsShiftLocked(false);
+        return;
+      }
+
+      const key = `shift_finish_locked_${user.id}`;
+      setIsShiftLocked(localStorage.getItem(key) === '1');
+    };
+
     readShiftLock();
 
     const handleStorage = () => readShiftLock();
@@ -88,6 +89,18 @@ export const Sidebar = ({ operatorName, stats, onLogout }: SidebarProps) => {
       window.removeEventListener('shift-lock-changed', handleShiftLockChanged as EventListener);
     };
   }, [user?.id]);
+
+  const rawAccountRole = String(user?.role || '').toLowerCase();
+  const accountRole = rawAccountRole === 'supervisor' ? 'supervisor' : 'operator';
+  const profileLabel = accountRole === 'supervisor' ? 'Supervisor' : 'Operador';
+  const visibleItems = useMemo(
+    () =>
+      SIDEBAR_ITEMS.filter((item) => {
+        if (!item.roles) return true;
+        return item.roles.includes(accountRole);
+      }),
+    [accountRole]
+  );
 
   const handleNavigation = (path: string) => {
     if (isShiftLocked && path !== '/shifts/control') {
@@ -173,7 +186,7 @@ export const Sidebar = ({ operatorName, stats, onLogout }: SidebarProps) => {
           ${collapsed && !mobileOpen ? 'max-h-0 opacity-0 mb-0' : 'max-h-20 opacity-100 mb-2 px-6 pt-2'}
         `}>
           <div className="space-y-1 animate-fade-in pl-1 whitespace-nowrap">
-            <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">Operador</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">{profileLabel}</div>
             <div className="text-slate-800 dark:text-white font-semibold truncate text-lg" title={operatorName}>
               {operatorName}
             </div>
@@ -188,7 +201,7 @@ export const Sidebar = ({ operatorName, stats, onLogout }: SidebarProps) => {
             : 'custom-scrollbar'
           }
         `}>
-          {SIDEBAR_ITEMS.map((item) => {
+          {visibleItems.map((item) => {
             const active = isActive(item.path);
             const isDisabledByShiftLock = isShiftLocked && item.path !== '/shifts/control';
             

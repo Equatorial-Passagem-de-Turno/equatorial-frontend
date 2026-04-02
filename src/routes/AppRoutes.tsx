@@ -17,24 +17,39 @@ import { OccurrenceDetailPage } from '@/features/occurrences/pages/OccurrenceDet
 import { ShiftControlPage } from '@/features/shifts/pages/ShiftControlPage';
 import { ShiftPreviousPage } from '@/features/shifts/pages/ShiftPreviousPage';
 import { ConstructionPage } from '@/pages/ConstructionPage';
+import { DashboardSupervisorPage } from '@/features/supervisor/pages/DashboardSupervisorPage';
+import { TimelinePage } from '@/features/supervisor/pages/TimelinePage';
+import { AnalyticsPage } from '@/features/supervisor/pages/AnalyticsPage';
+import { ManegementPage } from '@/features/supervisor/pages/ManagementPage';
+import { SupervisorOccurenceDetailsPage } from '@/features/supervisor/components/SupervisorOccurrenceDetailPage';
 
 export const AppRoutes = () => {
-  const { isAuthenticated, role, table } = useAuth();
+  const { isAuthenticated, role, table, user } = useAuth();
+  const accountRole = String((user as { role?: string } | null)?.role || '').toLowerCase();
+  const isSupervisor = accountRole === 'supervisor';
 
   if (!isAuthenticated) return <AuthPage />;
 
-  if (!role) return <RoleSelector />;
-  if (!table) return <TableSelector />;
-
-  if (role.toLowerCase() === 'admin') {
+  if (accountRole === 'admin') {
     return <ConstructionPage />;
   }
+
+  if (!isSupervisor && !role) return <RoleSelector />;
+  if (!isSupervisor && !table) return <TableSelector />;
+
 
   return (
     <Routes>
       <Route path="/" element={<ShiftFinishLockGuard><MainLayout /></ShiftFinishLockGuard>}>
         {/* Dashboard Principal */}
-        <Route index element={<ShiftFinishLockGuard><DashboardPage /></ShiftFinishLockGuard>} />
+        <Route
+          index
+          element={
+            isSupervisor
+              ? <ShiftFinishLockGuard><DashboardSupervisorPage /></ShiftFinishLockGuard>
+              : <ShiftFinishLockGuard><DashboardPage /></ShiftFinishLockGuard>
+          }
+        />
         
         {/* Módulo de Ocorrências */}
         <Route path="occurrences">
@@ -48,6 +63,13 @@ export const AppRoutes = () => {
           <Route path="control" element={<HandoverRouteGuard><ShiftControlPage /></HandoverRouteGuard>} />
           <Route path="previous" element={<ShiftFinishLockGuard><HandoverRouteGuard><ShiftPreviousPage /></HandoverRouteGuard></ShiftFinishLockGuard>} />
         </Route>
+
+        {/* Dashboard do Supervisor */}
+        <Route path="supervisor" element={isSupervisor ? <ShiftFinishLockGuard><DashboardSupervisorPage /></ShiftFinishLockGuard> : <Navigate to="/" replace />} />
+        <Route path="supervisor/timeline" element={isSupervisor ? <ShiftFinishLockGuard><TimelinePage /></ShiftFinishLockGuard> : <Navigate to="/" replace />} />
+        <Route path="supervisor/analytics" element={isSupervisor ? <ShiftFinishLockGuard><AnalyticsPage /></ShiftFinishLockGuard> : <Navigate to="/" replace />} />
+        <Route path="supervisor/management" element={isSupervisor ? <ShiftFinishLockGuard><ManegementPage /></ShiftFinishLockGuard> : <Navigate to="/" replace />} />
+        <Route path="supervisor/occurrences/:id" element={isSupervisor ? <ShiftFinishLockGuard><SupervisorOccurenceDetailsPage /></ShiftFinishLockGuard> : <Navigate to="/" replace />} />
       </Route>
 
       {/* Redireciona qualquer rota inválida para a home */}

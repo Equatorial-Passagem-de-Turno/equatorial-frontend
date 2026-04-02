@@ -1,4 +1,4 @@
-import { Activity, History, PaperclipIcon, Plus, UserCog, type LucideIcon } from 'lucide-react';
+import { Activity, BarChart3, History, LayoutDashboard, PaperclipIcon, Plus, Settings, UserCog, type LucideIcon } from 'lucide-react';
 
 export interface NavItem {
   label: string;
@@ -8,29 +8,58 @@ export interface NavItem {
 }
 
 export const SIDEBAR_ITEMS: NavItem[] = [
-  { 
-    label: 'Dashboard', 
-    path: '/', 
-    icon: Activity 
+  {
+    label: 'Dashboard',
+    path: '/',
+    icon: Activity,
+    roles: ['operator'],
   },
   { 
     label: 'Nova Ocorrência', 
     path: '/occurrences/new', 
-    icon: Plus 
+    icon: Plus,
+    roles: ['operator'],
   },
   { 
     label: 'Controle de Turnos', 
     path: '/shifts/control', 
-    icon: UserCog 
+    icon: UserCog,
+    roles: ['operator'],
   },
   { 
     label: 'Historico de Ocorrências', 
     path: '/occurrences/my-shift', 
-    icon: History 
+    icon: History,
+    roles: ['operator'],
   },
   {
     label: 'Turno Anterior',
     path: '/shifts/previous',
     icon: PaperclipIcon,
+    roles: ['operator'],
+  },
+  {
+    label: 'Dashboard',
+    path: '/supervisor',
+    icon: LayoutDashboard,
+    roles: ['supervisor'],
+  },
+  {
+    label: 'Linha do Tempo',
+    path: '/supervisor/timeline',
+    icon: History,
+    roles: ['supervisor'],
+  },
+  {
+    label: 'Analytics',
+    path: '/supervisor/analytics',
+    icon: BarChart3,
+    roles: ['supervisor'],
+  },
+  {
+    label: 'Gestão',
+    path: '/supervisor/management',
+    icon: Settings,
+    roles: ['supervisor'],
   }
 ];

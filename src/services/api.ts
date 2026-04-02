@@ -1,5 +1,6 @@
 // src/services/api.ts
 import axios from 'axios';
+import type { InternalAxiosRequestConfig } from 'axios';
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
@@ -9,7 +10,7 @@ export const api = axios.create({
   }
 });
 
-api.interceptors.request.use((config) => {
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   // O Zustand salva tudo dentro de um JSON chamado 'auth-storage'
   const authStorageString = localStorage.getItem('auth-storage');
   
