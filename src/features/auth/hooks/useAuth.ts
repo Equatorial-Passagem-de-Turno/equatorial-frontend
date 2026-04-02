@@ -1,118 +1,142 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { type UserRole, type AuthState } from '../types/index';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { type UserRole, type AuthState } from "../types/index";
 
-// Importe a store de ocorrências para poder resetá-la
-import { useOccurrenceStore } from '@/features/occurrences/stores/useOccurrenceStore';
+// 1. IMPORTANTE: Importe a store de ocorrências para poder resetá-la
+import { useOccurrenceStore } from "@/features/occurrences/stores/useOccurrenceStore";
 
-// URL base da sua API (O ideal é colocar isso num arquivo .env como import.meta.env.VITE_API_URL)
-const API_URL = 'http://localhost:8000/api';
+const MOCK_USERS: Record<string, { role: UserRole; name: string; id: string }> =
+  {
+    "operador@equatorial.com": {
+      role: null,
+      name: "João",
+      id: "user-op-1",
+    },
+    "supervisor@equatorial.com": {
+      role: "supervisor",
+      name: "Maria Supervisora",
+      id: "user-sup-1",
+    },
+  };
 
 export const useAuth = create<AuthState>()(
   persist(
     (set, get) => ({
+      // --- Estados Iniciais ---
       user: null,
-      token: null,
       role: null,
       table: null,
-      
+
       isAuthenticated: false,
       isLoading: false,
       requires2FA: false,
+      is2FAVerified: false,
+
+      // --- Actions ---
 
       login: async (email: string, password: string) => {
         set({ isLoading: true });
 
-        try {
-          const response = await fetch(`${API_URL}/login`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify({ email, password })
-          });
+        return new Promise<void>((resolve, reject) => {
+          setTimeout(() => {
+            // ... (Lógica de validação de senha e usuário igual ao anterior) ...
 
-          const data = await response.json();
+            // Mock para exemplo (copie sua lógica completa de login aqui)
+            if (password !== "123456") {
+              set({ isLoading: false });
+              reject(new Error("Senha incorreta."));
+              return;
+            }
 
-          if (!response.ok) {
-            throw new Error(data.message || 'Erro de autenticação'); 
-          }
+            // ... Validação de roles ...
+            // ... Definição do objeto user ...
 
-        set({
-          user: data.usuario,
-          token: data.token,
-          isAuthenticated: true,
-          isLoading: false,
-          role: data.active_shift ? data.active_shift.role : null,
-          table: data.active_shift ? data.active_shift.desk : null,
+            // Exemplo simplificado do sucesso:
+            const mockUser = MOCK_USERS[email.toLowerCase()];
+
+            if (!mockUser) {
+              set({ isLoading: false });
+              reject(new Error("Usuário não encontrado."));
+              return;
+            }
+
+            if (mockUser.role === "supervisor") {
+              // Supervisor já entra direto
+              set({
+                user: {
+                  id: mockUser.id,
+                  name: mockUser.name,
+                  email,
+                },
+                role: "supervisor",
+                isAuthenticated: true,
+                isLoading: false,
+              });
+            } else {
+              // Operador entra sem role definido ainda
+              set({
+                user: {
+                  id: mockUser.id,
+                  name: mockUser.name,
+                  email,
+                },
+                role: null, // 👈 IMPORTANTE
+                isAuthenticated: true,
+                isLoading: false,
+              });
+            }
+
+            resolve();
+          }, 1000);
         });
-
-        } catch (error) {
-          set({ isLoading: false });
-          throw error; 
-        }
       },
 
-      selectRole: (role: UserRole | null) => set((state) => ({ 
-        role: role, 
-        table: role === null ? null : state.table 
-      })),
+      verify2FA: (code: string) => {
+        if (code === "123456") {
+          return true;
+        }
+        return false;
+      },
+
+      selectRole: (role: UserRole) => set({ role }),
       selectTable: (table) => set({ table }),
 
-      logout: async () => {
-        const { token, user } = get();
+      // --- AQUI ESTÁ A MUDANÇA SOLICITADA ---
+      logout: () => {
+        const currentUser = get().user;
 
-        // 1. Invalida o token no Laravel
-        if (token) {
-          try {
-            await fetch(`${API_URL}/logout`, {
-              method: 'POST',
-              headers: {
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${token}`
-              }
-            });
-          } catch (e) {
-            console.error('Erro ao comunicar logout ao servidor:', e);
-          }
+        // 1. Limpa a "memória" de que o usuário já viu o modal de passagem de turno
+        if (currentUser?.id) {
+          sessionStorage.removeItem(`handover_viewed_${currentUser.id}`);
+          // Remove também a chave antiga caso tenha ficado lixo
+          sessionStorage.removeItem(`inherited_viewed_${currentUser.id}`);
         }
 
-        // 2. Limpa a "memória" de que o usuário já viu o modal
-        if (user?.id) {
-            sessionStorage.removeItem(`handover_viewed_${user.id}`);
-            sessionStorage.removeItem(`inherited_viewed_${user.id}`);
-          localStorage.removeItem(`shift_finish_locked_${user.id}`);
-          localStorage.removeItem(`shift_finish_snapshot_${user.id}`);
-          window.dispatchEvent(new Event('shift-lock-changed'));
-        }
-
-        // 3. Limpa as ocorrências herdadas
+        // 2. Limpa as ocorrências herdadas (Reseta a lista para o padrão inicial)
+        // Acessamos a store diretamente sem precisar de hook
         useOccurrenceStore.getState().reset();
 
-        // 4. Limpa o estado de Autenticação no Zustand
-        set({ 
-          user: null, 
-          token: null,
-          role: null, 
-          table: null,  
+        // 3. Limpa o estado de Autenticação
+        set({
+          user: null,
+          role: null,
+          table: null,
           isAuthenticated: false,
         });
-        
-        // 5. Limpa o LocalStorage
-        localStorage.removeItem('auth-storage');
+
+        // 4. Limpa o LocalStorage da Auth
+        localStorage.removeItem("auth-storage");
       },
     }),
     {
-      name: 'auth-storage',
+      name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ 
-        user: state.user, 
-        token: state.token,
-        role: state.role, 
+      partialize: (state) => ({
+        user: state.user,
+        role: state.role,
         table: state.table,
         isAuthenticated: state.isAuthenticated,
       }),
-    }
-  )
+    },
+  ),
 );

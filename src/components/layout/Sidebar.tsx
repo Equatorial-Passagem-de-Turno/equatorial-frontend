@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { LogOut, Menu, X, Radio, Sun, Moon, ChevronLeft } from 'lucide-react';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useTheme } from '../../contexts/ThemeContext';
 import { SIDEBAR_ITEMS } from '../../config/navigation';
-import { useAuth } from '../../features/auth/hooks/useAuth';
 
 // --- Interfaces ---
 interface SidebarStats {
@@ -32,8 +32,7 @@ const ToggleButton = ({ onClick, isOpen, isMobile = false }: ToggleButtonProps) 
       /* Tamanho */
       w-10 h-10 rounded-xl
       /* Cores Base */
-      bg-white border border-slate-200 text-slate-500 shadow-sm
-      dark:bg-slate-800 dark:border-slate-700 dark:text-slate-400 dark:shadow-none
+      bg-theme-panel border border-theme-border text-theme-text shadow-sm
       /* Hover Effects */
       hover:border-emerald-500/50 hover:text-emerald-600 dark:hover:text-emerald-400
       hover:shadow-[0_0_15px_rgba(16,185,129,0.3)]
@@ -58,43 +57,17 @@ const ToggleButton = ({ onClick, isOpen, isMobile = false }: ToggleButtonProps) 
 export const Sidebar = ({ operatorName, stats, onLogout }: SidebarProps) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isShiftLocked, setIsShiftLocked] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const { user } = useAuth();
   
   const navigate = useNavigate();
   const location = useLocation();
+  const { role } = useAuth();
 
-  const readShiftLock = () => {
-    if (!user?.id) {
-      setIsShiftLocked(false);
-      return;
-    }
-    const key = `shift_finish_locked_${user.id}`;
-    setIsShiftLocked(localStorage.getItem(key) === '1');
-  };
-
-  useEffect(() => {
-    readShiftLock();
-
-    const handleStorage = () => readShiftLock();
-    const handleShiftLockChanged = () => readShiftLock();
-
-    window.addEventListener('storage', handleStorage);
-    window.addEventListener('shift-lock-changed', handleShiftLockChanged as EventListener);
-
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-      window.removeEventListener('shift-lock-changed', handleShiftLockChanged as EventListener);
-    };
-  }, [user?.id]);
+  const filteredItems = SIDEBAR_ITEMS.filter(item =>
+  !item.roles || (role && item.roles.includes(role))
+);
 
   const handleNavigation = (path: string) => {
-    if (isShiftLocked && path !== '/shifts/control') {
-      navigate('/shifts/control');
-      setMobileOpen(false);
-      return;
-    }
     navigate(path);
     setMobileOpen(false);
   };
@@ -113,7 +86,7 @@ export const Sidebar = ({ operatorName, stats, onLogout }: SidebarProps) => {
           lg:hidden fixed top-4 left-4 z-[110] 
           w-12 h-12 rounded-xl flex items-center justify-center
           bg-white dark:bg-slate-900 
-          border border-slate-200 dark:border-slate-700 
+          border border-theme-border dark:border-slate-700 
           text-slate-600 dark:text-white 
           shadow-lg shadow-slate-200/50 dark:shadow-black/50
           transition-all duration-300 transform
@@ -128,7 +101,7 @@ export const Sidebar = ({ operatorName, stats, onLogout }: SidebarProps) => {
       <aside 
         className={`
           fixed lg:relative z-[100] h-full flex flex-col transition-all duration-300 ease-in-out
-          bg-slate-50 dark:bg-slate-900 
+          bg-slate-50 dark:bg-theme-panel 
           border-r border-slate-200 dark:border-slate-800
           /* IMPORTANTE: overflow-hidden previne que o conteúdo estoure durante a animação */
           overflow-hidden
@@ -188,22 +161,18 @@ export const Sidebar = ({ operatorName, stats, onLogout }: SidebarProps) => {
             : 'custom-scrollbar'
           }
         `}>
-          {SIDEBAR_ITEMS.map((item) => {
+          {filteredItems.map((item) => {
             const active = isActive(item.path);
-            const isDisabledByShiftLock = isShiftLocked && item.path !== '/shifts/control';
             
             return (
               <button
                 key={item.path}
                 onClick={() => handleNavigation(item.path)}
-                disabled={isDisabledByShiftLock}
                 className={`
                   w-full flex items-center px-4 py-3 rounded-xl transition-all duration-200 group relative
                   /* Gap dinâmico ajuda na suavidade */
                   ${collapsed && !mobileOpen ? 'justify-center gap-0' : 'gap-3'}
-                  ${isDisabledByShiftLock
-                    ? 'text-slate-400 dark:text-slate-600 opacity-60 cursor-not-allowed'
-                    : active 
+                  ${active 
                     ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/25 font-medium' 
                     : 'text-slate-500 dark:text-slate-400 hover:bg-white dark:hover:bg-slate-800 hover:text-emerald-600 dark:hover:text-white hover:shadow-sm'
                   } 
@@ -237,11 +206,6 @@ export const Sidebar = ({ operatorName, stats, onLogout }: SidebarProps) => {
            border-t border-slate-200 dark:border-slate-800 text-xs bg-slate-50/50 dark:bg-slate-900/50 overflow-hidden transition-all duration-300
            ${collapsed && !mobileOpen ? 'max-h-0 opacity-0 p-0' : 'max-h-32 opacity-100 p-4 space-y-3'}
         `}>
-           {isShiftLocked && (
-             <div className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">
-               Turno encerrado: navegação bloqueada. Use "Controle de Turnos" para reabrir.
-             </div>
-           )}
            {/* Conteúdo Stats mantido igual, apenas wrapper anima */}
             <div className="flex justify-between items-center whitespace-nowrap">
               <span className="text-slate-500 dark:text-slate-400">Abertas</span>

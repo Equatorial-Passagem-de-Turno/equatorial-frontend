@@ -3,7 +3,7 @@
 :root.dark {
   --bg-primary: #0f172a;
   --bg-secondary: rgba(15, 23, 42, 0.5);
-  --bg-card: rgba(30, 41, 59, 0.5);
+  --bg-card: rgba(30, 41, 59, 0.502);
   --border-primary: #1e293b;
   --border-secondary: #334155;
   --text-primary: #ffffff;

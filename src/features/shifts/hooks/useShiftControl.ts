@@ -1,67 +1,76 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 import type { Shift } from '../types/shift';
-import { type HistoryItem } from '../components/history/HistoryTable';
-import { api } from '@/services/api'; 
-import { useAuth } from '@/features/auth/hooks/useAuth'; 
+
+// Mock do Auth (Adicionado a função logout)
+const useAuth = () => ({
+  user: { name: 'OPERADOR', email: 'operador@demo.com' },
+  logout: () => {
+    console.log('Sessão encerrada');
+    // Aqui limparia o localStorage/Cookies
+  }
+});
 
 export const useShiftControl = () => {
   const navigate = useNavigate();
   const { user, logout: authLogout } = useAuth();
   
-  const [turnoAtual, setTurnoAtual] = useState<Shift | null>(null);
-  const [todaysShifts, setTodaysShifts] = useState<HistoryItem[]>([]);
+  // Mock Inicial
+  const [turnoAtual, setTurnoAtual] = useState<Shift | null>({
+    id: `TUR-${format(new Date(), 'yyyyMMdd')}-MT`,
+    operador: user.name,
+    funcao: 'MT',
+    inicio: '14:32',
+    data: format(new Date(), 'dd/MM/yyyy'),
+    briefing: '',
+    pendenciasHerdadas: [
+      { id: 'OC-0345', descricao: 'Reintegração BT setor 7', prioridade: 'crítica', status: 'pendente' },
+      { id: 'OC-0331', descricao: 'Ajuste de transformador', prioridade: 'média', status: 'em andamento' }
+    ],
+    pendenciasDeixadas: [
+      { id: 'OC-0351', descricao: 'Verificar telemetria MT', prioridade: 'baixa', status: 'pendente' },
+      { id: 'OC-0355', descricao: 'Atualizar relatório técnico AT', prioridade: 'média', status: 'pendente' }
+    ]
+  });
+
   const [briefing, setBriefing] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchActiveShiftAndToday = async () => {
-      try {
-        setLoading(true);
-        const responseCurrent = await api.get('/shifts/current'); 
-        if (responseCurrent.data) {
-          setTurnoAtual(responseCurrent.data);
-          setBriefing(responseCurrent.data.briefing || '');
-        }
-
-        const responseToday = await api.get('/shifts/by-date');
-        if (responseToday.data) {
-            setTodaysShifts(responseToday.data);
-        }
-
-      } catch (error) {
-        console.error("Erro ao buscar dados do turno:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (user) {
-      fetchActiveShiftAndToday();
+  const encerrarTurno = () => {
+    if (!turnoAtual || !briefing.trim()) {
+      alert('Por favor, preencha o briefing antes de encerrar.');
+      return;
     }
-  }, [user]);
+    
+    const fim = format(new Date(), 'HH:mm');
+    setTurnoAtual(prev => prev ? { ...prev, briefing, fim } : null);
+    setShowSuccessModal(true);
+  };
 
-  const encerrarTurno = () => setShowSuccessModal(true);
-  const finalizarNavegacao = () => navigate('/');
-  const imprimirRelatorio = () => window.print();
+  const finalizarNavegacao = () => {
+    navigate('/');
+  };
+
+  const imprimirRelatorio = () => {
+    window.print();
+  };
+
+  // Nova função de Logout que redireciona
   const logout = () => {
     authLogout();
-    navigate('/login');
+    navigate('/login'); // Ajuste a rota conforme seu roteamento
   };
 
   return {
     user,
     turnoAtual,
-    setTurnoAtual,
-    todaysShifts,
     briefing,
     setBriefing,
     showSuccessModal,
-    loading,
     encerrarTurno,
     finalizarNavegacao,
     imprimirRelatorio,
-    logout
+    logout // <--- Adicionado aqui para corrigir o erro TS2339
   };
 };
