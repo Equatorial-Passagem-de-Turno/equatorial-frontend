@@ -20,15 +20,6 @@ export interface Occurrence {
   status: OccurrenceStatus;
   createdAt: string;
   createdBy: string;
-  authorId?: string; 
-  user_id?: string | number;
-  shift_id?: string | number;
-  created_at?: string;
-  updated_at?: string;
-  is_inherited?: boolean;
-  is_open?: boolean;
-  origin?: 'Herdada' | 'Atual' | string;
-  
   description: string;
   location?: string | OccurrenceLocation;
   linkType?: 'OS' | 'External';
@@ -38,16 +29,16 @@ export interface Occurrence {
   reminders?: Reminder[];
 }
 
-export interface OccurrenceLocation {
-  address?: string;
-  neighborhood?: string;
-  city?: string;
-  zone?: string;
-  state?: string;
-  alimentador?: string;
-  subestacao?: string;
-  reference?: string;
-}
+  export interface OccurrenceLocation {
+    address?: string;
+    neighborhood?: string;
+    city?: string;
+    zone?: string;
+    state?: string;
+    alimentador?: string;
+    subestacao?: string;
+    reference?: string;
+  }
 
 // Lembrete agendado para uma ocorrência
 export interface Reminder {
