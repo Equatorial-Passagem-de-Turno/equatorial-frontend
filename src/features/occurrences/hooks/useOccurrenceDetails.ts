@@ -17,7 +17,7 @@ export const useOccurrenceDetails = () => {
 
   // 2. Buscar dados se ainda não estiverem carregados
   useEffect(() => {
-    // Se a função existir na store, garantimos que os dados mais recentes sejam buscados
+    // Se a lista estiver vazia ou precisarmos garantir dados frescos
     if (fetchOccurrences) {
         fetchOccurrences();
     }
