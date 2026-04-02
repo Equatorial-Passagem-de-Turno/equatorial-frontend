@@ -15,26 +15,45 @@ import { ShiftHistoryModal } from '../components/history/ShiftHistoryModal';
 import { ShiftDetailModal } from '../components/history/ShiftDetailModal';
 import { type HistoryItem } from '../components/history/HistoryTable';
 
+// Importação do serviço de API
+import {
+    finishShiftApi,
+    getSystemUsersApi,
+    reopenShiftApi,
+    sendShiftFinishEmailApi,
+    type SystemUser,
+} from '../../occurrences/services/shiftService';
+import {
+    clearCreatedThisShiftOccurrenceIds,
+    clearInheritedSelectionCompleted,
+    clearSelectedInheritedIds,
+} from '@/features/occurrences/utils/handoverPersistence';
+
 export const ShiftControlPage = () => {
   const { 
     user, 
     turnoAtual, 
+    setTurnoAtual,
+    todaysShifts,
     briefing, 
     setBriefing, 
     encerrarTurno, 
     finalizarNavegacao, 
     imprimirRelatorio,
-    logout 
+        logout,
+        loading,
   } = useShiftControl();
+
+  
 
   // Estados de UI
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-  const [todaysShifts, setTodaysShifts] = useState<HistoryItem[]>([]);
   const [selectedShiftForDetail, setSelectedShiftForDetail] = useState<HistoryItem | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   
-  // Estado para o Modal de Confirmação de Encerramento
+  // Estado para o Modal de Confirmação de Encerramento e Loading da API
   const [isFinishModalOpen, setIsFinishModalOpen] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
 
   // Estado para o Modal de Confirmação de Reabertura
   const [isReopenModalOpen, setIsReopenModalOpen] = useState(false);
@@ -43,30 +62,18 @@ export const ShiftControlPage = () => {
   const [finishedShiftState, setFinishedShiftState] = useState<any | null>(null);
 
   // === Estados para envio de E-mail (Multi-select) ===
-  const [selectedRecipients, setSelectedRecipients] = useState<string[]>([]);
+    const [selectedRecipients, setSelectedRecipients] = useState<number[]>([]);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isEmailDropdownOpen, setIsEmailDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+    const [availableOperators, setAvailableOperators] = useState<SystemUser[]>([]);
 
   // Estados de Negócio
   const [resolvedItems, setResolvedItems] = useState<string[]>([]);
   const [nextOperator, setNextOperator] = useState<string>(""); 
 
-  // Mock de Operadores do Sistema
-  const availableOperators = [
-    { id: 'OP-01', name: 'Carlos Oliveira' },
-    { id: 'OP-02', name: 'Fernanda Souza' },
-    { id: 'OP-03', name: 'Ricardo Mendes' },
-    { id: 'OP-04', name: 'Patrícia Lima' },
-  ];
-
-  // Lista de Destinatários de E-mail
-  const emailRecipients = [
-    { id: 'lider_rd_mt', label: 'LÍDER RD_MT' },
-    { id: 'lider_at', label: 'LÍDER AT' },
-    { id: 'executivo', label: 'EXECUTIVO' },
-    { id: 'gerente', label: 'GERENTE' }
-  ];
+    const shiftLockKey = user?.id ? `shift_finish_locked_${user.id}` : null;
+    const shiftSnapshotKey = user?.id ? `shift_finish_snapshot_${user.id}` : null;
 
   // Fecha o dropdown se clicar fora
   useEffect(() => {
@@ -79,22 +86,59 @@ export const ShiftControlPage = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Mock Turnos
-  useEffect(() => {
-    const mockTodaysShifts: HistoryItem[] = [
-      { id: 'TUR-1401-A', operador: 'JOÃO SILVA', horario: '06:00 - 14:00', tipo: 'MT', status: 'Fechado' },
-      { id: 'TUR-1401-B', operador: 'MARIA DOS SANTOS', horario: '14:00 - ...', tipo: turnoAtual?.funcao || 'MT', status: 'Aberto' },
-      { id: 'TUR-1653-C', operador: user.name, horario: `${turnoAtual?.inicio} - ...`, tipo: turnoAtual?.funcao || 'MT', status: 'Aberto' }
-    ];
-    setTodaysShifts(mockTodaysShifts);
-  }, [user.name, turnoAtual]);
+    useEffect(() => {
+        const loadUsers = async () => {
+            try {
+                const users = await getSystemUsersApi();
+                setAvailableOperators(users);
+            } catch (error) {
+                console.error('Erro ao carregar usuários para turno/e-mail:', error);
+            }
+        };
+
+        loadUsers();
+    }, []);
+
+    useEffect(() => {
+        if (!shiftSnapshotKey) return;
+
+        const snapshot = localStorage.getItem(shiftSnapshotKey);
+        if (!snapshot) return;
+
+        try {
+            const parsed = JSON.parse(snapshot);
+            if (parsed && !finishedShiftState) {
+                setFinishedShiftState(parsed);
+            }
+        } catch {
+            localStorage.removeItem(shiftSnapshotKey);
+        }
+    }, [shiftSnapshotKey, finishedShiftState]);
+
+    useEffect(() => {
+        if (loading) return;
+        if (!shiftLockKey || !shiftSnapshotKey) return;
+
+        const isLocked = localStorage.getItem(shiftLockKey) === '1';
+        if (!isLocked) return;
+
+        if (!turnoAtual && !finishedShiftState) {
+            // Recuperação de estado inconsistente para evitar tela em branco.
+            localStorage.removeItem(shiftLockKey);
+            localStorage.removeItem(shiftSnapshotKey);
+            window.dispatchEvent(new Event('shift-lock-changed'));
+            finalizarNavegacao();
+        }
+    }, [loading, turnoAtual, finishedShiftState, shiftLockKey, shiftSnapshotKey, finalizarNavegacao]);
 
   const allPendingItems = useMemo(() => {
     if (!turnoAtual) return [];
-    return [
-        ...turnoAtual.pendenciasHerdadas.map(p => ({ ...p, origem: 'Herdada' })),
-        ...turnoAtual.pendenciasDeixadas.map(p => ({ ...p, origem: 'Atual' }))
-    ];
+        
+        // Adicionamos ( || [] ) para garantir que o .map não quebre a tela se a API não mandar o array
+      return [
+        ...(turnoAtual.pendenciasHerdadas || []).map(p => ({ ...p, origem: 'Herdada' })),
+        ...(turnoAtual.pendenciasDeixadas || []).map(p => ({ ...p, origem: 'Atual' }))
+        ];
   }, [turnoAtual]);
 
   const toggleResolution = (id: string) => {
@@ -107,54 +151,94 @@ export const ShiftControlPage = () => {
   const handoverCount = allPendingItems.length - resolvedCount;
   
   const targetName = nextOperator 
-    ? availableOperators.find(op => op.id === nextOperator)?.name 
+        ? availableOperators.find(op => String(op.id) === String(nextOperator))?.name 
     : "MESA";
 
-  // Abertura do Modal de confirmação de encerramento
   const handleAttemptFinish = () => {
     setIsFinishModalOpen(true);
   };
 
-  // Ação real de encerramento
-  const handleConfirmFinish = () => {
-    const itensResolvidos = allPendingItems.filter(i => resolvedItems.includes(i.id));
-    const itensParaRepasse = allPendingItems.filter(i => !resolvedItems.includes(i.id));
+  // === Ação real de encerramento com a API ===
+    const handleConfirmFinish = async () => {
+        try {
+        setIsFinishing(true);
 
-    // 1. Criamos o snapshot dos dados finais
-    const snapshotDados = {
-        ...turnoAtual,
-        briefingFinal: briefing,
-        pendenciasResolvidas: itensResolvidos,
-        pendenciasRepassadas: itensParaRepasse,
-        proximoOperador: nextOperator || 'MESA',
-        dataFechamento: new Date()
+        await finishShiftApi({
+            briefing: briefing,
+            proximoOperador: nextOperator || null,
+            pendenciasResolvidas: resolvedItems
+        });
+
+        if (user?.id) {
+            clearSelectedInheritedIds(String(user.id));
+            clearInheritedSelectionCompleted(String(user.id));
+            clearCreatedThisShiftOccurrenceIds(String(user.id));
+        }
+
+        const closedSnapshot = {
+            ...turnoAtual,
+            briefingFinal: briefing,
+            pendenciasResolvidas: allPendingItems.filter(i => resolvedItems.includes(i.id)),
+            pendenciasRepassadas: allPendingItems.filter(i => !resolvedItems.includes(i.id)),
+            proximoOperador: nextOperator || 'MESA',
+            dataFechamento: new Date(),
+            fim: format(new Date(), 'HH:mm')
+        };
+
+        setFinishedShiftState(closedSnapshot);
+
+        if (shiftLockKey) {
+            localStorage.setItem(shiftLockKey, '1');
+            window.dispatchEvent(new Event('shift-lock-changed'));
+        }
+
+        if (shiftSnapshotKey) {
+            localStorage.setItem(shiftSnapshotKey, JSON.stringify(closedSnapshot));
+        }
+
+        encerrarTurno(); 
+        setIsFinishModalOpen(false);
+        } catch (error: any) {
+            console.error("Erro da API:", error.response?.data);
+            
+            const mensagemErro = error.response?.data?.message || error.response?.data?.error || "Erro desconhecido no servidor.";
+            alert(`Falha ao encerrar turno:\n${mensagemErro}`);
+        } finally {
+        setIsFinishing(false);
+        }
     };
 
-    // 2. Salvamos localmente
-    setFinishedShiftState(snapshotDados);
-
-    // 3. Chamamos a função do backend
-    encerrarTurno(); 
-    
-    setIsFinishModalOpen(false);
-  };
-
-  // Lógica de tentativa de reabertura (abre modal)
   const handleAttemptReopen = () => {
     setIsReopenModalOpen(true);
   };
 
-  // Lógica real de reabertura (reseta o estado finalizado)
-  const handleConfirmReopen = () => {
-    setFinishedShiftState(null);
-    setIsReopenModalOpen(false);
-    // Resetar estado do email ao reabrir
-    setSelectedRecipients([]);
-    setIsSendingEmail(false);
-  };
+    const handleConfirmReopen = async () => {
+        try {
+            await reopenShiftApi();
 
-  // === Toggle de destinatários (Multi-select) ===
-  const toggleRecipient = (id: string) => {
+            if (finishedShiftState) {
+                setTurnoAtual(finishedShiftState);
+            }
+
+            setFinishedShiftState(null);
+            setIsReopenModalOpen(false);
+            setSelectedRecipients([]);
+            setIsSendingEmail(false);
+
+            if (shiftLockKey) {
+                localStorage.removeItem(shiftLockKey);
+                window.dispatchEvent(new Event('shift-lock-changed'));
+            }
+            if (shiftSnapshotKey) {
+                localStorage.removeItem(shiftSnapshotKey);
+            }
+        } catch (error: any) {
+            const mensagemErro = error?.response?.data?.message || 'Não foi possível reabrir o turno no servidor.';
+            alert(mensagemErro);
+        }
+    };
+
+    const toggleRecipient = (id: number) => {
     setSelectedRecipients(prev => {
         if (prev.includes(id)) {
             return prev.filter(item => item !== id);
@@ -164,46 +248,54 @@ export const ShiftControlPage = () => {
     });
   };
 
-  // === Handler de Envio de Email ===
-  const handleSendEmail = () => {
+    const handleSendEmail = async () => {
     if (selectedRecipients.length === 0) return;
-    
+        if (!finishedShiftState?.id) return;
+
     setIsSendingEmail(true);
-    
-    // Simulação de chamada API
-    setTimeout(() => {
-        setIsSendingEmail(false);
-        const names = emailRecipients
-            .filter(r => selectedRecipients.includes(r.id))
-            .map(r => r.label)
-            .join(', ');
-            
-        alert(`E-mail enviado com sucesso para: ${names}`);
-        setSelectedRecipients([]); // Reseta seleção
-        setIsEmailDropdownOpen(false);
-    }, 2000);
+
+        try {
+            const shiftId = Number(finishedShiftState.id);
+            if (!Number.isFinite(shiftId)) {
+                throw new Error('ID de turno inválido para envio de notificação.');
+            }
+
+            await sendShiftFinishEmailApi(shiftId, {
+                recipientIds: selectedRecipients,
+                summary: {
+                    resolvedCount,
+                    handoverCount,
+                    briefing,
+                },
+            });
+
+            const names = availableOperators
+                .filter((recipient) => selectedRecipients.includes(recipient.id))
+                .map((recipient) => recipient.name)
+                .join(', ');
+
+            alert(`E-mail enviado com sucesso para: ${names}`);
+            setSelectedRecipients([]);
+            setIsEmailDropdownOpen(false);
+        } catch (error: any) {
+            const mensagemErro = error?.response?.data?.message || 'Falha ao enviar e-mail de encerramento.';
+            alert(mensagemErro);
+        } finally {
+            setIsSendingEmail(false);
+        }
   };
 
-  // === Handler de Logout (CORRIGIDO) ===
   const handleLogoutSystem = () => {
     if (window.confirm("Tem certeza que deseja sair do sistema?")) {
-        // Agora usamos a função logout que foi desestruturada do hook
         if (logout) {
             logout();
         } else {
-            // Fallback caso a função não exista no hook (mock)
             console.log("Logout function not implemented in hook");
             window.location.reload();
         }
     }
   };
 
-  const handleViewShiftDetail = (shift: HistoryItem) => {
-    setSelectedShiftForDetail(shift);
-    setIsDetailModalOpen(true);
-  };
-
-  // Helper para calcular duração entre string "HH:mm" e objeto Date
   const calculateDuration = (startTimeStr: string, endDate: Date) => {
     if (!startTimeStr || !endDate) return "0h 00m";
     
@@ -223,10 +315,46 @@ export const ShiftControlPage = () => {
     return `${hours}h ${minutes.toString().padStart(2, '0')}m`;
   };
 
-  // Se não tem turno ativo E não tem turno recém encerrado, não mostra nada
-  if (!turnoAtual && !finishedShiftState) return null;
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+                <div className="flex items-center gap-2 text-slate-500 dark:text-slate-300">
+                    <Loader2 className="w-5 h-5 animate-spin text-emerald-500" />
+                    Carregando dados do turno...
+                </div>
+            </div>
+        );
+    }
+
+    if (!user) {
+        return (
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-500 dark:text-slate-300">
+                Sessão inválida. Faça login novamente.
+            </div>
+        );
+    }
+
+    if (!turnoAtual && !finishedShiftState) {
+        return (
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6">
+                <div className="max-w-md w-full rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 text-center">
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Nenhum turno disponível</h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                        Não encontramos um turno em andamento ou finalizado para exibir nesta sessão.
+                    </p>
+                    <button
+                        onClick={finalizarNavegacao}
+                        className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+                    >
+                        Voltar ao início
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
   const dadosRelatorio = turnoAtual ? { ...turnoAtual, briefing } : finishedShiftState;
+  const isAnyModalOpen = isHistoryOpen || isDetailModalOpen || isFinishModalOpen;
 
   // --- TELA: TURNO ENCERRADO (Exibida se finishedShiftState existe) ---
   if (finishedShiftState) {
@@ -262,7 +390,7 @@ export const ShiftControlPage = () => {
                             <div className="flex justify-between items-center mb-2 border-b border-slate-200 dark:border-slate-700 pb-2">
                                 <span className="text-xs font-semibold text-slate-400 uppercase">Destino</span>
                                 <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-                                    {availableOperators.find(o => o.id === finishedShiftState.proximoOperador)?.name || 'MESA'}
+                                    {availableOperators.find(o => String(o.id) === String(finishedShiftState.proximoOperador))?.name || 'MESA'}
                                 </span>
                             </div>
                             <div className="flex justify-between items-center pt-1">
@@ -285,7 +413,6 @@ export const ShiftControlPage = () => {
                             </div>
                             
                             <div className="flex gap-2 items-start" ref={dropdownRef}>
-                                {/* Custom Dropdown Trigger */}
                                 <div className="relative flex-1">
                                     <button
                                         onClick={() => setIsEmailDropdownOpen(!isEmailDropdownOpen)}
@@ -300,10 +427,9 @@ export const ShiftControlPage = () => {
                                         <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isEmailDropdownOpen ? 'rotate-180' : ''}`} />
                                     </button>
 
-                                    {/* Dropdown Menu */}
                                     {isEmailDropdownOpen && (
                                         <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto animate-fade-in-up">
-                                            {emailRecipients.map(recipient => {
+                                            {availableOperators.map(recipient => {
                                                 const isSelected = selectedRecipients.includes(recipient.id);
                                                 return (
                                                     <div 
@@ -316,7 +442,7 @@ export const ShiftControlPage = () => {
                                                         <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all ${isSelected ? 'bg-amber-500 border-amber-500' : 'border-slate-300 dark:border-slate-600'}`}>
                                                             {isSelected && <Check className="w-3 h-3 text-white" />}
                                                         </div>
-                                                        {recipient.label}
+                                                        {recipient.name}
                                                     </div>
                                                 );
                                             })}
@@ -324,7 +450,6 @@ export const ShiftControlPage = () => {
                                     )}
                                 </div>
 
-                                {/* Botão de Envio */}
                                 <button
                                     onClick={handleSendEmail}
                                     disabled={selectedRecipients.length === 0 || isSendingEmail}
@@ -348,12 +473,11 @@ export const ShiftControlPage = () => {
                                 </button>
                             </div>
                             
-                            {/* Tags dos selecionados para visualização rápida */}
                             {selectedRecipients.length > 0 && (
                                 <div className="mt-2 flex flex-wrap gap-1">
                                     {selectedRecipients.map(id => (
                                         <span key={id} className="text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-400 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800/50 flex items-center gap-1">
-                                            {emailRecipients.find(r => r.id === id)?.label}
+                                            {availableOperators.find(r => r.id === id)?.name}
                                             <button onClick={() => toggleRecipient(id)} className="hover:text-red-500"><X className="w-2.5 h-2.5" /></button>
                                         </span>
                                     ))}
@@ -382,14 +506,10 @@ export const ShiftControlPage = () => {
                     </div>
 
                     <div className="bg-slate-50 dark:bg-slate-950/50 p-3 flex justify-between items-center border-t border-slate-100 dark:border-slate-800">
-                        <button 
-                            onClick={finalizarNavegacao}
-                            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs font-medium transition-colors"
-                        >
-                            Voltar para o Dashboard
-                        </button>
+                        <span className="text-slate-400 text-xs font-medium">
+                            Turno encerrado. Para alterações, utilize apenas a opção de reabrir turno.
+                        </span>
 
-                        {/* BOTÃO DE SAIR NO FOOTER */}
                         <button 
                             onClick={handleLogoutSystem}
                             className="text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5"
@@ -464,12 +584,10 @@ export const ShiftControlPage = () => {
   }
 
   // --- TELA NORMAL (TURNO EM ANDAMENTO) ---
-  const isAnyModalOpen = isHistoryOpen || isDetailModalOpen || isFinishModalOpen;
-
   return (
     <>
       {dadosRelatorio && (
-        <ShiftReportPrintView turno={dadosRelatorio} operatorEmail={user.email} />
+                <ShiftReportPrintView turno={dadosRelatorio} operatorEmail={user?.email || ''} />
       )}
 
       <div className="print:hidden min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300 font-sans relative">
@@ -633,7 +751,7 @@ export const ShiftControlPage = () => {
                                 >
                                     <option value="">-- Ninguém selecionado (Enviar para Mesa) --</option>
                                     {availableOperators.map(op => (
-                                        <option key={op.id} value={op.id}>
+                                        <option key={op.id} value={String(op.id)}>
                                             {op.name}
                                         </option>
                                     ))}
@@ -648,7 +766,7 @@ export const ShiftControlPage = () => {
                                 {nextOperator ? (
                                     <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
                                         <CheckCircle className="w-3 h-3" /> 
-                                        O turno será assumido por <strong>{availableOperators.find(o => o.id === nextOperator)?.name}</strong>
+                                        O turno será assumido por <strong>{availableOperators.find(o => String(o.id) === String(nextOperator))?.name}</strong>
                                     </span>
                                 ) : (
                                     <span className="text-slate-400 flex items-center gap-1">
@@ -722,7 +840,7 @@ export const ShiftControlPage = () => {
             <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
               <div 
                 className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
-                onClick={() => setIsFinishModalOpen(false)}
+                onClick={() => !isFinishing && setIsFinishModalOpen(false)}
               />
               <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-800 animate-fade-in-up overflow-hidden">
                 
@@ -734,7 +852,8 @@ export const ShiftControlPage = () => {
                   </h3>
                   <button 
                     onClick={() => setIsFinishModalOpen(false)}
-                    className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-500"
+                    disabled={isFinishing}
+                    className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-500 disabled:opacity-50"
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -771,15 +890,21 @@ export const ShiftControlPage = () => {
                 <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex gap-3">
                   <button 
                     onClick={() => setIsFinishModalOpen(false)}
-                    className="flex-1 px-4 py-2.5 rounded-lg font-medium text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700 transition-colors"
+                    disabled={isFinishing}
+                    className="flex-1 px-4 py-2.5 rounded-lg font-medium text-slate-600 bg-white border border-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
                   >
                     Cancelar
                   </button>
                   <button 
                     onClick={handleConfirmFinish}
-                    className="flex-1 px-4 py-2.5 rounded-lg font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
+                    disabled={isFinishing}
+                    className="flex-1 px-4 py-2.5 rounded-lg font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                   >
-                    <Check className="w-4 h-4" /> Confirmar
+                    {isFinishing ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <><Check className="w-4 h-4" /> Confirmar</>
+                    )}
                   </button>
                 </div>
               </div>

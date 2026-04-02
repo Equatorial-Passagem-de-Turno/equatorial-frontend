@@ -5,6 +5,7 @@ import { ptBR } from 'date-fns/locale';
 import { MiniCalendar } from './MiniCalendar';
 import { HistoryTable, type HistoryItem } from './HistoryTable';
 import { ShiftDetailModal } from './ShiftDetailModal'; // <--- IMPORTAR
+import { api } from '@/services/api';
 
 interface Props {
   isOpen: boolean;
@@ -27,28 +28,29 @@ export const ShiftHistoryModal: React.FC<Props> = ({ isOpen, onClose }) => {
   ];
 
   useEffect(() => {
-    if (isOpen) {
-      setIsLoading(true);
-      setTimeout(() => {
-        const mockData: HistoryItem[] = [
-            { id: `TUR-${format(selectedDate, 'ddMM')}-A`, operador: 'BRUNO GOMES FERREIRA', horario: '06:00 - 14:00', tipo: 'MT', status: 'Fechado' },
-            { id: `TUR-${format(selectedDate, 'ddMM')}-B`, operador: 'MARIA COSTA', horario: '14:00 - 22:00', tipo: 'BT', status: 'Fechado' },
-            ...(format(selectedDate, 'ddMMyyyy') === format(new Date(), 'ddMMyyyy') 
-                ? [{ id: `TUR-${format(selectedDate, 'ddMM')}-C`, operador: 'CARLOS OP.', horario: '22:00 - ...', tipo: 'AT', status: 'Aberto' as const }] 
-                : [])
-        ];
+    if (!isOpen) return;
+
+    const fetchHistory = async () => {
+      try {
+        setIsLoading(true);
+        const dateStr = format(selectedDate, 'yyyy-MM-dd');
         
-        if (selectedDate > new Date()) {
-            setHistoryData([]);
-        } else {
-            setHistoryData(mockData);
+        const response = await api.get(`/shifts/by-date?date=${dateStr}`);
+        
+        if (response.data) {
+          setHistoryData(response.data);
         }
+      } catch (error) {
+        console.error("Erro ao carregar o histórico desse dia:", error);
+        setHistoryData([]);
+      } finally {
         setIsLoading(false);
-      }, 400);
-    }
+      }
+    };
+
+    fetchHistory();
   }, [selectedDate, isOpen]);
 
-  // Handler para quando clicar em "Visualizar"
   const handleViewShift = (item: HistoryItem) => {
     setSelectedShift(item);
     setIsDetailOpen(true);

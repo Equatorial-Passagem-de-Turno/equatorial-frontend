@@ -2,25 +2,30 @@
 export interface User {
   id: string;
   name: string;
+  table: string;
   email: string;
   password?: string;
   avatar?: string;
 }
+export interface Table {
+  id: string;
+  name: string;
+  code: string;
+}
 
-export type UserRole = 'bt' | 'mt' | 'at' | 'pre_op' | 'supervisor' | null;
-export type OperationTable = string | null;
+export type UserRole = string;
+export type OperationTable = Table | null;
 
 export interface AuthState {
   user: User | null;
+  token: string | null; 
   role: UserRole | null;
-  table: OperationTable | null; 
-  selectTable: (tableId: string) => void;
+  table: OperationTable; 
   isAuthenticated: boolean;
   isLoading: boolean;
 
   login: (email: string, password: string) => Promise<void>;
-  selectRole: (role: UserRole) => void;
-  logout: () => void;
-
-  verify2FA: (code: string) => boolean;
+  selectRole: (role: UserRole | null) => void;
+  selectTable: (table: OperationTable) => void;
+  logout: () => Promise<void>; 
 }

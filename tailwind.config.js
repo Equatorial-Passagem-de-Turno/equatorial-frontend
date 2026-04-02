@@ -9,11 +9,10 @@ export default {
     extend: {
       colors: {
         theme: {
-          bg:   'var(--bg-background)',
+          bg: 'var(--bg-page)',
           panel: 'var(--bg-panel)',
           input: 'var(--bg-input)',
           text: 'var(--text-main)',
-          hover: 'var(--bg-hover)',
           muted: 'var(--text-muted)',
           border: 'var(--border-color)', // Essa é a mágica
           'border-input': 'var(--border-input)',

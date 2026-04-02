@@ -18,21 +18,13 @@ export const LoginForm = ({ onForgotPassword }: LoginFormProps) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-  // Função para traduzir erros comuns de backend (ex: Firebase/Supabase)
+  // Simplificado: Agora repassa a mensagem limpa que vem do Laravel
   const getFriendlyErrorMessage = (error: unknown) => {
     if (error instanceof Error) {
-      // Adapte estas strings conforme o retorno do seu backend
-      const msg = error.message.toLowerCase();
-      if (msg.includes('invalid-email') || msg.includes('badly formatted')) return 'O formato do e-mail está incorreto.';
-      if (msg.includes('user-not-found') || msg.includes('invalid-credential')) return 'Usuário não encontrado ou credenciais inválidas.';
-      if (msg.includes('wrong-password')) return 'A senha informada está incorreta.';
-      if (msg.includes('too-many-requests')) return 'Muitas tentativas. Tente novamente mais tarde.';
-      
-      // Retorna a mensagem original se não for nenhuma das acima, ou uma genérica
       return error.message; 
     }
     return 'Ocorreu um erro inesperado. Tente novamente.';
-  };
+  };  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,8 +37,7 @@ export const LoginForm = ({ onForgotPassword }: LoginFormProps) => {
       return;
     }
 
-    // 2. Validação de formato de e-mail (O PULO DO GATO)
-    // Isso impede que o erro "feio" do backend sequer aconteça
+    // 2. Validação de formato de e-mail
     if (!isValidEmail(email)) {
       toast.warning('E-mail inválido', {
         description: 'Por favor, verifique se digitou o endereço corretamente (ex: nome@empresa.com).'
@@ -60,7 +51,7 @@ export const LoginForm = ({ onForgotPassword }: LoginFormProps) => {
         description: 'Login realizado com sucesso.'
       });
     } catch (error: unknown) { 
-      // 3. Tratamento melhorado de erros do servidor
+      // 3. Tratamento de erros do servidor (Ex: 401 do Laravel)
       const friendlyMessage = getFriendlyErrorMessage(error);
       
       toast.error('Falha no acesso', {
