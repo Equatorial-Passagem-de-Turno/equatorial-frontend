@@ -1,6 +1,5 @@
+import { useEffect, useMemo } from "react";
 import {
-  TrendingUp,
-  TrendingDown,
   AlertTriangle,
   CheckCircle2,
   Clock,
@@ -17,153 +16,156 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { OperatorsOverview } from "@/features/supervisor/components/analytics/OperatorsOverview";
-import {
-  // ANALYTICS_INCIDENTES_MENSAIS,
-  ANALYTICS_TEMPO_POR_PERFIL,
-  // ANALYTICS_DISTRIBUICAO_TURNO,
-  // ANALYTICS_PERFORMANCE_OPERATORS,
-  // ANALYTICS_STATUS_DISTRIBUICAO,
-  ANALYTICS_KPIS,
-  getTempoMedioResolucaoPorMesa,
-} from "../mocks/mocks.ts";
 import { OperationsChart } from "../components/analytics/OperationsChart";
-
-/* =========================
-   DADOS (mock)
-========================= */
-
-// const incidentesDate = ANALYTICS_INCIDENTES_MENSAIS;
-const resolucaoTempoMesaData = getTempoMedioResolucaoPorMesa();
-const resolucaoTempoPerfilData = ANALYTICS_TEMPO_POR_PERFIL;
-// const distribuicaoTurnoData = ANALYTICS_DISTRIBUICAO_TURNO;
-// const performanceOperadoresData = ANALYTICS_PERFORMANCE_OPERATORS;
-// const statusDistribuicao = ANALYTICS_STATUS_DISTRIBUICAO;
-const kpis = ANALYTICS_KPIS;
-
-// Calcular trends
-const calcularTrend = (atual: number, anterior: number) => {
-  const diff = ((atual - anterior) / anterior) * 100;
-  return {
-    valor: `${diff > 0 ? "+" : ""}${diff.toFixed(1)}%`,
-    positivo: diff > 0,
-  };
-};
-
-const kpisArray = [
-  {
-    label: "Taxa de Resolução",
-    value: `${kpis.taxaResolucao.toFixed(1)}%`,
-    icon: CheckCircle2,
-    trend: calcularTrend(kpis.taxaResolucao, kpis.taxaResolucaoMesAnterior)
-      .valor,
-    trendUp: calcularTrend(kpis.taxaResolucao, kpis.taxaResolucaoMesAnterior)
-      .positivo,
-    danger: false,
-  },
-  {
-    label: "Tempo Médio",
-    value: `${kpis.tempoMedioGeral} min`,
-    icon: Clock,
-    trend: calcularTrend(kpis.tempoMedioMesAnterior, kpis.tempoMedioGeral)
-      .valor, // Invertido pois menor é melhor
-    trendUp: kpis.tempoMedioGeral < kpis.tempoMedioMesAnterior,
-    danger: false,
-  },
-  {
-    label: "Incidentes Críticos",
-    value: kpis.incidentesCriticos.toString(),
-    icon: AlertTriangle,
-    trend: calcularTrend(
-      kpis.incidentesCriticosMesAnterior,
-      kpis.incidentesCriticos,
-    ).valor, // Invertido pois menor é melhor
-    trendUp: kpis.incidentesCriticos < kpis.incidentesCriticosMesAnterior,
-    danger: true,
-  },
-  {
-    label: "Operadores Ativos",
-    value: kpis.activeOperators.toString(),
-    icon: Users,
-    trend: calcularTrend(
-      kpis.activeOperators,
-      kpis.activeOperatorsLastMonth,
-    ).valor,
-    trendUp: calcularTrend(
-      kpis.activeOperators,
-      kpis.activeOperatorsLastMonth,
-    ).positivo,
-    danger: false,
-  },
-];
-
-// const tooltipStyle = {
-//   backgroundColor: "var(--bg-card)",
-//   border: "1px solid var(--border-primary)",
-//   borderRadius: "8px",
-//   color: "var(--text-primary)",
-//   fontSize: "12px",
-// };
-
-/* =========================
-   COMPONENTE
-========================= */
+import { useSupervisorStore } from "../stores/useSupervisorStore";
 
 export function AnalyticsPage() {
+  const loadData = useSupervisorStore((state) => state.loadData);
+  const isLoading = useSupervisorStore((state) => state.isLoading);
+  const loadError = useSupervisorStore((state) => state.loadError);
+  const hydratedAt = useSupervisorStore((state) => state.hydratedAt);
+  const operators = useSupervisorStore((state) => state.operators);
+  const occurrences = useSupervisorStore((state) => state.occurrences);
+
+  useEffect(() => {
+    if (!hydratedAt) {
+      void loadData();
+    }
+  }, [hydratedAt, loadData]);
+
+  const kpis = useMemo(() => {
+    const activeOperators = operators.filter((operator) => operator.status === "Ativo" || operator.status === "Pausa");
+    const resolved = occurrences.filter((occ) => occ.status === "resolvida").length;
+    const open = occurrences.filter((occ) => occ.status === "aberta" || occ.status === "em_andamento").length;
+    const critical = occurrences.filter((occ) => occ.criticality === "critica").length;
+    const total = occurrences.length;
+    const resolutionRate = total > 0 ? (resolved / total) * 100 : 0;
+    const avgMinutes = activeOperators.length > 0
+      ? activeOperators.reduce((acc, operator) => acc + operator.averageResolutionTime, 0) / activeOperators.length
+      : 0;
+
+    return {
+      resolutionRate,
+      avgMinutes,
+      critical,
+      activeOperators: activeOperators.length,
+      open,
+      resolved,
+    };
+  }, [operators, occurrences]);
+
+  const tempoPorMesa = useMemo(() => {
+    const grouped = new Map<string, { total: number; count: number }>();
+
+    operators
+      .filter((operator) => operator.status === "Ativo" || operator.status === "Pausa")
+      .forEach((operator) => {
+        const key = operator.table || "N/A";
+        const current = grouped.get(key) || { total: 0, count: 0 };
+        grouped.set(key, {
+          total: current.total + operator.averageResolutionTime,
+          count: current.count + 1,
+        });
+      });
+
+    return Array.from(grouped.entries()).map(([mesa, data]) => ({
+      mesa,
+      tempoMedio: data.count > 0 ? Math.round(data.total / data.count) : 0,
+      meta: 60,
+    }));
+  }, [operators]);
+
+  const tempoPorPerfil = useMemo(() => {
+    const grouped = new Map<string, { total: number; count: number }>();
+
+    operators
+      .filter((operator) => operator.status === "Ativo" || operator.status === "Pausa")
+      .forEach((operator) => {
+        const key = operator.profile;
+        const current = grouped.get(key) || { total: 0, count: 0 };
+        grouped.set(key, {
+          total: current.total + operator.averageResolutionTime,
+          count: current.count + 1,
+        });
+      });
+
+    return Array.from(grouped.entries()).map(([perfil, data]) => ({
+      perfil,
+      tempoMedio: data.count > 0 ? Math.round(data.total / data.count) : 0,
+      meta: 60,
+    }));
+  }, [operators]);
+
+  if (isLoading && !hydratedAt) {
+    return (
+      <div className="p-6">
+        <div className="rounded-lg border border-slate-700 bg-slate-900 p-6 text-slate-300">
+          Carregando analytics do supervisor...
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError && !hydratedAt) {
+    return (
+      <div className="p-6">
+        <div className="rounded-lg border border-red-700/40 bg-red-900/10 p-6 text-red-300">
+          {loadError}
+        </div>
+      </div>
+    );
+  }
+
+  const kpiCards = [
+    {
+      label: "Taxa de Resolucao Total",
+      value: `${kpis.resolutionRate.toFixed(1)}%`,
+      icon: CheckCircle2,
+      color: "text-blue-500",
+    },
+    {
+      label: "Tempo Medio",
+      value: `${Math.round(kpis.avgMinutes)} min`,
+      icon: Clock,
+      color: "text-blue-500",
+    },
+    {
+      label: "Incidentes Criticos",
+      value: String(kpis.critical),
+      icon: AlertTriangle,
+      color: "text-red-500",
+    },
+    {
+      label: "Turnos Ativos Agora",
+      value: String(kpis.activeOperators),
+      icon: Users,
+      color: "text-blue-500",
+    },
+  ];
+
   return (
     <div className="p-6 space-y-6 pb-12 bg-slate-100 dark:bg-slate-950 min-h-screen transition-colors">
-
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-          Analytics & Relatórios
+          Analytics e Relatorios
         </h1>
         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-          Análise detalhada de desempenho e métricas do COI
+          Analise detalhada com dados reais do COI
         </p>
       </div>
 
-      {/* KPIs */}
       <div className="grid grid-cols-4 gap-4">
-        {kpisArray.map((kpi) => {
+        {kpiCards.map((kpi) => {
           const Icon = kpi.icon;
-
           return (
             <div
               key={kpi.label}
               className="bg-white dark:bg-theme-panel border border-slate-200 dark:border-slate-800 rounded-lg p-5 transition-colors"
             >
               <div className="flex items-center justify-between mb-3">
-
-                {/* Ícone */}
                 <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
-                  <Icon
-                    className={`w-5 h-5 ${
-                      kpi.danger
-                        ? "text-red-500"
-                        : "text-blue-500"
-                    }`}
-                  />
+                  <Icon className={`w-5 h-5 ${kpi.color}`} />
                 </div>
-
-                {/* Trend */}
-                {kpi.trend && (
-                  <div
-                    className={`flex items-center gap-1 text-xs font-medium ${
-                      kpi.danger
-                        ? "text-red-500"
-                        : kpi.trendUp
-                        ? "text-emerald-500"
-                        : "text-red-500"
-                    }`}
-                  >
-                    {kpi.trendUp ? (
-                      <TrendingUp className="w-3 h-3" />
-                    ) : (
-                      <TrendingDown className="w-3 h-3" />
-                    )}
-                    {kpi.trend}
-                  </div>
-                )}
               </div>
 
               <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
@@ -180,104 +182,45 @@ export function AnalyticsPage() {
       <OperationsChart />
       <OperatorsOverview />
 
-      {/* Tempo Médio */}
       <div className="grid grid-cols-2 gap-6">
-
-        {/* Por Mesa */}
         <div className="bg-white dark:bg-theme-panel border border-slate-200 dark:border-slate-800 rounded-lg p-6 transition-colors">
           <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
-            Tempo Médio de Resolução por Mesa
+            Tempo Medio de Resolucao por Mesa
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
             Em minutos - Meta: 60 min
           </p>
 
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={resolucaoTempoMesaData} layout="horizontal">
-              <CartesianGrid
-                stroke="#cbd5e1"
-                strokeDasharray="3 3"
-                className="dark:stroke-slate-800"
-              />
-              <XAxis
-                type="number"
-                stroke="#64748b"
-                domain={[0, 70]}
-              />
-              <YAxis
-                type="category"
-                dataKey="mesa"
-                stroke="#64748b"
-                width={120}
-                tick={{ fontSize: 11 }}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "white",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "8px",
-                  color: "#0f172a",
-                  fontSize: "12px",
-                }}
-              />
+            <BarChart data={tempoPorMesa} layout="horizontal">
+              <CartesianGrid stroke="#cbd5e1" strokeDasharray="3 3" className="dark:stroke-slate-800" />
+              <XAxis type="number" stroke="#64748b" domain={[0, 90]} />
+              <YAxis type="category" dataKey="mesa" stroke="#64748b" width={120} tick={{ fontSize: 11 }} />
+              <Tooltip />
               <Legend />
-
-              <Bar
-                dataKey="meta"
-                fill="rgba(100,116,139,0.3)"
-                name="Meta (60 min)"
-              />
-
-              <Bar
-                dataKey="tempoMedio"
-                fill="#10b981"
-                name="Tempo Médio"
-                radius={[0, 4, 4, 0]}
-              />
+              <Bar dataKey="meta" fill="rgba(100,116,139,0.3)" name="Meta (60 min)" />
+              <Bar dataKey="tempoMedio" fill="#10b981" name="Tempo Medio" radius={[0, 4, 4, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Por Perfil */}
         <div className="bg-white dark:bg-theme-panel border border-slate-200 dark:border-slate-800 rounded-lg p-6 transition-colors">
           <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
-            Tempo Médio de Resolução por Perfil
+            Tempo Medio de Resolucao por Perfil
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
             Em minutos - Meta: 60 min
           </p>
 
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={resolucaoTempoPerfilData}>
-              <CartesianGrid
-                stroke="#cbd5e1"
-                strokeDasharray="3 3"
-              />
+            <BarChart data={tempoPorPerfil}>
+              <CartesianGrid stroke="#cbd5e1" strokeDasharray="3 3" />
               <XAxis dataKey="perfil" stroke="#64748b" />
-              <YAxis stroke="#64748b" domain={[0, 70]} />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "white",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "8px",
-                  color: "#0f172a",
-                  fontSize: "12px",
-                }}
-              />
+              <YAxis stroke="#64748b" domain={[0, 90]} />
+              <Tooltip />
               <Legend />
-
-              <Bar
-                dataKey="meta"
-                fill="rgba(100,116,139,0.3)"
-                name="Meta (60 min)"
-              />
-
-              <Bar
-                dataKey="tempoMedio"
-                fill="#10b981"
-                name="Tempo Médio"
-                radius={[4, 4, 0, 0]}
-              />
+              <Bar dataKey="meta" fill="rgba(100,116,139,0.3)" name="Meta (60 min)" />
+              <Bar dataKey="tempoMedio" fill="#10b981" name="Tempo Medio" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

@@ -1,33 +1,44 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ActivityFeed } from "@/features/supervisor/components/ActivityFeed";
 import { OperatorsTable } from "@/features/supervisor/components/analytics/OperatorsTable";
 import { TablesSummary } from "@/features/supervisor/components/TablesSummary";
 import { OccurrencesList } from "@/features/supervisor/components/OccurrencesList";
-import { fetchSupervisorData } from "../services/supervisorService";
-import { hydrateSupervisorData } from "../mocks/mocks.ts";
+import { useSupervisorStore } from "../stores/useSupervisorStore";
 
 
 // import { CriticalTimeline } from "@/app/components/analytics/critical-timeline";
 
 export function DashboardSupervisorPage() {
-  const [version, setVersion] = useState(0);
+  const loadData = useSupervisorStore((state) => state.loadData);
+  const isLoading = useSupervisorStore((state) => state.isLoading);
+  const loadError = useSupervisorStore((state) => state.loadError);
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const payload = await fetchSupervisorData();
-        hydrateSupervisorData(payload);
-        setVersion((prev) => prev + 1);
-      } catch {
-        // Fallback para dados mock locais.
-      }
-    };
+    void loadData();
+  }, [loadData]);
 
-    void load();
-  }, []);
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="rounded-lg border border-slate-700 bg-slate-900 p-6 text-slate-300">
+          Carregando dados do supervisor...
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="p-6">
+        <div className="rounded-lg border border-red-700/40 bg-red-900/10 p-6 text-red-300">
+          {loadError}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div key={version}>
+    <div>
 
       <div className="p-6 space-y-6">
         {/* Stats Cards */}

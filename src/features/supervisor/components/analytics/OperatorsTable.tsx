@@ -1,7 +1,4 @@
-import {
-  OPERATORS,
-  OCCURRENCES,
-} from "@/features/supervisor/mocks/mocks";
+import { useSupervisorStore } from "../../stores/useSupervisorStore";
 
 interface OperatorRow {
   id: string;
@@ -13,42 +10,31 @@ interface OperatorRow {
   pendenciasResolvidas: number;
 }
 
-// 🔥 Agora usando OCCURRENCES direto
-const operators: OperatorRow[] = OPERATORS
-  .filter((op) => op.status === "Ativo" || op.status === "Pausa")
-  .map((op) => {
-    const ocorrencias = OCCURRENCES.filter(
-      (o) => o.operatorId === op.id
-    );
-
-    const resolvidas = ocorrencias.filter(
-      (o) => o.status === "resolvida"
-    ).length;
-
-    const abertas = ocorrencias.filter(
-      (o) => o.status === "aberta" || o.status === "em_andamento"
-    ).length;
-
-    return {
-      id: op.id,
-      name: op.name,
-      profile: op.profile,
-      table: op.table,
-      pendenciasHerdadas: Math.floor(abertas * 0.6),
-      pendenciasCriadas: Math.floor(abertas * 0.4),
-      pendenciasResolvidas: resolvidas,
-    };
-  });
-
 export function OperatorsTable() {
+  const operatorsSource = useSupervisorStore((state) => state.operators);
+
+  const operators: OperatorRow[] = operatorsSource
+    .filter((op) => op.status === "Ativo" || op.status === "Pausa")
+    .map((op) => {
+      return {
+        id: op.id,
+        name: op.name,
+        profile: op.profile,
+        table: op.table,
+        pendenciasHerdadas: Number(op.inheritedOccurrences ?? 0),
+        pendenciasCriadas: Number(op.createdOccurrences ?? 0),
+        pendenciasResolvidas: Number(op.resolvedOccurrences ?? 0),
+      };
+    });
+
   return (
     <div className="bg-white dark:bg-[#1e293b]/50 rounded-lg border border-zinc-200 dark:border-[#334155] overflow-hidden">
       <div className="p-4 border-b border-zinc-200 dark:border-[#334155]">
         <h3 className="font-semibold text-zinc-900 dark:text-white">
-          Operadores Ativos
+          Turnos Ativos
         </h3>
         <p className="text-xs text-zinc-500 dark:text-[#94a3b8]">
-          Status em tempo real dos operadores
+          Status em tempo real dos turnos em andamento
         </p>
       </div>
 
@@ -78,6 +64,13 @@ export function OperatorsTable() {
           </thead>
 
           <tbody className="divide-y divide-zinc-200 dark:divide-[#334155]">
+            {operators.length === 0 && (
+              <tr>
+                <td className="px-4 py-6 text-center text-sm text-zinc-500 dark:text-[#94a3b8]" colSpan={6}>
+                  Nenhum turno ativo encontrado.
+                </td>
+              </tr>
+            )}
             {operators.map((operator) => (
               <tr
                 key={operator.id}
@@ -137,7 +130,7 @@ export function OperatorsTable() {
       <div className="p-3 border-t border-zinc-200 dark:border-[#334155] bg-zinc-50 dark:bg-[#0f172a]/50">
         <div className="flex items-center justify-between text-xs">
           <span className="text-zinc-600 dark:text-[#94a3b8]">
-            {operators.length} operadores ativos
+            {operators.length} turnos ativos
           </span>
         </div>
       </div>

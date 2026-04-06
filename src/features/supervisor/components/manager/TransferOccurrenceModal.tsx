@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { X, ArrowRightLeft, User } from "lucide-react";
 import { createPortal } from "react-dom";
 import type { Occurrence } from "../../types/index";
-import { OPERATORS } from "../../mocks/mocks";
+import { useSupervisorStore } from "../../stores/useSupervisorStore";
 
 interface TransferOccurrenceModalProps {
   isOpen: boolean;
@@ -17,6 +17,7 @@ export function TransferOccurrenceModal({
   onTransfer,
   occurrence,
 }: TransferOccurrenceModalProps) {
+  const operators = useSupervisorStore((state) => state.operators);
   const [selectedOperator, setSelectedOperator] = useState("");
   const [reason, setReason] = useState("");
 
@@ -39,7 +40,7 @@ export function TransferOccurrenceModal({
       return;
     }
 
-    const operador = OPERATORS.find((o) => o.id === selectedOperator);
+    const operador = operators.find((o) => o.id === selectedOperator);
 
     if (!operador) return;
 
@@ -100,7 +101,7 @@ export function TransferOccurrenceModal({
               >
                 <option value="">Selecione um operador</option>
 
-                {OPERATORS.map((op) => (
+                {operators.map((op) => (
                   <option key={op.id} value={op.id}>
                     {op.name} — {op.profile}
                   </option>

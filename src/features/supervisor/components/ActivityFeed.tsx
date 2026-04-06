@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ActivityDetailsModal } from "./ActivityDetailsModal";
-import { ATIVIDADES_RECENTES, type AtividadeRecente } from "../mocks/mocks.ts";
+import type { AtividadeRecente } from "../types/index";
+import { useSupervisorStore } from "../stores/useSupervisorStore";
 
 const typeStyles: Record<AtividadeRecente["type"], string> = {
   critical: "bg-red-500/10 border-red-500",
@@ -19,6 +20,7 @@ const dotStyles: Record<AtividadeRecente["type"], string> = {
 
 export function ActivityFeed() {
   const navigate = useNavigate();
+  const activities = useSupervisorStore((state) => state.activities);
 
   const [selectedActivity, setSelectedActivity] =
     useState<AtividadeRecente | null>(null);
@@ -39,7 +41,7 @@ export function ActivityFeed() {
 
       {/* List */}
       <div className="space-y-3">
-        {ATIVIDADES_RECENTES.map((activity) => {
+        {activities.map((activity) => {
           return (
             <div
               key={activity.id}
@@ -80,6 +82,12 @@ export function ActivityFeed() {
             </div>
           );
         })}
+
+        {activities.length === 0 && (
+          <div className="p-3 rounded-lg border border-slate-700 text-xs text-slate-400">
+            Nenhuma atividade recente encontrada.
+          </div>
+        )}
       </div>
 
       {/* Modal */}

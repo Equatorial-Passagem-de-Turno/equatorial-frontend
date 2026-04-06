@@ -1,5 +1,5 @@
 import { X, Bell, Clock, User, AlertTriangle, CheckCircle, Info } from 'lucide-react';
-import type { AtividadeRecente } from '../mocks/mocks.ts';
+import type { AtividadeRecente } from '../types/index.ts';
 
 interface ActivityDetailsModalProps {
   atividade: AtividadeRecente;

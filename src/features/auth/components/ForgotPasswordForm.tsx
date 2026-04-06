@@ -1,12 +1,11 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Loader2, Mail, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { api } from '@/services/api';
 
 interface ForgotPasswordFormProps {
   onBack: () => void;
 }
-const API_URL = 'http://localhost:8000/api';
-
 export const ForgotPasswordForm = ({ onBack }: ForgotPasswordFormProps) => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -23,21 +22,8 @@ export const ForgotPasswordForm = ({ onBack }: ForgotPasswordFormProps) => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/forgot-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ email })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        const errorMsg = data.errors?.email?.[0] || data.message || 'Erro ao processar solicitação.';
-        throw new Error(errorMsg);
-      } 
+      const response = await api.post('/forgot-password', { email });
+      const data = response.data;
       console.log("Link para testar localmente:", data.debug_link);
 
       setIsEmailSent(true);

@@ -12,7 +12,8 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import { OCCURRENCES} from "../../mocks/mocks";
+import { useSupervisorStore } from "../../stores/useSupervisorStore";
+import type { Occurrence } from "../../types/index";
 
 type TimeRange = "24h" | "48h" | "72h";
 type ChartType = "bars" | "line";
@@ -61,6 +62,7 @@ const timeRangeLabels: Record<TimeRange, string> = {
 function generateHourlyData(
   range: TimeRange,
   selectedMesa: string | null,
+  occurrences: Occurrence[],
 ): TimeRow[] {
   const hours =
     range === "24h" ? 24 : range === "48h" ? 48 : 72;
@@ -70,9 +72,8 @@ function generateHourlyData(
     now.getTime() - hours * 3600000,
   );
 
-  const filtered = OCCURRENCES.filter((o) => {
-    // const now = new Date("2026-02-09T10:00:00");
-    const inRange = true;
+  const filtered = occurrences.filter((o) => {
+    const inRange = o.timestamp >= start.getTime();
     const mesaMatch =
       !selectedMesa || o.table === selectedMesa;
 
@@ -133,9 +134,11 @@ export function OperationsChart() {
     critica: true,
   });
 
+  const occurrencesState = useSupervisorStore((state) => state.occurrences);
+
   const data = useMemo(
-    () => generateHourlyData(timeRange, selectedMesa),
-    [timeRange, selectedMesa],
+    () => generateHourlyData(timeRange, selectedMesa, occurrencesState),
+    [timeRange, selectedMesa, occurrencesState],
   );
 
   const togglePriority = (k: PriorityKey) => {

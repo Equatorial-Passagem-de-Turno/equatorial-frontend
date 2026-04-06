@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Calendar,
   Filter,
@@ -18,10 +18,8 @@ import {
   ArrowUpDown,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import {
-  OCCURRENCES,
-} from "../mocks/mocks.ts";
 import type { OccurrenceCriticality, OccurrenceStatus } from "../types/index.ts";
+import { useSupervisorStore } from "../stores/useSupervisorStore";
 // import { OccurrenceDetailsModal } from "../components/OccurrenceDetailsModal";
 
 const criticalityConfig = {
@@ -73,6 +71,12 @@ const statusConfig = {
   },
 };
 export function TimelinePage() {
+  const loadData = useSupervisorStore((state) => state.loadData);
+  const occurrencesState = useSupervisorStore((state) => state.occurrences);
+  const isLoading = useSupervisorStore((state) => state.isLoading);
+  const loadError = useSupervisorStore((state) => state.loadError);
+  const hydratedAt = useSupervisorStore((state) => state.hydratedAt);
+
   const [filtroStatus, setFiltroStatus] = useState<OccurrenceStatus | "todos">(
     "todos",
   );
@@ -85,8 +89,14 @@ export function TimelinePage() {
   // const [selectedOccurrence, setSelectedOccurrence] =
   // useState<Occurrence | null>(null);
 
+  useEffect(() => {
+    if (!hydratedAt) {
+      void loadData();
+    }
+  }, [hydratedAt, loadData]);
+
   // Filtrar ocorrências
-  let occurrencesFiltradas = OCCURRENCES.filter((ocr) => {
+  let occurrencesFiltradas = occurrencesState.filter((ocr) => {
     const matchStatus = filtroStatus === "todos" || ocr.status === filtroStatus;
     const matchCriticidade =
       filtroCriticidade === "todos" || ocr.criticality === filtroCriticidade;
@@ -111,7 +121,7 @@ export function TimelinePage() {
 
   // Extrair tables únicas
   const tablesUnicas = Array.from(
-    new Set(OCCURRENCES.map((o) => o.table)),
+    new Set(occurrencesState.map((o) => o.table)),
   ).sort();
 
   const limparFiltros = () => {
@@ -128,6 +138,27 @@ export function TimelinePage() {
     buscaTexto !== "";
 
   const navigate = useNavigate();
+
+  if (isLoading && !hydratedAt) {
+    return (
+      <div className="min-h-screen bg-bg-primary p-6">
+        <div className="rounded-lg border border-slate-700 bg-slate-900 p-6 text-slate-300">
+          Carregando timeline do supervisor...
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError && !hydratedAt) {
+    return (
+      <div className="min-h-screen bg-bg-primary p-6">
+        <div className="rounded-lg border border-red-700/40 bg-red-900/10 p-6 text-red-300">
+          {loadError}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-bg-primary">
       <div className="p-6 space-y-6">

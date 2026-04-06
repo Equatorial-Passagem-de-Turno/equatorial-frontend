@@ -1,13 +1,13 @@
 import { createPortal } from "react-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X, Clock, FileText, Calendar } from "lucide-react";
-import { SHIFTS_PER_OPERATOR, } from "../mocks/mocks.ts";
+import { api } from "@/services/api";
 import type { Shift } from "../types/index.ts";
-import { ShiftPendingItemsModal } from "./ShiftPendingModal";
 
 interface OperatorHistoryModalProps {
   isOpen: boolean;
   onClose: () => void;
+  operatorId: string;
   operatorName: string;
   operatorEmail: string;
   operatorProfile: string;
@@ -16,21 +16,39 @@ interface OperatorHistoryModalProps {
 export function OperatorHistoryModal({
   isOpen,
   onClose,
+  operatorId,
   operatorName,
   operatorEmail,
   operatorProfile,
 }: OperatorHistoryModalProps) {
-  const [showPendenciasModal, setShowPendenciasModal] = useState(false);
-  const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
+  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || !operatorId) return;
+
+    const load = async () => {
+      setIsLoading(true);
+      try {
+        const response = await api.get<Array<{ id: string; date: string; time: string; status: string }>>(`/shifts/by-user/${operatorId}`);
+        const mapped: Shift[] = (response.data || []).map((shift) => ({
+          id: shift.id,
+          date: shift.date,
+          time: shift.time,
+          status: shift.status === 'in_progress' ? 'ativo' : shift.status === 'finished' ? 'concluido' : 'pendente',
+        }));
+        setShifts(mapped);
+      } catch {
+        setShifts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void load();
+  }, [isOpen, operatorId]);
 
   if (!isOpen) return null;
-
-  const shifts = SHIFTS_PER_OPERATOR[operatorName] || [];
-
-  const handleVisualizarClick = (shift: Shift) => {
-    setSelectedShift(shift);
-    setShowPendenciasModal(true);
-  };
 
   return createPortal(
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
@@ -76,7 +94,14 @@ export function OperatorHistoryModal({
               </span>
             </div>
 
-            {shifts.length > 0 ? (
+            {isLoading ? (
+              <div className="p-12 text-center">
+                <Clock className="w-12 h-12 text-text-muted mx-auto mb-3 opacity-50" />
+                <p className="text-text-muted">
+                  Carregando histórico...
+                </p>
+              </div>
+            ) : shifts.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
@@ -93,9 +118,6 @@ export function OperatorHistoryModal({
                       <th className="px-4 py-3 text-center text-xs font-semibold text-text-muted uppercase">
                         Status
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-text-muted uppercase">
-                        Ação
-                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border-primary">
@@ -109,14 +131,6 @@ export function OperatorHistoryModal({
                         <td className="px-4 py-3 text-text-primary">{shift.time}</td>
                         <td className="px-4 py-3 text-center">
                           {shift.status}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => handleVisualizarClick(shift)}
-                            className="px-3 py-1 bg-theme-accent hover:bg-emerald-400 text-white text-xs rounded"
-                          >
-                            Visualizar
-                          </button>
                         </td>
                       </tr>
                     ))}
@@ -135,18 +149,6 @@ export function OperatorHistoryModal({
         </div>
       </div>
 
-      {selectedShift && (
-        <ShiftPendingItemsModal
-          isOpen={showPendenciasModal}
-          onClose={() => {
-            setShowPendenciasModal(false);
-            setSelectedShift(null);
-          }}
-          operator={operatorName}
-          shiftId={selectedShift.id}
-          date={selectedShift.date}
-        />
-      )}
     </div>,
     document.body
   );

@@ -1,6 +1,6 @@
 import { AlertTriangle, TrendingUp, Clock, AlertCircle } from "lucide-react";
-import { OCCURRENCES, OPERATORS } from "@/features/supervisor/mocks/mocks";
 import type { Occurrence, Operator } from "../types/index";
+import { useSupervisorStore } from "../stores/useSupervisorStore";
 
 interface TableAlert {
   table: string;
@@ -26,10 +26,13 @@ const statusConfig = {
 };
 
 export function TablesSummary() {
+  const occurrencesState = useSupervisorStore((state) => state.occurrences);
+  const operatorsState = useSupervisorStore((state) => state.operators);
+
   // =========================
   // FILTRAR OCORRÊNCIAS ABERTAS
   // =========================
-  const openOccurrences: Occurrence[] = OCCURRENCES.filter(
+  const openOccurrences: Occurrence[] = occurrencesState.filter(
     (o) => o.status === "aberta" || o.status === "em_andamento",
   );
 
@@ -42,7 +45,7 @@ export function TablesSummary() {
   // =========================
   // OPERATORS ATIVOS
   // =========================
-  const activeOperators: number = OPERATORS.filter(
+  const activeOperators: number = operatorsState.filter(
     (op: Operator) => op.status === "Ativo" || op.status === "Pausa",
   ).length;
 
@@ -138,7 +141,7 @@ export function TablesSummary() {
         <SummaryItem label="Ocorrências abertas" value={totalPending} />
 
         <SummaryItem
-          label="Operatores ativos"
+          label="Turnos ativos"
           value={activeOperators}
           color="text-emerald-400"
         />

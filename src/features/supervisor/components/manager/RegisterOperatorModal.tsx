@@ -5,6 +5,7 @@ import type { OperatorProfile } from "../../types/index";
 interface RegisterOperatorModalProps {
   isOpen: boolean;
   onClose: () => void;
+  tables: string[];
   onSave: (operator: {
     name: string;
     email: string;
@@ -16,12 +17,15 @@ interface RegisterOperatorModalProps {
 export function RegisterOperatorModal({
   isOpen,
   onClose,
+  tables,
   onSave,
 }: RegisterOperatorModalProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [profile, setProfile] = useState<OperatorProfile>("AT");
-  const [table, setDesk] = useState("MCZ I");
+  const [table, setDesk] = useState(tables[0] || "");
+
+  const availableTables = tables.length > 0 ? tables : ["Sem mesa"];
 
   if (!isOpen) return null;
 
@@ -47,7 +51,7 @@ export function RegisterOperatorModal({
     setName("");
     setEmail("");
     setProfile("AT");
-    setDesk("MCZ I");
+    setDesk(availableTables[0] || "");
   };
 
   const handleCancel = () => {
@@ -146,18 +150,20 @@ export function RegisterOperatorModal({
 
           {/* Mesa */}
           <div className="space-y-2">
-            
-              {/* <select
+              <label className="text-sm font-medium text-zinc-900 dark:text-white">
+                Mesa
+              </label>
+              <select
                 value={table}
                 onChange={(event) => setDesk(event.target.value)}
                 className="w-full px-4 py-3 bg-white dark:bg-[#0f172a] border border-zinc-200 dark:border-[#334155] rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-[#10b981] transition-all"
               >
-                {TABLES.map((m) => (
+                {availableTables.map((m) => (
                   <option key={m} value={m} className="bg-white dark:bg-[#0f172a]">
                     {m}
                   </option>
                 ))}
-              </select> */}
+              </select>
           </div>
 
           {/* Actions */}

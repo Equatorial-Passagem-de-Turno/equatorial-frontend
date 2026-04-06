@@ -13,9 +13,12 @@ export interface Operator {
   profile: OperatorProfile;
   shift: string;
   status: OperatorStatus;
+  accountActive?: boolean;
 
   assumedOccurrences: number;
   resolvedOccurrences: number;
+  inheritedOccurrences?: number;
+  createdOccurrences?: number;
 
   averageResolutionTime: number;
   resolutionRate: number;
@@ -138,8 +141,11 @@ export interface Operator {
   profile: OperatorProfile;
   shift: string;
   status: OperatorStatus;
+  accountActive?: boolean;
   assumedOccurrences: number;
   resolvedOccurrences: number;
+  inheritedOccurrences?: number;
+  createdOccurrences?: number;
   averageResolutionTime: number;
   resolutionRate: number;
   time: string;
@@ -288,3 +294,13 @@ export interface AtividadeEvent {
 }
 
 export type CombinedEvent = TimelineEvent | AtividadeEvent;
+
+export interface AtividadeRecente {
+  id: string;
+  type: 'critical' | 'warning' | 'info' | 'success';
+  title: string;
+  description: string;
+  time: string;
+  timestamp: string;
+  author: string;
+}

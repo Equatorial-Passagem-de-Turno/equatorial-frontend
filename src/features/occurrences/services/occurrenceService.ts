@@ -16,7 +16,7 @@ export interface InheritedOccurrence {
   title: string;
   category: string;
   priority: 'crítica' | 'alta' | 'média' | 'baixa';
-  status: 'Aberta' | 'Em Andamento' | 'Resolvida' | 'Pendente' | 'Em Análise';
+  status: 'Aberta' | 'Em Andamento' | 'Resolvida' | 'Finalizada' | 'Pendente' | 'Em Análise' | 'Cancelada';
   description: string;
   location: OccurrenceLocation;
   osNumero?: string;

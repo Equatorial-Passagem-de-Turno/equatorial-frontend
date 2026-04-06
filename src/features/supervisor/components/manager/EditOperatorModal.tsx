@@ -7,27 +7,34 @@ interface EditOperatorModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (operatorAtualizado: Operator) => void;
+  onDeactivate: (operatorAtualizado: Operator) => void;
+  onReactivate: (operatorAtualizado: Operator) => void;
   operator: Operator;
+  tables: string[];
 }
 
 export function EditOperatorModal({
   isOpen,
   onClose,
   onSave,
+  onDeactivate,
+  onReactivate,
   operator,
+  tables,
 }: EditOperatorModalProps) {
   const [name, setName] = useState(operator.name);
   const [email, setEmail] = useState(operator.email);
-  
-  const [id, setID] = useState(operator.email);
   const [profile, setProfile] = useState<OperatorProfile>(operator.profile);
+  const [table, setTable] = useState(operator.table);
+
+  const availableTables = tables.length > 0 ? tables : ["Sem mesa"];
 
   // Atualizar estado quando o operator mudar
   useEffect(() => {
     setName(operator.name);
     setEmail(operator.email);
-    setID(operator.id);
     setProfile(operator.profile);
+    setTable(operator.table);
   }, [operator]);
 
   if (!isOpen) return null;
@@ -46,6 +53,7 @@ export function EditOperatorModal({
       name: name.trim(),
       email: email.trim(),
       profile,
+      table,
     });
   };
 
@@ -53,7 +61,40 @@ export function EditOperatorModal({
     setName(operator.name);
     setEmail(operator.email);
     setProfile(operator.profile);
+    setTable(operator.table);
     onClose();
+  };
+
+  const handleDeactivate = () => {
+    const confirmed = window.confirm("Deseja desativar este operador?");
+    if (!confirmed) {
+      return;
+    }
+
+    onDeactivate({
+      ...operator,
+      name: name.trim(),
+      email: email.trim(),
+      profile,
+      table,
+      accountActive: false,
+    });
+  };
+
+  const handleReactivate = () => {
+    const confirmed = window.confirm("Deseja reativar este operador?");
+    if (!confirmed) {
+      return;
+    }
+
+    onReactivate({
+      ...operator,
+      name: name.trim(),
+      email: email.trim(),
+      profile,
+      table,
+      accountActive: true,
+    });
   };
   return createPortal(
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
@@ -86,22 +127,6 @@ export function EditOperatorModal({
         {/* CONTEÚDO */}
         <div className="flex-1 overflow-y-auto p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* ID */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-zinc-900 dark:text-white flex items-center gap-2">
-                <User className="w-4 h-4 text-blue-500" />
-                ID do Operator
-              </label>
-
-              <input
-                type="text"
-                value={id}
-                onChange={(e) => setID(e.target.value)}
-                className="w-full px-4 py-3 bg-white dark:bg-[#0f172a] border border-zinc-200 dark:border-[#334155] rounded-lg text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-[#64748b] focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
-                required
-              />
-            </div>
-
             {/* NAME */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-zinc-900 dark:text-white flex items-center gap-2">
@@ -161,8 +186,43 @@ export function EditOperatorModal({
               </div>
             </div>
 
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-zinc-900 dark:text-white">
+                Mesa
+              </label>
+              <select
+                value={table}
+                onChange={(event) => setTable(event.target.value)}
+                className="w-full px-4 py-3 bg-white dark:bg-[#0f172a] border border-zinc-200 dark:border-[#334155] rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500"
+              >
+                {availableTables.map((item) => (
+                  <option key={item} value={item} className="bg-white dark:bg-[#0f172a]">
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* ACTIONS */}
             <div className="flex items-center gap-3 pt-4 border-t border-zinc-200 dark:border-[#334155]">
+              {operator.accountActive === false ? (
+                <button
+                  type="button"
+                  onClick={handleReactivate}
+                  className="px-4 py-3 bg-emerald-500 hover:bg-emerald-600 rounded-lg text-white font-medium shadow-lg shadow-emerald-500/20"
+                >
+                  Reativar operador
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleDeactivate}
+                  className="px-4 py-3 bg-red-500 hover:bg-red-600 rounded-lg text-white font-medium shadow-lg shadow-red-500/20"
+                >
+                  Desativar operador
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={handleCancel}

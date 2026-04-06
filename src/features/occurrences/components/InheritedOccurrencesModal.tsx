@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { 
-  Radio, AlertTriangle, XCircle, CheckCircle2, MapPin, Clock, 
+  Radio, CheckCircle2, MapPin, Clock, 
   CheckSquare, Square, MousePointerClick // Novos ícones importados
 } from 'lucide-react';
 import { type ShiftHandoverData } from '../services/occurrenceService'; 

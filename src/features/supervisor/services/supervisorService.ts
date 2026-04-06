@@ -1,6 +1,6 @@
 import { api } from '@/services/api';
 import type { Occurrence, Operator } from '../types/index.ts';
-import type { AtividadeRecente } from '../mocks/mocks.ts';
+import type { AtividadeRecente } from '../types/index.ts';
 
 type ApiOccurrence = {
   id: string;
@@ -21,6 +21,22 @@ type ApiUser = {
   name: string;
   email: string;
   role?: string;
+  voltage_level?: string;
+  operation_desk_name?: string;
+  active?: boolean;
+};
+
+type ApiActiveOperator = {
+  id: string;
+  name: string;
+  email: string;
+  profile?: string;
+  table?: string;
+  status?: string;
+  inherited_occurrences?: number;
+  created_occurrences?: number;
+  resolved_occurrences?: number;
+  assumed_occurrences?: number;
 };
 
 const normalizeCriticality = (priority?: string): Occurrence['criticality'] => {
@@ -39,8 +55,13 @@ const normalizeStatus = (status?: string): Occurrence['status'] => {
   return 'aberta';
 };
 
-const mapOccurrence = (occ: ApiOccurrence, usersById: Map<string, ApiUser>): Occurrence => {
+const mapOccurrence = (
+  occ: ApiOccurrence,
+  usersById: Map<string, ApiUser>,
+  activeStatsById: Map<string, ApiActiveOperator>
+): Occurrence => {
   const user = occ.user_id ? usersById.get(String(occ.user_id)) : undefined;
+  const stat = occ.user_id ? activeStatsById.get(String(occ.user_id)) : undefined;
   const location = (occ.location ?? {}) as Record<string, unknown>;
   const createdAt = occ.created_at ? new Date(occ.created_at) : new Date();
 
@@ -57,7 +78,7 @@ const mapOccurrence = (occ: ApiOccurrence, usersById: Map<string, ApiUser>): Occ
     operator: user?.name || String(occ.createdBy || 'Sistema'),
     operatorId: String(occ.user_id || ''),
     profile: ((user?.role as Operator['profile']) || 'AT'),
-    table: String(location.table || location.desk || 'N/A'),
+    table: String(stat?.table || location.table || location.desk || 'N/A'),
     geographicBase: String(location.zone || location.city || 'N/A'),
     feeder: String(location.feeder || 'N/A'),
     substation: String(location.substation || location.city || 'N/A'),
@@ -79,24 +100,44 @@ const mapOccurrence = (occ: ApiOccurrence, usersById: Map<string, ApiUser>): Occ
   };
 };
 
-const mapOperator = (user: ApiUser, occurrences: Occurrence[]): Operator => {
+const normalizeProfile = (value?: string): Operator['profile'] => {
+  const v = String(value || '').toUpperCase();
+  if (v.includes('MT')) return 'MT';
+  if (v.includes('AT')) return 'AT';
+  if (v.includes('ENG')) return 'Eng. Pré-Op';
+  return 'BT';
+};
+
+const mapOperator = (
+  user: ApiUser,
+  occurrences: Occurrence[],
+  activeStatsById: Map<string, ApiActiveOperator>
+): Operator => {
   const mine = occurrences.filter((o) => o.operatorId === String(user.id));
-  const resolved = mine.filter((o) => o.status === 'resolvida').length;
+  const stat = activeStatsById.get(String(user.id));
+
+  const inherited = Number(stat?.inherited_occurrences ?? 0);
+  const created = Number(stat?.created_occurrences ?? 0);
+  const resolved = Number(stat?.resolved_occurrences ?? mine.filter((o) => o.status === 'resolvida').length);
+  const assumed = Number(stat?.assumed_occurrences ?? inherited + created + resolved);
   const avgResolution = 45;
 
   return {
     id: String(user.id),
     name: user.name,
     email: user.email,
-    profile: ((user.role as Operator['profile']) || 'AT'),
+    profile: normalizeProfile(stat?.profile || user.voltage_level || user.role),
     shift: 'Atual',
-    status: 'Ativo',
-    assumedOccurrences: mine.length,
+    status: (stat?.status as Operator['status']) || 'Inativo',
+    accountActive: Boolean(user.active),
+    assumedOccurrences: assumed,
     resolvedOccurrences: resolved,
+    inheritedOccurrences: inherited,
+    createdOccurrences: created,
     averageResolutionTime: avgResolution,
-    resolutionRate: mine.length ? Number(((resolved / mine.length) * 100).toFixed(1)) : 0,
+    resolutionRate: assumed ? Number(((resolved / assumed) * 100).toFixed(1)) : 0,
     time: '--:--',
-    table: mine[0]?.table || 'N/A',
+    table: stat?.table || user.operation_desk_name || mine[0]?.table || 'N/A',
   };
 };
 
@@ -122,16 +163,24 @@ const mapActivities = (occurrences: Occurrence[]): AtividadeRecente[] => {
 };
 
 export async function fetchSupervisorData() {
-  const [occRes, usersRes] = await Promise.all([
+  const [occRes, usersRes, activeOperatorsRes] = await Promise.all([
     api.get<ApiOccurrence[]>('/occurrences'),
-    api.get<ApiUser[]>('/users'),
+    api.get<ApiUser[]>('/users', { params: { include_inactive: true } }),
+    api.get<ApiActiveOperator[]>('/shifts/operators/active'),
   ]);
 
   const users: ApiUser[] = usersRes.data || [];
   const occurrencesPayload: ApiOccurrence[] = occRes.data || [];
+  const activeOperatorsPayload: ApiActiveOperator[] = activeOperatorsRes.data || [];
   const usersById = new Map<string, ApiUser>(users.map((u: ApiUser) => [String(u.id), u]));
-  const occurrences = occurrencesPayload.map((o: ApiOccurrence) => mapOccurrence(o, usersById));
-  const operators = users.map((u: ApiUser) => mapOperator(u, occurrences));
+  const activeStatsById = new Map<string, ApiActiveOperator>(
+    activeOperatorsPayload.map((item: ApiActiveOperator) => [String(item.id), item])
+  );
+
+  const occurrences = occurrencesPayload.map((o: ApiOccurrence) => mapOccurrence(o, usersById, activeStatsById));
+  const operators = users
+    .filter((u: ApiUser) => String(u.role || '').toLowerCase() === 'operador')
+    .map((u: ApiUser) => mapOperator(u, occurrences, activeStatsById));
   const activities = mapActivities(occurrences);
 
   return {

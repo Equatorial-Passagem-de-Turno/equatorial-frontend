@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Users,
   Search,
@@ -14,58 +14,26 @@ import {
 } from "lucide-react";
 import { ConfirmRemovalModal } from "../components/manager/ConfirmRemovalOperator";
 import { OperatorHistoryModal } from "../components/OperatorHistoryModal";
-import { ShiftHistoryModal } from "../components/ShiftHistoryModal";
+import { ShiftHistoryModal } from "@/features/supervisor/components/ShiftHistoryModal";
 import { RegisterOperatorModal } from "../components/manager/RegisterOperatorModal";
 import { EditOperatorModal } from "../components/manager/EditOperatorModal";
-import { OPERATORS } from "../mocks/mocks.ts";
-import type { Operator, OperatorProfile, OperatorStatus } from "../types/index.ts";
-import {
-  filterActiveOperators,
-  filterInactiveOperators,
-  generateNewId,
-} from "../utils";
+import type { Operator, OperatorProfile } from "../types/index.ts";
 import { PROFILE_COLORS_DETAILED } from "../constants";
 import { AddTableModal } from "../components/manager/AddTable";
 import { EditTableModal } from "../components/manager/EditTableModal";
-import { TABLES } from "../constants";
+import { useSupervisorStore } from "../stores/useSupervisorStore";
+import { api } from "@/services/api";
 
 interface Table {
+  id?: string;
   name: string;
   description: string;
 }
 
-interface LegacyOperator {
-  id: string;
-  name: string;
-  email: string;
-  profile: OperatorProfile;
-  table: string;
-  shift?: string;
-  status?: string;
-  ocorrenciasAssumidas?: number;
-  ocorrenciasResolvidas?: number;
-  tempoMedioResolucao?: number;
-  taxaResolucao?: number;
-  tempo?: string;
-}
-
 export function ManegementPage() {
-  const mappedOperators: Operator[] = (OPERATORS as LegacyOperator[]).map(
-    (op) => ({
-      id: op.id,
-      name: op.name,
-      email: op.email,
-      profile: op.profile,
-      table: op.table,
-      shift: op.shift ?? "-",
-      status: (op.status as OperatorStatus) ?? "Inativo",
-      assumedOccurrences: op.ocorrenciasAssumidas ?? 0,
-      resolvedOccurrences: op.ocorrenciasResolvidas ?? 0,
-      averageResolutionTime: op.tempoMedioResolucao ?? 0,
-      resolutionRate: op.taxaResolucao ?? 0,
-      time: op.tempo ?? "-",
-    }),
-  );
+  const loadData = useSupervisorStore((state) => state.loadData);
+  const sourceOperators = useSupervisorStore((state) => state.operators);
+  const isLoading = useSupervisorStore((state) => state.isLoading);
 
   const TABLE_DESCRIPTIONS: Record<string, string> = {
   "MCZ I": "Operação da região central de Maceió",
@@ -77,12 +45,7 @@ export function ManegementPage() {
   "MCZ I / RLU": "Suporte compartilhado entre capital e regulação",
   "OUTRAS": "Mesas auxiliares ou temporárias do COI",
 };
-  const [tablesData, setTablesData] = useState<Table[]>(
-    TABLES.map((name) => ({
-      name,
-      description: TABLE_DESCRIPTIONS[name] ?? "",
-    })),
-  );
+  const [tablesData, setTablesData] = useState<Table[]>([]);
 
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
 
@@ -92,7 +55,7 @@ export function ManegementPage() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRemoveOperatorModal, setShowRemoveOperatorModal] = useState(false);
   const [operatorsData, setOperatorsData] =
-    useState<Operator[]>(mappedOperators);
+    useState<Operator[]>([]);
 
   const [selectedOperator, setSelectedOperator] = useState<Operator | null>(
     null,
@@ -104,6 +67,34 @@ export function ManegementPage() {
     useState(false);
 
   const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    setOperatorsData(sourceOperators);
+  }, [sourceOperators]);
+
+  useEffect(() => {
+    const loadTables = async () => {
+      try {
+        const response = await api.get<Array<{ id: string; name: string; code: string; location?: string }>>('/operation-desks');
+        const mapped = (response.data || []).map((desk) => ({
+          id: String(desk.id),
+          name: desk.name,
+          description: desk.location ?? TABLE_DESCRIPTIONS[desk.name] ?? desk.code,
+        }));
+        setTablesData(mapped);
+      } catch {
+        setTablesData([]);
+      }
+    };
+
+    void loadTables();
+  }, []);
 
   const handleProfileClick = (operator: Operator) => {
     setSelectedOperator(operator);
@@ -120,13 +111,74 @@ export function ManegementPage() {
     setShowEditModal(true);
   };
 
-  const handleUpdateOperator = (updatedOperator: Operator) => {
-    setOperatorsData((prev) =>
-      prev.map((op) => (op.id === updatedOperator.id ? updatedOperator : op)),
-    );
+  const findDeskByName = (deskName: string) => {
+    return tablesData.find((table) => table.name === deskName);
+  };
 
-    setShowEditModal(false);
-    setSelectedOperator(null);
+  const handleUpdateOperator = async (updatedOperator: Operator) => {
+    try {
+      const desk = findDeskByName(updatedOperator.table);
+
+      await api.put(`/users/${updatedOperator.id}`, {
+        name: updatedOperator.name,
+        email: updatedOperator.email,
+        role: 'operador',
+        voltage_level: updatedOperator.profile,
+        active: updatedOperator.accountActive !== false,
+        operation_desk_id: desk?.id ?? null,
+        operation_desk_name: updatedOperator.table,
+      });
+
+      await loadData();
+      setShowEditModal(false);
+      setSelectedOperator(null);
+    } catch {
+      alert('Nao foi possivel atualizar o operador.');
+    }
+  };
+
+  const handleDeactivateOperator = async (updatedOperator: Operator) => {
+    try {
+      const desk = findDeskByName(updatedOperator.table);
+
+      await api.put(`/users/${updatedOperator.id}`, {
+        name: updatedOperator.name,
+        email: updatedOperator.email,
+        role: 'operador',
+        voltage_level: updatedOperator.profile,
+        active: false,
+        operation_desk_id: desk?.id ?? null,
+        operation_desk_name: updatedOperator.table,
+      });
+
+      await loadData();
+      setShowEditModal(false);
+      setSelectedOperator(null);
+    } catch {
+      alert('Nao foi possivel desativar o operador.');
+    }
+  };
+
+  const handleReactivateOperator = async (updatedOperator: Operator) => {
+    try {
+      const desk = findDeskByName(updatedOperator.table);
+
+      await api.put(`/users/${updatedOperator.id}`, {
+        name: updatedOperator.name,
+        email: updatedOperator.email,
+        role: 'operador',
+        voltage_level: updatedOperator.profile,
+        active: true,
+        operation_desk_id: desk?.id ?? null,
+        operation_desk_name: updatedOperator.table,
+      });
+
+      await loadData();
+      setShowEditModal(false);
+      setSelectedOperator(null);
+    } catch {
+      alert('Nao foi possivel reativar o operador.');
+    }
   };
 
   const handleRemoveOperator = (operator: Operator) => {
@@ -137,51 +189,102 @@ export function ManegementPage() {
   const handleConfirmRemoveOperator = () => {
     if (!selectedOperator) return;
 
-    setOperatorsData((prev) =>
-      prev.filter((op) => op.id !== selectedOperator.id),
-    );
-
-    setShowRemoveOperatorModal(false);
-    setSelectedOperator(null);
+    void (async () => {
+      try {
+        await api.delete(`/users/${selectedOperator.id}`);
+        await loadData();
+        setShowRemoveOperatorModal(false);
+        setSelectedOperator(null);
+      } catch {
+        alert('Nao foi possivel desativar o operador.');
+      }
+    })();
   };
 
-  const handleRegisterOperator = (newOperator: {
+  const handleRegisterOperator = async (newOperator: {
     name: string;
     email: string;
     profile: OperatorProfile;
     table: string;
   }) => {
-    const newId = generateNewId(
-      operatorsData.map((op) => op.id),
-      "OP",
-    );
+    try {
+      const desk = findDeskByName(newOperator.table);
 
-    const operatorComplete: Operator = {
-      id: newId,
-      name: newOperator.name,
-      email: newOperator.email,
-      profile: newOperator.profile,
-      table: newOperator.table,
-      shift: "-",
-      status: "Inativo",
-      assumedOccurrences: 0,
-      resolvedOccurrences: 0,
-      averageResolutionTime: 0,
-      resolutionRate: 0,
-      time: "-",
-    };
+      await api.post('/users', {
+        name: newOperator.name,
+        email: newOperator.email,
+        role: 'operador',
+        voltage_level: newOperator.profile,
+        active: true,
+        operation_desk_id: desk?.id ?? null,
+        operation_desk_name: newOperator.table,
+      });
 
-    setOperatorsData((prev) => [...prev, operatorComplete]);
-    setShowRegisterModal(false);
+      await loadData();
+      setShowRegisterModal(false);
+    } catch {
+      alert('Nao foi possivel cadastrar o operador.');
+    }
   };
 
-  const totalOperators = operatorsData.length;
-  const activeOperators = filterActiveOperators(operatorsData).length;
-  const inactiveOperators = filterInactiveOperators(operatorsData).length;
+  const filteredOperators = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
 
-  const handleAddTable = (newTable: { name: string; description: string }) => {
-    setTablesData((prev) => [...prev, newTable]);
-    setShowAddTableModal(false);
+    return operatorsData.filter((op) => {
+      const accountIsActive = op.accountActive !== false;
+      const matchesStatus =
+        statusFilter === "all"
+          ? true
+          : statusFilter === "active"
+            ? accountIsActive
+            : !accountIsActive;
+
+      const matchesSearch =
+        q.length === 0 ||
+        op.name.toLowerCase().includes(q) ||
+        op.email.toLowerCase().includes(q) ||
+        op.table.toLowerCase().includes(q);
+
+      return matchesStatus && matchesSearch;
+    });
+  }, [operatorsData, searchTerm, statusFilter]);
+
+  const totalOperators = useMemo(() => operatorsData.length, [operatorsData]);
+  const activeOperators = useMemo(
+    () => operatorsData.filter((op) => op.accountActive !== false).length,
+    [operatorsData],
+  );
+  const inactiveOperators = useMemo(
+    () => operatorsData.filter((op) => op.accountActive === false).length,
+    [operatorsData],
+  );
+
+  const reloadTables = async () => {
+    try {
+      const response = await api.get<Array<{ id: string; name: string; code: string; location?: string }>>('/operation-desks');
+      const mapped = (response.data || []).map((desk) => ({
+        id: String(desk.id),
+        name: desk.name,
+        description: desk.location ?? TABLE_DESCRIPTIONS[desk.name] ?? desk.code,
+      }));
+      setTablesData(mapped);
+    } catch {
+      setTablesData([]);
+    }
+  };
+
+  const handleAddTable = async (newTable: { name: string; description: string }) => {
+    try {
+      await api.post('/operation-desks', {
+        name: newTable.name,
+        location: newTable.description || null,
+      });
+
+      await reloadTables();
+      setShowAddTableModal(false);
+    } catch {
+      alert('Nao foi possivel cadastrar a mesa.');
+    }
   };
 
   const handleEditTable = (table: Table) => {
@@ -189,21 +292,23 @@ export function ManegementPage() {
     setShowEditTableModal(true);
   };
 
-  const handleSaveTableEdit = (updatedTable: Table, originalName: string) => {
-    setTablesData((prev) =>
-      prev.map((t) => (t.name === originalName ? updatedTable : t)),
-    );
-
-    if (originalName !== updatedTable.name) {
-      setOperatorsData((prev) =>
-        prev.map((op) =>
-          op.table === originalName ? { ...op, table: updatedTable.name } : op,
-        ),
-      );
+  const handleSaveTableEdit = async (updatedTable: Table, _originalName: string): Promise<void> => {
+    if (!selectedTable?.id) {
+      return;
     }
 
-    setShowEditTableModal(false);
-    setSelectedTable(null);
+    try {
+      await api.put(`/operation-desks/${selectedTable.id}`, {
+        name: updatedTable.name,
+        location: updatedTable.description || null,
+      });
+
+      await Promise.all([reloadTables(), loadData()]);
+      setShowEditTableModal(false);
+      setSelectedTable(null);
+    } catch {
+      alert('Nao foi possivel atualizar a mesa.');
+    }
   };
 
   const handleRemoveTable = (table: Table) => {
@@ -211,12 +316,18 @@ export function ManegementPage() {
     setShowRemoveTableModal(true);
   };
   const handleConfirmRemoveTable = () => {
-    if (!selectedTable) return;
+    if (!selectedTable?.id) return;
 
-    setTablesData((prev) => prev.filter((t) => t.name !== selectedTable.name));
-
-    setShowRemoveTableModal(false);
-    setSelectedTable(null);
+    void (async () => {
+      try {
+        await api.delete(`/operation-desks/${selectedTable.id}`);
+        await Promise.all([reloadTables(), loadData()]);
+        setShowRemoveTableModal(false);
+        setSelectedTable(null);
+      } catch {
+        alert('Nao foi possivel remover a mesa.');
+      }
+    })();
   };
 
   return (
@@ -363,6 +474,12 @@ export function ManegementPage() {
       </div>
 
       {/* STATS */}
+      {isLoading && (
+        <div className="rounded-lg border border-slate-700 bg-slate-900 p-4 text-slate-300 text-sm">
+          Carregando operadores...
+        </div>
+      )}
+
       <div className="grid grid-cols-3 gap-4">
         <StatCard
           icon={<Users className="w-5 h-5 text-blue-400" />}
@@ -388,6 +505,8 @@ export function ManegementPage() {
           <input
             type="text"
             placeholder="Buscar operator..."
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
           />
         </div>
@@ -400,10 +519,18 @@ export function ManegementPage() {
           Ver Histórico Completo
         </button>
 
-        <button className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-400 hover:bg-theme-hover transition-all flex items-center gap-2">
+        <div className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-400 hover:bg-theme-hover transition-all flex items-center gap-2">
           <Filter className="w-4 h-4" />
-          Filtros
-        </button>
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value as "all" | "active" | "inactive")}
+            className="bg-transparent text-slate-300 focus:outline-none"
+          >
+            <option value="all" className="bg-slate-800 text-slate-100">Todos</option>
+            <option value="active" className="bg-slate-800 text-slate-100">Ativos</option>
+            <option value="inactive" className="bg-slate-800 text-slate-100">Inativos</option>
+          </select>
+        </div>
       </div>
 
       {/* TABLE */}
@@ -436,8 +563,9 @@ export function ManegementPage() {
           </thead>
 
           <tbody>
-            {operatorsData.map((op) => {
+            {filteredOperators.map((op) => {
               const profileStyle = PROFILE_COLORS_DETAILED[op.profile];
+              const visibleStatus = op.accountActive === false ? "Inativo" : "Ativo";
 
               return (
                 <tr
@@ -468,10 +596,21 @@ export function ManegementPage() {
                   </td>
 
                   <td className="px-6 py-4 text-center text-slate-300">
-                    {op.status}
+                    {visibleStatus}
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleProfileClick(op);
+                        }}
+                        className="p-2 hover:bg-emerald-500/10 text-emerald-400 rounded-lg transition-all"
+                        title="Historico de turnos"
+                      >
+                        <Calendar className="w-4 h-4" />
+                      </button>
+
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -482,6 +621,18 @@ export function ManegementPage() {
                       >
                         <Edit className="w-4 h-4" />
                       </button>
+                      {op.accountActive === false && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void handleReactivateOperator(op);
+                          }}
+                          className="p-2 hover:bg-emerald-500/10 text-emerald-400 rounded-lg transition-all"
+                          title="Reativar operador"
+                        >
+                          <UserCheck className="w-4 h-4" />
+                        </button>
+                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -510,6 +661,7 @@ export function ManegementPage() {
         <OperatorHistoryModal
           isOpen={showOperatorHistoryModal}
           onClose={handleCloseOperatorModal}
+          operatorId={selectedOperator.id}
           operatorName={selectedOperator.name}
           operatorEmail={selectedOperator.email}
           operatorProfile={selectedOperator.profile}
@@ -521,13 +673,17 @@ export function ManegementPage() {
           isOpen={showEditModal}
           onClose={() => setShowEditModal(false)}
           operator={selectedOperator}
+          tables={tablesData.map((table) => table.name)}
           onSave={handleUpdateOperator}
+          onDeactivate={handleDeactivateOperator}
+          onReactivate={handleReactivateOperator}
         />
       )}
 
       <RegisterOperatorModal
         isOpen={showRegisterModal}
         onClose={() => setShowRegisterModal(false)}
+        tables={tablesData.map((table) => table.name)}
         onSave={handleRegisterOperator}
       />
 

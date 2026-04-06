@@ -15,8 +15,8 @@ import type {
    OccurrenceCriticality,
    OccurrenceStatus,
 } from "../types/index";
-import { OCCURRENCES } from "../mocks/mocks.ts";
 import { OccurrenceDetailsModal } from "@/features/supervisor/components/OccurrenceDetailsModal";
+import { useSupervisorStore } from "../stores/useSupervisorStore";
 
 type SortMode = "priority" | "recent" | "oldest";
 
@@ -105,8 +105,10 @@ export function OccurrencesList() {
   const [sortMode, setSortMode] = useState<SortMode>("priority");
   const [selectedOccurrence, setSelectedOccurrence] =
     useState<Occurrence | null>(null);
+  const occurrencesState = useSupervisorStore((state) => state.occurrences);
+
   // 🔹 Mantendo filtro do código novo
-  const ocorrenciasAbertas = OCCURRENCES.filter(
+  const ocorrenciasAbertas = occurrencesState.filter(
     (o) => o.status === "aberta" || o.status === "em_andamento",
   );
 
@@ -202,7 +204,7 @@ export function OccurrencesList() {
           return (
             <div
               key={occurrence.id}
-              onClick={() => navigate(`/supervisor/occurrences/${occurrence.id}`)}
+              onClick={() => navigate(`/occurrences/${occurrence.id}`)}
               className={`p-4 rounded-lg border-l-4 ${config.color} transition-all hover:shadow-md cursor-pointer`}
             >
               <div className="flex items-start justify-between mb-2">

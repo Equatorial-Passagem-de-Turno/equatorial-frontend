@@ -7,8 +7,8 @@ import {
   Activity,
 } from "lucide-react";
 
-import { OPERATORS } from "../../mocks/mocks";
 import type { OperatorProfile } from "../../types/index";
+import { useSupervisorStore } from "../../stores/useSupervisorStore";
 
 /* =========================
    PROFILE COLOR MAP
@@ -49,7 +49,9 @@ const profileStyleMap: Record<
 ========================= */
 
 export function OperatorsOverview() {
-  const activeOperators = OPERATORS.filter(
+  const operatorsState = useSupervisorStore((state) => state.operators);
+
+  const activeOperators = operatorsState.filter(
     (operator) => operator.status === "Ativo" || operator.status === "Pausa"
   );
 
@@ -63,12 +65,14 @@ export function OperatorsOverview() {
     0
   );
 
-  const averageResolutionTime = (
-    activeOperators.reduce(
-      (acc, operator) => acc + operator.resolutionRate,
-      0
-    ) / activeOperators.length
-  ).toFixed(0);
+  const averageResolutionTime = activeOperators.length > 0
+    ? (
+        activeOperators.reduce(
+          (acc, operator) => acc + operator.resolutionRate,
+          0
+        ) / activeOperators.length
+      ).toFixed(0)
+    : "0";
 
   return (
     <div className="bg-white dark:bg-theme-panel rounded-lg border border-zinc-200 dark:border-[#334155] overflow-hidden">
@@ -265,7 +269,7 @@ export function OperatorsOverview() {
           </div>
 
           <span className="text-xs text-zinc-500 dark:text-[#64748b]">
-            {activeOperators.length} operadores ativos
+            {activeOperators.length} turnos ativos
           </span>
         </div>
       </div>

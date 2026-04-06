@@ -1,12 +1,11 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { type UserRole, type AuthState } from '../types/index';
+import { api } from '@/services/api';
+import axios from 'axios';
 
 // Importe a store de ocorrências para poder resetá-la
 import { useOccurrenceStore } from '@/features/occurrences/stores/useOccurrenceStore';
-
-// URL base da sua API (O ideal é colocar isso num arquivo .env como import.meta.env.VITE_API_URL)
-const API_URL = 'http://localhost:8000/api';
 
 export const useAuth = create<AuthState>()(
   persist(
@@ -24,20 +23,8 @@ export const useAuth = create<AuthState>()(
         set({ isLoading: true });
 
         try {
-          const response = await fetch(`${API_URL}/login`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify({ email, password })
-          });
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.message || 'Erro de autenticação'); 
-          }
+          const response = await api.post('/login', { email, password });
+          const data = response.data;
 
         const accountRole = String(data?.usuario?.role || '').toLowerCase();
         const isSupervisor = accountRole === 'supervisor';
@@ -54,8 +41,16 @@ export const useAuth = create<AuthState>()(
         });
 
         } catch (error) {
+          let message = 'Erro de autenticação';
+
+          if (axios.isAxiosError(error)) {
+            message = error.response?.data?.message || message;
+          } else if (error instanceof Error) {
+            message = error.message;
+          }
+
           set({ isLoading: false });
-          throw error; 
+          throw new Error(message); 
         }
       },
 
@@ -66,21 +61,13 @@ export const useAuth = create<AuthState>()(
       selectTable: (table) => set({ table }),
 
       logout: async () => {
-        const { token, user } = get();
+        const { user } = get();
 
         // 1. Invalida o token no Laravel
-        if (token) {
-          try {
-            await fetch(`${API_URL}/logout`, {
-              method: 'POST',
-              headers: {
-                'Accept': 'application/json',
-                'Authorization': `Bearer ${token}`
-              }
-            });
-          } catch (e) {
-            console.error('Erro ao comunicar logout ao servidor:', e);
-          }
+        try {
+          await api.post('/logout');
+        } catch (e) {
+          console.error('Erro ao comunicar logout ao servidor:', e);
         }
 
         // 2. Limpa a "memória" de que o usuário já viu o modal

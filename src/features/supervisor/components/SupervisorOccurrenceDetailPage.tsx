@@ -26,9 +26,9 @@ import { useState, useEffect } from "react";
 import { EditOccurrenceModal } from "./manager/EditOccurrenceModal";
 import { TransferOccurrenceModal } from "./manager/TransferOccurrenceModal";
 import { ConfirmRemovalModal } from "./manager/ConfirmRemovalOperator";
-import { OCCURRENCES } from "../mocks/mocks.ts";
-import { COMENTARIOS_MOCK } from "../mocks/mocks.ts";
 import type { Occurrence } from "../types/index.ts";
+import { useSupervisorStore } from "../stores/useSupervisorStore";
+import { api } from "@/services/api";
 
 const criticalityConfig = {
   critica: {
@@ -104,13 +104,73 @@ const statusConfig = {
 export function SupervisorOccurenceDetailsPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const occurrences = useSupervisorStore((state) => state.occurrences);
+  const loadData = useSupervisorStore((state) => state.loadData);
   const [editOpen, setEditOpen] = useState(false);
   const [transferOpen, setTransferOpen] = useState(false);
-  const [occurrence, setOccurrence] = useState<Occurrence | null>(
-    OCCURRENCES.find((o) => o.id === id),
-  );
+  const [occurrence, setOccurrence] = useState<Occurrence | null>(null);
   const [historicoEventos, setHistoricoEventos] = useState<any[]>([]);
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
+
+  useEffect(() => {
+    if (!id) return;
+
+    const found = occurrences.find((o) => String(o.id) === String(id));
+    if (found) {
+      setOccurrence(found);
+      return;
+    }
+
+    const fetchOne = async () => {
+      try {
+        const response = await api.get(`/occurrences/${id}`);
+        const data = response.data;
+
+        const mapped: Occurrence = {
+          id: String(data.id),
+          title: String(data.title || 'Sem título'),
+          description: String(data.description || ''),
+          category: String(data.category || 'Operação'),
+          criticality: String(data.priority || '').toLowerCase().includes('crit') ? 'critica' : String(data.priority || '').toLowerCase().includes('alt') ? 'alta' : String(data.priority || '').toLowerCase().includes('med') ? 'media' : 'baixa',
+          status: String(data.status || '').toLowerCase().includes('resol') ? 'resolvida' : String(data.status || '').toLowerCase().includes('andamento') ? 'em_andamento' : String(data.status || '').toLowerCase().includes('transfer') ? 'transferida' : 'aberta',
+          type: 'falha',
+          dateTime: data.created_at ? new Date(data.created_at).toLocaleString('pt-BR') : new Date().toLocaleString('pt-BR'),
+          timestamp: data.created_at ? new Date(data.created_at).getTime() : Date.now(),
+          operator: String(data.createdBy || 'Sistema'),
+          operatorId: String(data.user_id || ''),
+          profile: 'BT',
+          table: 'N/A',
+          geographicBase: String(data.location?.zone || data.location?.city || 'N/A'),
+          feeder: String(data.location?.alimentador || 'N/A'),
+          substation: String(data.location?.subestacao || 'N/A'),
+          location: {
+            city: String(data.location?.city || 'N/A'),
+            district: String(data.location?.neighborhood || 'N/A'),
+            zone: data.location?.zone ? String(data.location.zone) : undefined,
+            address: data.location?.address ? String(data.location.address) : undefined,
+            referencePoint: data.location?.reference ? String(data.location.reference) : undefined,
+          },
+          attachments: {
+            photo: false,
+            video: false,
+            document: false,
+            protocol: false,
+          },
+        };
+
+        setOccurrence(mapped);
+      } catch {
+        setOccurrence(null);
+      }
+    };
+
+    void fetchOne();
+  }, [id, occurrences]);
+
   if (!occurrence) {
     return <div>Ocorrência não encontrada</div>;
   }
@@ -119,7 +179,7 @@ export function SupervisorOccurenceDetailsPage() {
      COMENTÁRIOS DA OCORRÊNCIA
      ========================= */
 
-  const comentarios = COMENTARIOS_MOCK[occurrence.id] || [];
+  const comentarios: Array<{ type: string; texto: string; autor: string; timestamp: number; dateTime: string }> = [];
 
   /* =========================
      HISTÓRICO UNIFICADO
@@ -202,13 +262,6 @@ export function SupervisorOccurenceDetailsPage() {
 
   function handleDeleteOccurrence() {
     if (!occurrence) return;
-
-    // remove da lista mockada
-    const index = OCCURRENCES.findIndex((o) => o.id === occurrence.id);
-
-    if (index !== -1) {
-      OCCURRENCES.splice(index, 1);
-    }
 
     // fecha modal
     setDeleteOpen(false);

@@ -43,6 +43,24 @@ export function TableSelector() {
     fetchMesas();
   }, []);
 
+  useEffect(() => {
+    if (!mesas.length || selectedMesa) {
+      return;
+    }
+
+    const userDefaultDeskId = user?.operation_desk_id;
+    if (userDefaultDeskId === null || userDefaultDeskId === undefined) {
+      return;
+    }
+
+    const normalizedDefault = String(userDefaultDeskId);
+    const matchingDesk = mesas.find((mesa) => String(mesa.id) === normalizedDefault);
+
+    if (matchingDesk) {
+      setSelectedMesa(matchingDesk.id);
+    }
+  }, [mesas, selectedMesa, user?.operation_desk_id]);
+
   const handleConfirm = async () => {
     if (!selectedMesa || !role) return;
 
@@ -98,6 +116,11 @@ export function TableSelector() {
         <p className="text-theme-muted">
           Em qual mesa de operação você assumirá o turno hoje?
         </p>
+        {!!user?.operation_desk_name && (
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
+            Mesa padrão cadastrada: {user.operation_desk_name}. Você pode manter ou escolher outra.
+          </p>
+        )}
       </div>
 
       {/* Tratamento de Estados: Carregando ou Erro */}

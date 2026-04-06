@@ -5,6 +5,8 @@ export interface User {
   table: string;
   email: string;
   role?: string;
+  operation_desk_id?: string | number | null;
+  operation_desk_name?: string | null;
   password?: string;
   avatar?: string;
 }
