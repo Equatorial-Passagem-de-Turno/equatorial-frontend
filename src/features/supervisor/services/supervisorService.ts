@@ -165,15 +165,21 @@ const mapActivities = (occurrences: Occurrence[]): AtividadeRecente[] => {
 };
 
 export async function fetchSupervisorData() {
-  const [occRes, usersRes, activeOperatorsRes] = await Promise.all([
+  const [occRes, usersRes, activeOperatorsRes] = await Promise.allSettled([
     api.get<ApiOccurrence[]>('/occurrences'),
     api.get<ApiUser[]>('/users', { params: { include_inactive: true } }),
     api.get<ApiActiveOperator[]>('/shifts/operators/active'),
   ]);
 
-  const users: ApiUser[] = usersRes.data || [];
-  const occurrencesPayload: ApiOccurrence[] = occRes.data || [];
-  const activeOperatorsPayload: ApiActiveOperator[] = activeOperatorsRes.data || [];
+  const users: ApiUser[] = usersRes.status === 'fulfilled' ? (usersRes.value.data || []) : [];
+  const occurrencesPayload: ApiOccurrence[] = occRes.status === 'fulfilled' ? (occRes.value.data || []) : [];
+  const activeOperatorsPayload: ApiActiveOperator[] =
+    activeOperatorsRes.status === 'fulfilled' ? (activeOperatorsRes.value.data || []) : [];
+
+  // If everything failed, propagate a meaningful error for the store.
+  if (usersRes.status === 'rejected' && occRes.status === 'rejected' && activeOperatorsRes.status === 'rejected') {
+    throw new Error('Falha ao carregar endpoints de supervisor');
+  }
   const usersById = new Map<string, ApiUser>(users.map((u: ApiUser) => [String(u.id), u]));
   const activeStatsById = new Map<string, ApiActiveOperator>(
     activeOperatorsPayload.map((item: ApiActiveOperator) => [String(item.id), item])

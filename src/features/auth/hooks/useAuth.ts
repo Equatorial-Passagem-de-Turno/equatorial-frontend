@@ -25,9 +25,14 @@ export const useAuth = create<AuthState>()(
         try {
           const response = await api.post('/login', { email, password });
           const data = response.data;
+          const activeShift = data?.active_shift;
+          const hasActiveShift = Boolean(activeShift);
 
         const accountRole = String(data?.usuario?.role || '').toLowerCase();
         const isSupervisor = accountRole === 'supervisor';
+        const operatorRoleFromShift = activeShift?.role
+          ? String(activeShift.role)
+          : (data?.usuario?.voltage_level ? String(data.usuario.voltage_level) : null);
 
         set({
           user: data.usuario,
@@ -35,9 +40,13 @@ export const useAuth = create<AuthState>()(
           isAuthenticated: true,
           isLoading: false,
           // Supervisor entra direto no dashboard geral de supervisão.
-          // Operador sempre escolhe perfil e mesa ao entrar.
-          role: isSupervisor ? 'supervisor' : null,
-          table: isSupervisor ? (data.active_shift ? data.active_shift.desk : null) : null,
+          // Operador com turno ativo retorna direto para a home (sem iniciar novo turno).
+          role: isSupervisor
+            ? 'supervisor'
+            : hasActiveShift
+              ? operatorRoleFromShift
+              : null,
+          table: (isSupervisor || hasActiveShift) ? (activeShift?.desk || null) : null,
         });
 
         } catch (error) {

@@ -286,13 +286,17 @@ export const ShiftControlPage = () => {
   };
 
   const handleLogoutSystem = () => {
-    if (window.confirm("Tem certeza que deseja sair do sistema?")) {
+        const shouldLogout = window.confirm(
+            "Importante: recomendamos encerrar o turno antes de sair do sistema para evitar perda de contexto e repasse incompleto.\n\nDeseja sair mesmo assim?"
+        );
+
+        if (!shouldLogout) return;
+
         if (logout) {
             logout();
         } else {
             console.log("Logout function not implemented in hook");
             window.location.reload();
-        }
     }
   };
 

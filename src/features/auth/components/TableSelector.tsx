@@ -14,6 +14,15 @@ type Mesa = {
 export function TableSelector() {
   const { user, role, selectRole, selectTable, logout } = useAuth();
   const displayName = user?.name || "Operador";
+
+  const handleLogout = async () => {
+    const shouldLogout = window.confirm(
+      "Importante: recomendamos encerrar o turno antes de sair do sistema para evitar pendencias sem repasse.\n\nDeseja sair mesmo assim?"
+    );
+
+    if (!shouldLogout) return;
+    await logout();
+  };
   
   // Estados
   const [mesas, setMesas] = useState<Mesa[]>([]);
@@ -223,7 +232,7 @@ export function TableSelector() {
       </div>
 
       <button
-        onClick={logout}
+        onClick={handleLogout}
         disabled={isStarting}
         className="mt-6 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 text-sm underline underline-offset-4 disabled:opacity-50 disabled:cursor-not-allowed"
       >

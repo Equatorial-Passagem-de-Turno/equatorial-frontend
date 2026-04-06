@@ -38,6 +38,15 @@ export const RoleSelector = () => {
   const { user, selectRole, logout } = useAuth();
   const displayName = user?.name || 'Colaborador';
 
+  const handleLogout = async () => {
+    const shouldLogout = window.confirm(
+      'Importante: recomendamos encerrar o turno antes de sair do sistema para evitar pendencias sem repasse.\n\nDeseja sair mesmo assim?'
+    );
+
+    if (!shouldLogout) return;
+    await logout();
+  };
+
   // Estados da API
   const [dbRoles, setDbRoles] = useState<DbRole[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -171,7 +180,7 @@ export const RoleSelector = () => {
         {/* Footer com Logout Funcional */}
         <div className="mt-16 text-center">
           <button 
-            onClick={logout}
+            onClick={handleLogout}
             className="text-theme-muted hover:text-red-500 text-sm transition-colors flex items-center justify-center mx-auto gap-2 group"
           >
             <span className="underline decoration-theme-border underline-offset-4 group-hover:decoration-red-500/50">
