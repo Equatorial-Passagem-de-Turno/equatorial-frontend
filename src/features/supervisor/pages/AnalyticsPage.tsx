@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -14,12 +14,17 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
 } from "recharts";
 import { OperatorsOverview } from "@/features/supervisor/components/analytics/OperatorsOverview";
 import { OperationsChart } from "../components/analytics/OperationsChart";
 import { useSupervisorStore } from "../stores/useSupervisorStore";
 
 export function AnalyticsPage() {
+  const [tempoFiltro, setTempoFiltro] = useState<"all" | "within" | "above">("all");
+
   const loadData = useSupervisorStore((state) => state.loadData);
   const isLoading = useSupervisorStore((state) => state.isLoading);
   const loadError = useSupervisorStore((state) => state.loadError);
@@ -54,32 +59,51 @@ export function AnalyticsPage() {
     };
   }, [operators, occurrences]);
 
-  const tempoPorMesa = useMemo(() => {
-    const grouped = new Map<string, { total: number; count: number }>();
+  const ocorrenciasPorMesa = useMemo(() => {
+    const grouped = new Map<string, { total: number; criticas: number; resolvidas: number }>();
 
-    operators
-      .filter((operator) => operator.status === "Ativo" || operator.status === "Pausa")
-      .forEach((operator) => {
-        const key = operator.table || "N/A";
-        const current = grouped.get(key) || { total: 0, count: 0 };
-        grouped.set(key, {
-          total: current.total + operator.averageResolutionTime,
-          count: current.count + 1,
-        });
+    occurrences.forEach((occ) => {
+      const key = occ.table || "N/A";
+      const current = grouped.get(key) || { total: 0, criticas: 0, resolvidas: 0 };
+      grouped.set(key, {
+        total: current.total + 1,
+        criticas: current.criticas + (occ.criticality === "critica" ? 1 : 0),
+        resolvidas: current.resolvidas + (occ.status === "resolvida" ? 1 : 0),
       });
+    });
 
-    return Array.from(grouped.entries()).map(([mesa, data]) => ({
-      mesa,
-      tempoMedio: data.count > 0 ? Math.round(data.total / data.count) : 0,
-      meta: 60,
-    }));
-  }, [operators]);
+    return Array.from(grouped.entries())
+      .map(([mesa, data]) => ({
+        mesa,
+        total: data.total,
+        criticas: data.criticas,
+        taxaResolucao: data.total > 0 ? Math.round((data.resolvidas / data.total) * 100) : 0,
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [occurrences]);
+
+  const ocorrenciasPorMesaChartData = useMemo(() => {
+    const semNA = ocorrenciasPorMesa.filter((item) => item.mesa !== "N/A");
+    const base = semNA.length > 0 ? semNA : ocorrenciasPorMesa;
+    return base.slice(0, 8);
+  }, [ocorrenciasPorMesa]);
 
   const tempoPorPerfil = useMemo(() => {
+    const filteredOperators = operators
+      .filter((operator) => operator.status === "Ativo" || operator.status === "Pausa")
+      .filter((operator) => {
+        if (tempoFiltro === "within") {
+          return operator.averageResolutionTime <= 60;
+        }
+        if (tempoFiltro === "above") {
+          return operator.averageResolutionTime > 60;
+        }
+        return true;
+      });
+
     const grouped = new Map<string, { total: number; count: number }>();
 
-    operators
-      .filter((operator) => operator.status === "Ativo" || operator.status === "Pausa")
+    filteredOperators
       .forEach((operator) => {
         const key = operator.profile;
         const current = grouped.get(key) || { total: 0, count: 0 };
@@ -89,12 +113,44 @@ export function AnalyticsPage() {
         });
       });
 
-    return Array.from(grouped.entries()).map(([perfil, data]) => ({
-      perfil,
-      tempoMedio: data.count > 0 ? Math.round(data.total / data.count) : 0,
-      meta: 60,
-    }));
-  }, [operators]);
+    return Array.from(grouped.entries())
+      .map(([perfil, data]) => ({
+        perfil,
+        tempoMedio: data.count > 0 ? Math.round(data.total / data.count) : 0,
+        meta: 60,
+      }))
+      .sort((a, b) => b.tempoMedio - a.tempoMedio);
+  }, [operators, tempoFiltro]);
+
+  const criticidadeData = useMemo(() => {
+    const counters = {
+      baixa: 0,
+      media: 0,
+      alta: 0,
+      critica: 0,
+    };
+
+    occurrences.forEach((occ) => {
+      counters[occ.criticality] += 1;
+    });
+
+    return [
+      { name: "Baixa", value: counters.baixa, color: "#10b981" },
+      { name: "Media", value: counters.media, color: "#3b82f6" },
+      { name: "Alta", value: counters.alta, color: "#f59e0b" },
+      { name: "Critica", value: counters.critica, color: "#ef4444" },
+    ].filter((item) => item.value > 0);
+  }, [occurrences]);
+
+  const tooltipProps = {
+    contentStyle: {
+      backgroundColor: "#0f172a",
+      border: "1px solid #334155",
+      borderRadius: 8,
+      color: "#e2e8f0",
+    },
+    labelStyle: { color: "#cbd5e1", fontWeight: 600 },
+  };
 
   if (isLoading && !hydratedAt) {
     return (
@@ -182,26 +238,53 @@ export function AnalyticsPage() {
       <OperationsChart />
       <OperatorsOverview />
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+          Filtros de visualizacao
+        </h2>
+        <select
+          value={tempoFiltro}
+          onChange={(event) => setTempoFiltro(event.target.value as "all" | "within" | "above")}
+          className="px-3 py-2 text-xs rounded-md bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none"
+        >
+          <option value="all">Todos os turnos</option>
+          <option value="within">Somente dentro da meta (&lt;= 60 min)</option>
+          <option value="above">Somente acima da meta (&gt; 60 min)</option>
+        </select>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-theme-panel border border-slate-200 dark:border-slate-800 rounded-lg p-6 transition-colors">
           <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
-            Tempo Medio de Resolucao por Mesa
+            Ocorrencias por Mesa
           </h3>
           <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-            Em minutos - Meta: 60 min
+            Volume total e criticas por mesa
           </p>
 
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={tempoPorMesa} layout="horizontal">
-              <CartesianGrid stroke="#cbd5e1" strokeDasharray="3 3" className="dark:stroke-slate-800" />
-              <XAxis type="number" stroke="#64748b" domain={[0, 90]} />
-              <YAxis type="category" dataKey="mesa" stroke="#64748b" width={120} tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="meta" fill="rgba(100,116,139,0.3)" name="Meta (60 min)" />
-              <Bar dataKey="tempoMedio" fill="#10b981" name="Tempo Medio" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {ocorrenciasPorMesaChartData.length === 0 ? (
+            <div className="h-[300px] rounded-md border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-sm text-slate-500 dark:text-slate-400">
+              Sem ocorrencias para exibir no periodo.
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={ocorrenciasPorMesaChartData} margin={{ top: 8, right: 8, left: 0, bottom: 32 }}>
+                <CartesianGrid stroke="#cbd5e1" strokeDasharray="3 3" className="dark:stroke-slate-800" />
+                <XAxis dataKey="mesa" stroke="#64748b" angle={-25} textAnchor="end" height={56} interval={0} />
+                <YAxis stroke="#64748b" allowDecimals={false} />
+                <Tooltip
+                  {...tooltipProps}
+                  formatter={(value: number | string, name: string) => [
+                    `${value}`,
+                    name === "total" ? "Total" : name === "criticas" ? "Criticas" : "Taxa de resolucao",
+                  ]}
+                />
+                <Legend />
+                <Bar dataKey="total" fill="#10b981" name="Total" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="criticas" fill="#ef4444" name="Criticas" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         <div className="bg-white dark:bg-theme-panel border border-slate-200 dark:border-slate-800 rounded-lg p-6 transition-colors">
@@ -213,15 +296,46 @@ export function AnalyticsPage() {
           </p>
 
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={tempoPorPerfil}>
+            <BarChart data={tempoPorPerfil} margin={{ left: 8, right: 8 }}>
               <CartesianGrid stroke="#cbd5e1" strokeDasharray="3 3" />
               <XAxis dataKey="perfil" stroke="#64748b" />
               <YAxis stroke="#64748b" domain={[0, 90]} />
-              <Tooltip />
+              <Tooltip {...tooltipProps} formatter={(value: number | string, name: string) => [`${value}`, name === "meta" ? "Meta" : "Tempo medio"]} />
               <Legend />
               <Bar dataKey="meta" fill="rgba(100,116,139,0.3)" name="Meta (60 min)" />
               <Bar dataKey="tempoMedio" fill="#10b981" name="Tempo Medio" radius={[4, 4, 0, 0]} />
             </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="bg-white dark:bg-theme-panel border border-slate-200 dark:border-slate-800 rounded-lg p-6 transition-colors">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
+            Distribuicao por Criticidade
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+            Visao geral da carteira atual de ocorrencias
+          </p>
+
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Tooltip
+                {...tooltipProps}
+                formatter={(value: number | string, name: string) => [`${value}`, String(name)]}
+              />
+              <Legend />
+              <Pie
+                data={criticidadeData}
+                dataKey="value"
+                nameKey="name"
+                innerRadius={60}
+                outerRadius={100}
+                paddingAngle={3}
+              >
+                {criticidadeData.map((entry) => (
+                  <Cell key={entry.name} fill={entry.color} />
+                ))}
+              </Pie>
+            </PieChart>
           </ResponsiveContainer>
         </div>
       </div>

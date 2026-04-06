@@ -59,6 +59,13 @@ const timeRangeLabels: Record<TimeRange, string> = {
   "72h": "72 horas",
 };
 
+const PRIORITY_TOOLTIP_LABEL: Record<PriorityKey, string> = {
+  baixa: "Baixa",
+  media: "Media",
+  alta: "Alta",
+  critica: "Critica",
+};
+
 function generateHourlyData(
   range: TimeRange,
   selectedMesa: string | null,
@@ -124,6 +131,8 @@ export function OperationsChart() {
     useState<ChartType>("bars");
   const [selectedMesa, setSelectedMesa] =
     useState<string | null>(null);
+  const [showTotalSeries, setShowTotalSeries] =
+    useState(false);
 
   const [visible, setVisible] = useState<
     Record<PriorityKey, boolean>
@@ -140,6 +149,21 @@ export function OperationsChart() {
     () => generateHourlyData(timeRange, selectedMesa, occurrencesState),
     [timeRange, selectedMesa, occurrencesState],
   );
+
+  const mesaOptions = useMemo(() => {
+    const fromData = Array.from(
+      new Set(
+        occurrencesState
+          .map((item) => item.table)
+          .filter((item): item is string => Boolean(item && item.trim())),
+      ),
+    ).sort((a, b) => a.localeCompare(b));
+
+    return fromData.length > 0 ? fromData : [...MESAS];
+  }, [occurrencesState]);
+
+  const xTickInterval =
+    timeRange === "24h" ? 2 : timeRange === "48h" ? 5 : 8;
 
   const togglePriority = (k: PriorityKey) => {
     setVisible((prev) => {
@@ -160,7 +184,7 @@ export function OperationsChart() {
       <div className="flex items-start justify-between mb-4 gap-4">
         <div>
           <h3 className="font-semibold text-text-primary">
-            Monitoramento de Ocorrências (COI)
+            Monitoramento de Ocorrências (COI) - Sem tendência
           </h3>
           <p className="text-xs text-text-muted mt-0.5">
             {subtitle}
@@ -196,7 +220,7 @@ export function OperationsChart() {
           className="px-2 py-1.5 text-xs rounded-md bg-bg-secondary border border-border-primary text-text-primary focus:outline-none"
         >
           <option value="">Todas as mesas</option>
-          {MESAS.map((m) => (
+          {mesaOptions.map((m) => (
             <option key={m} value={m}>
               {m}
             </option>
@@ -245,6 +269,17 @@ export function OperationsChart() {
               </button>
             ),
           )}
+
+          <button
+            onClick={() => setShowTotalSeries((prev) => !prev)}
+            className={
+              showTotalSeries
+                ? "px-3 py-1.5 text-xs font-medium rounded-md border border-slate-500/40 bg-slate-500/10 text-text-primary"
+                : "px-3 py-1.5 text-xs font-medium rounded-md border border-border-primary text-text-muted hover:text-text-primary"
+            }
+          >
+            Total
+          </button>
         </div>
       </div>
 
@@ -262,40 +297,80 @@ export function OperationsChart() {
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
+                interval={xTickInterval}
+                minTickGap={12}
               />
               <YAxis
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
+                allowDecimals={false}
               />
-              <Tooltip />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#0f172a",
+                  border: "1px solid #334155",
+                  borderRadius: 8,
+                  color: "#e2e8f0",
+                }}
+                cursor={{ stroke: "#64748b", strokeDasharray: "3 3" }}
+                labelStyle={{ color: "#cbd5e1", fontWeight: 600 }}
+                formatter={(value: number | string, name: string) => [
+                  `${value}`,
+                  PRIORITY_TOOLTIP_LABEL[name as PriorityKey] ?? name,
+                ]}
+                labelFormatter={(label: string) => `Hora ${label}`}
+              />
 
               {visible.baixa && (
                 <Line
                   dataKey="baixa"
+                  type="monotone"
                   stroke={PRIORITY_COLOR.baixa}
+                  strokeWidth={2}
                   dot={false}
+                  activeDot={{ r: 4 }}
                 />
               )}
               {visible.media && (
                 <Line
                   dataKey="media"
+                  type="monotone"
                   stroke={PRIORITY_COLOR.media}
+                  strokeWidth={2}
                   dot={false}
+                  activeDot={{ r: 4 }}
                 />
               )}
               {visible.alta && (
                 <Line
                   dataKey="alta"
+                  type="monotone"
                   stroke={PRIORITY_COLOR.alta}
+                  strokeWidth={2}
                   dot={false}
+                  activeDot={{ r: 4 }}
                 />
               )}
               {visible.critica && (
                 <Line
                   dataKey="critica"
+                  type="monotone"
                   stroke={PRIORITY_COLOR.critica}
+                  strokeWidth={2.4}
                   dot={false}
+                  activeDot={{ r: 4 }}
+                />
+              )}
+              {showTotalSeries && (
+                <Line
+                  dataKey="total"
+                  type="monotone"
+                  stroke="#cbd5e1"
+                  strokeDasharray="5 4"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 3 }}
                 />
               )}
             </LineChart>
@@ -315,8 +390,23 @@ export function OperationsChart() {
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
+                allowDecimals={false}
               />
-              <Tooltip />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#0f172a",
+                  border: "1px solid #334155",
+                  borderRadius: 8,
+                  color: "#e2e8f0",
+                }}
+                cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
+                labelStyle={{ color: "#cbd5e1", fontWeight: 600 }}
+                formatter={(value: number | string, name: string) => [
+                  `${value}`,
+                  PRIORITY_TOOLTIP_LABEL[name as PriorityKey] ?? name,
+                ]}
+                labelFormatter={(label: string) => `Hora ${label}`}
+              />
 
               {visible.baixa && (
                 <Bar
@@ -353,7 +443,7 @@ export function OperationsChart() {
       </div>
 
       <p className="text-xs text-text-muted text-center mt-3">
-        Dica: desligue prioridades para isolar padrões.
+        Dica: desligue prioridades para isolar padrões. O modo linha está sem tendência.
       </p>
     </div>
   );

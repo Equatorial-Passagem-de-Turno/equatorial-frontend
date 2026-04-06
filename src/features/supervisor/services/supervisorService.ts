@@ -14,6 +14,8 @@ type ApiOccurrence = {
   updated_at?: string;
   createdBy?: string;
   location?: Record<string, unknown> | null;
+  table?: string;
+  operation_desk_name?: string;
 };
 
 type ApiUser = {
@@ -78,7 +80,7 @@ const mapOccurrence = (
     operator: user?.name || String(occ.createdBy || 'Sistema'),
     operatorId: String(occ.user_id || ''),
     profile: ((user?.role as Operator['profile']) || 'AT'),
-    table: String(stat?.table || location.table || location.desk || 'N/A'),
+    table: String(occ.table || occ.operation_desk_name || stat?.table || location.table || location.desk || 'N/A'),
     geographicBase: String(location.zone || location.city || 'N/A'),
     feeder: String(location.feeder || 'N/A'),
     substation: String(location.substation || location.city || 'N/A'),
