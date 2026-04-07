@@ -27,7 +27,22 @@ export const useShiftControl = () => {
 
         const responseToday = await api.get('/shifts/by-date');
         if (responseToday.data) {
-            setTodaysShifts(responseToday.data);
+            const normalizedShifts: HistoryItem[] = (Array.isArray(responseToday.data) ? responseToday.data : []).map((item: any) => {
+              const parsedFromDisplayId = Number(String(item?.id ?? '').replace(/\D/g, ''));
+              const normalizedShiftId = Number(item?.shiftId ?? item?.shift_id ?? parsedFromDisplayId);
+
+              return {
+                shiftId: Number.isFinite(normalizedShiftId) ? normalizedShiftId : 0,
+                id: String(item?.id ?? ''),
+                operador: String(item?.operador ?? 'Desconhecido'),
+                horario: String(item?.horario ?? '--:-- - --:--'),
+                tipo: String(item?.tipo ?? 'BT'),
+                status: item?.status === 'Aberto' ? 'Aberto' : 'Fechado',
+                workedDuration: String(item?.workedDuration ?? item?.tempo_trabalhado ?? '--'),
+              };
+            });
+
+            setTodaysShifts(normalizedShifts);
         }
 
       } catch (error) {
@@ -44,7 +59,6 @@ export const useShiftControl = () => {
 
   const encerrarTurno = () => setShowSuccessModal(true);
   const finalizarNavegacao = () => navigate('/');
-  const imprimirRelatorio = () => window.print();
   const logout = () => {
     authLogout();
     navigate('/login');
@@ -61,7 +75,6 @@ export const useShiftControl = () => {
     loading,
     encerrarTurno,
     finalizarNavegacao,
-    imprimirRelatorio,
     logout
   };
 };

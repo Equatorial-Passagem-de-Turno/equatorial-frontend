@@ -8,6 +8,9 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useShiftControl } from '../hooks/useShiftControl';
+import { generateShiftClosureReportPdf } from '@/features/reports/utils/standardReportPdf';
+import { showErrorModal, showSuccessModal } from '@/shared/ui/feedbackModal';
+import { api } from '@/services/api';
 
 // Importação dos Componentes Modulares
 import { ShiftReportPrintView } from '../components/ShiftReportPrintView';
@@ -39,7 +42,6 @@ export const ShiftControlPage = () => {
     setBriefing, 
     encerrarTurno, 
     finalizarNavegacao, 
-    imprimirRelatorio,
         logout,
         loading,
   } = useShiftControl();
@@ -57,6 +59,9 @@ export const ShiftControlPage = () => {
 
   // Estado para o Modal de Confirmação de Reabertura
   const [isReopenModalOpen, setIsReopenModalOpen] = useState(false);
+    const [showShiftOpenLogoutModal, setShowShiftOpenLogoutModal] = useState(false);
+    const [hasActiveShiftOnLogout, setHasActiveShiftOnLogout] = useState(false);
+    const [isCheckingLogout, setIsCheckingLogout] = useState(false);
 
   // Estado para armazenar o snapshot do turno encerrado localmente
   const [finishedShiftState, setFinishedShiftState] = useState<any | null>(null);
@@ -153,10 +158,41 @@ export const ShiftControlPage = () => {
   const targetName = nextOperator 
         ? availableOperators.find(op => String(op.id) === String(nextOperator))?.name 
     : "MESA";
+    const currentWorkedDuration = String((turnoAtual as any)?.workedDuration ?? (turnoAtual as any)?.tempo_trabalhado ?? '--');
 
   const handleAttemptFinish = () => {
     setIsFinishModalOpen(true);
   };
+
+    const generateShiftReportPdf = (snapshot: any) => {
+        if (!snapshot) return;
+
+        try {
+            const destinoNome = snapshot?.proximoOperador && snapshot?.proximoOperador !== 'MESA'
+                ? (availableOperators.find((operator) => String(operator.id) === String(snapshot.proximoOperador))?.name || 'Operador nao identificado')
+                : 'MESA';
+
+            const pendenciasResolvidas = Array.isArray(snapshot?.pendenciasResolvidas) ? snapshot.pendenciasResolvidas : [];
+            const pendenciasRepassadas = Array.isArray(snapshot?.pendenciasRepassadas) ? snapshot.pendenciasRepassadas : [];
+
+            generateShiftClosureReportPdf({
+                shiftId: String(snapshot?.id || '--'),
+                operator: String(snapshot?.operador || user?.name || '--'),
+                role: String(snapshot?.funcao || '--'),
+                deskTarget: destinoNome,
+                start: String(snapshot?.inicio || '--:--'),
+                end: String(snapshot?.fim || format(new Date(), 'HH:mm')),
+                status: 'Fechado',
+                workedDuration: String(snapshot?.workedDuration ?? snapshot?.tempo_trabalhado ?? '--'),
+                briefing: String(snapshot?.briefingFinal || snapshot?.briefing || 'Sem briefing registrado.'),
+                resolvedItems: pendenciasResolvidas,
+                handoverItems: pendenciasRepassadas,
+            });
+        } catch (pdfError) {
+            console.error('Erro ao gerar relatorio PDF:', pdfError);
+            void showErrorModal('Nao foi possivel gerar o relatorio em PDF.');
+        }
+    };
 
   // === Ação real de encerramento com a API ===
     const handleConfirmFinish = async () => {
@@ -182,8 +218,12 @@ export const ShiftControlPage = () => {
             pendenciasRepassadas: allPendingItems.filter(i => !resolvedItems.includes(i.id)),
             proximoOperador: nextOperator || 'MESA',
             dataFechamento: new Date(),
-            fim: format(new Date(), 'HH:mm')
+            fim: format(new Date(), 'HH:mm'),
+            tempo_trabalhado: calculateDuration(turnoAtual?.inicio || '00:00', new Date()),
+            workedDuration: calculateDuration(turnoAtual?.inicio || '00:00', new Date()),
         };
+
+        generateShiftReportPdf(closedSnapshot);
 
         setFinishedShiftState(closedSnapshot);
 
@@ -202,7 +242,7 @@ export const ShiftControlPage = () => {
             console.error("Erro da API:", error.response?.data);
             
             const mensagemErro = error.response?.data?.message || error.response?.data?.error || "Erro desconhecido no servidor.";
-            alert(`Falha ao encerrar turno:\n${mensagemErro}`);
+            await showErrorModal(`Falha ao encerrar turno: ${mensagemErro}`);
         } finally {
         setIsFinishing(false);
         }
@@ -234,7 +274,7 @@ export const ShiftControlPage = () => {
             }
         } catch (error: any) {
             const mensagemErro = error?.response?.data?.message || 'Não foi possível reabrir o turno no servidor.';
-            alert(mensagemErro);
+            await showErrorModal(mensagemErro);
         }
     };
 
@@ -274,30 +314,45 @@ export const ShiftControlPage = () => {
                 .map((recipient) => recipient.name)
                 .join(', ');
 
-            alert(`E-mail enviado com sucesso para: ${names}`);
+            await showSuccessModal(`E-mail enviado com sucesso para: ${names}`);
             setSelectedRecipients([]);
             setIsEmailDropdownOpen(false);
         } catch (error: any) {
             const mensagemErro = error?.response?.data?.message || 'Falha ao enviar e-mail de encerramento.';
-            alert(mensagemErro);
+            await showErrorModal(mensagemErro);
         } finally {
             setIsSendingEmail(false);
         }
   };
 
-  const handleLogoutSystem = () => {
-        const shouldLogout = window.confirm(
-            "Importante: recomendamos encerrar o turno antes de sair do sistema para evitar perda de contexto e repasse incompleto.\n\nDeseja sair mesmo assim?"
-        );
+  const doLogout = async () => {
+        try {
+            if (logout) {
+                await Promise.resolve(logout());
+            } else {
+                console.log("Logout function not implemented in hook");
+                window.location.reload();
+            }
+        } finally {
+            setShowShiftOpenLogoutModal(false);
+            setIsCheckingLogout(false);
+        }
+  };
 
-        if (!shouldLogout) return;
-
-        if (logout) {
-            logout();
-        } else {
-            console.log("Logout function not implemented in hook");
-            window.location.reload();
-    }
+  const handleLogoutSystem = async () => {
+        try {
+            setIsCheckingLogout(true);
+            const response = await api.get('/shifts/current');
+            const currentShift = response?.data;
+            setHasActiveShiftOnLogout(Boolean(currentShift));
+            setShowShiftOpenLogoutModal(true);
+        } catch (error) {
+            console.error('Falha ao verificar turno atual no logout:', error);
+            setHasActiveShiftOnLogout(false);
+            setShowShiftOpenLogoutModal(true);
+        } finally {
+            setIsCheckingLogout(false);
+        }
   };
 
   const calculateDuration = (startTimeStr: string, endDate: Date) => {
@@ -362,13 +417,17 @@ export const ShiftControlPage = () => {
 
   // --- TELA: TURNO ENCERRADO (Exibida se finishedShiftState existe) ---
   if (finishedShiftState) {
-    const durationString = calculateDuration(finishedShiftState.inicio, finishedShiftState.dataFechamento);
+        const durationString = String(
+            finishedShiftState?.workedDuration
+            ?? finishedShiftState?.tempo_trabalhado
+            ?? calculateDuration(finishedShiftState.inicio, finishedShiftState.dataFechamento)
+        );
 
     return (
         <>
             <ShiftReportPrintView turno={dadosRelatorio} operatorEmail={user.email} />
             
-            <div className={`min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-4 animate-fade-in transition-all duration-300 ${isReopenModalOpen ? 'blur-sm opacity-50' : ''}`}>
+            <div className={`min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-4 animate-fade-in transition-all duration-300 ${isReopenModalOpen || showShiftOpenLogoutModal ? 'blur-sm opacity-50' : ''}`}>
                 <div className="max-w-lg w-full bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden relative">
                     
                     {/* Header Decorativo */}
@@ -492,7 +551,7 @@ export const ShiftControlPage = () => {
                         {/* Botões de Ação */}
                         <div className="space-y-3">
                             <button 
-                                onClick={imprimirRelatorio}
+                                onClick={() => generateShiftReportPdf(finishedShiftState)}
                                 className="w-full py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-white font-medium flex items-center justify-center gap-2 transition-all group"
                             >
                                 <FileText className="w-4 h-4 text-slate-500 group-hover:text-slate-800 dark:text-slate-400 dark:group-hover:text-white" />
@@ -583,6 +642,59 @@ export const ShiftControlPage = () => {
                     </div>
                 </div>
             )}
+
+            {showShiftOpenLogoutModal && (
+                <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
+                    <div
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                        onClick={() => !isCheckingLogout && setShowShiftOpenLogoutModal(false)}
+                    />
+                    <div className="relative w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden">
+                        <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-amber-50 dark:bg-amber-900/15">
+                            <h3 className="text-lg font-bold text-amber-800 dark:text-amber-400 flex items-center gap-2">
+                                <AlertTriangle className="w-5 h-5" />
+                                Turno em andamento
+                            </h3>
+                        </div>
+
+                        <div className="p-5 space-y-3 text-sm text-slate-600 dark:text-slate-300">
+                            <p>
+                                O sistema recomenda encerrar o turno antes de sair para evitar perda de contexto e pendencias sem repasse.
+                            </p>
+                            {hasActiveShiftOnLogout ? (
+                                <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold">
+                                    Detectamos turno em andamento neste usuario.
+                                </p>
+                            ) : (
+                                <p className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
+                                    Nenhum turno em andamento detectado. Voce pode sair normalmente.
+                                </p>
+                            )}
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                Se preferir, você pode sair agora e continuar esse turno ao retornar.
+                            </p>
+                        </div>
+
+                        <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex gap-3">
+                            <button
+                                onClick={() => setShowShiftOpenLogoutModal(false)}
+                                disabled={isCheckingLogout}
+                                className="flex-1 px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-60"
+                            >
+                                Continuar no sistema
+                            </button>
+                            <button
+                                onClick={doLogout}
+                                disabled={isCheckingLogout}
+                                className="flex-1 px-4 py-2.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
+                            >
+                                {isCheckingLogout ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                                Sair mesmo assim
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
   }
@@ -621,7 +733,7 @@ export const ShiftControlPage = () => {
                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Em Andamento
                 </div>
                 <h1 className="text-3xl lg:text-4xl font-bold mb-2 text-slate-800 dark:text-white tracking-tight">Painel de Controle • {turnoAtual?.funcao}</h1>
-                <p className="text-lg text-slate-500 dark:text-slate-400">Operador: <strong className="text-slate-800 dark:text-slate-200">{user.name}</strong> • Início às {turnoAtual?.inicio}</p>
+                                <p className="text-lg text-slate-500 dark:text-slate-400">Operador: <strong className="text-slate-800 dark:text-slate-200">{user.name}</strong> • Início às {turnoAtual?.inicio} • Total trabalhado: <strong className="text-slate-700 dark:text-slate-300">{currentWorkedDuration}</strong></p>
               </div>
             </header>
 
@@ -824,6 +936,7 @@ export const ShiftControlPage = () => {
                         </div>
                         <div className="flex items-center gap-2 mb-1"><User className="w-3.5 h-3.5 text-slate-400" /><p className="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{shift.operador}</p></div>
                         <div className="flex items-center gap-2 mb-3"><Clock className="w-3.5 h-3.5 text-slate-400" /><p className="text-xs text-slate-500 dark:text-slate-400">{shift.horario} • {shift.tipo}</p></div>
+                                                <div className="mb-3 text-[11px] font-semibold text-slate-600 dark:text-slate-300">Total trabalhado: {shift.workedDuration || '--'}</div>
                         <button onClick={() => { setSelectedShiftForDetail(shift); setIsDetailModalOpen(true); }} className="w-full py-1.5 text-xs font-medium border border-slate-200 dark:border-slate-700 rounded text-slate-600 dark:text-slate-400 hover:border-emerald-500 hover:text-emerald-600 transition-colors flex items-center justify-center gap-2 group-hover:bg-white dark:group-hover:bg-slate-700"><Eye className="w-3 h-3" /> Visualizar Detalhes</button>
                       </div>
                     ))}

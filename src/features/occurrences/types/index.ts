@@ -23,6 +23,9 @@ export interface Occurrence {
   authorId?: string; 
   user_id?: string | number;
   shift_id?: string | number;
+  supervisor_id?: string | number;
+  assigned_operator_id?: string | number;
+  assigned_operation_desk_id?: string | number;
   created_at?: string;
   updated_at?: string;
   is_inherited?: boolean;

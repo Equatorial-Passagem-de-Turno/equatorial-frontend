@@ -34,6 +34,7 @@ export interface ShiftHandoverData {
   previousOperator: string;
   shiftTime: string;
   date: string;
+  tempoTrabalhadoTurnoAnterior?: string;
   reportText: string;
   criticalCount: number;
   occurrences: InheritedOccurrence[];

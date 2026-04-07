@@ -3,6 +3,7 @@ import { X, User, Mail, Briefcase  } from "lucide-react";
 import type { Operator, OperatorProfile } from "../../types";
 import { OPERATOR_PROFILES, PROFILE_COLORS } from "../../constants";
 import { createPortal } from "react-dom";
+import { showConfirmModal, showWarningModal } from "@/shared/ui/feedbackModal";
 interface EditOperatorModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -44,7 +45,7 @@ export function EditOperatorModal({
     e.preventDefault();
 
     if (!name.trim() || !email.trim()) {
-      alert("Por favor, preencha todos os campos obrigatórios.");
+      void showWarningModal("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
 
@@ -65,8 +66,13 @@ export function EditOperatorModal({
     onClose();
   };
 
-  const handleDeactivate = () => {
-    const confirmed = window.confirm("Deseja desativar este operador?");
+  const handleDeactivate = async () => {
+    const confirmed = await showConfirmModal(
+      "Deseja desativar este operador?",
+      "Desativar operador",
+      "Desativar",
+      "Cancelar"
+    );
     if (!confirmed) {
       return;
     }
@@ -81,8 +87,13 @@ export function EditOperatorModal({
     });
   };
 
-  const handleReactivate = () => {
-    const confirmed = window.confirm("Deseja reativar este operador?");
+  const handleReactivate = async () => {
+    const confirmed = await showConfirmModal(
+      "Deseja reativar este operador?",
+      "Reativar operador",
+      "Reativar",
+      "Cancelar"
+    );
     if (!confirmed) {
       return;
     }

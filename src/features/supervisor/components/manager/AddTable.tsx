@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X, MapPin, FileText } from "lucide-react";
 import { createPortal } from "react-dom";
+import { showWarningModal } from "@/shared/ui/feedbackModal";
 
 interface AddTableModalProps {
   isOpen: boolean;
@@ -22,7 +23,7 @@ export function AddTableModal({
     e.preventDefault();
 
     if (!name.trim()) {
-      alert("Por favor, preencha o name da mesa.");
+      void showWarningModal("Por favor, preencha o name da mesa.");
       return;
     }
 

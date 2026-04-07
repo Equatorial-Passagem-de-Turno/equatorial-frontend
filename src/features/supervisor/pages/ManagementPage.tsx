@@ -23,6 +23,7 @@ import { AddTableModal } from "../components/manager/AddTable";
 import { EditTableModal } from "../components/manager/EditTableModal";
 import { useSupervisorStore } from "../stores/useSupervisorStore";
 import { api } from "@/services/api";
+import { showErrorModal } from "@/shared/ui/feedbackModal";
 
 interface Table {
   id?: string;
@@ -133,7 +134,7 @@ export function ManegementPage() {
       setShowEditModal(false);
       setSelectedOperator(null);
     } catch {
-      alert('Nao foi possivel atualizar o operador.');
+      void showErrorModal('Nao foi possivel atualizar o operador.');
     }
   };
 
@@ -155,7 +156,7 @@ export function ManegementPage() {
       setShowEditModal(false);
       setSelectedOperator(null);
     } catch {
-      alert('Nao foi possivel desativar o operador.');
+      void showErrorModal('Nao foi possivel desativar o operador.');
     }
   };
 
@@ -177,7 +178,7 @@ export function ManegementPage() {
       setShowEditModal(false);
       setSelectedOperator(null);
     } catch {
-      alert('Nao foi possivel reativar o operador.');
+      void showErrorModal('Nao foi possivel reativar o operador.');
     }
   };
 
@@ -196,7 +197,7 @@ export function ManegementPage() {
         setShowRemoveOperatorModal(false);
         setSelectedOperator(null);
       } catch {
-        alert('Nao foi possivel desativar o operador.');
+        void showErrorModal('Nao foi possivel desativar o operador.');
       }
     })();
   };
@@ -223,7 +224,7 @@ export function ManegementPage() {
       await loadData();
       setShowRegisterModal(false);
     } catch {
-      alert('Nao foi possivel cadastrar o operador.');
+      void showErrorModal('Nao foi possivel cadastrar o operador.');
     }
   };
 
@@ -283,7 +284,7 @@ export function ManegementPage() {
       await reloadTables();
       setShowAddTableModal(false);
     } catch {
-      alert('Nao foi possivel cadastrar a mesa.');
+      void showErrorModal('Nao foi possivel cadastrar a mesa.');
     }
   };
 
@@ -307,7 +308,7 @@ export function ManegementPage() {
       setShowEditTableModal(false);
       setSelectedTable(null);
     } catch {
-      alert('Nao foi possivel atualizar a mesa.');
+      void showErrorModal('Nao foi possivel atualizar a mesa.');
     }
   };
 
@@ -325,7 +326,7 @@ export function ManegementPage() {
         setShowRemoveTableModal(false);
         setSelectedTable(null);
       } catch {
-        alert('Nao foi possivel remover a mesa.');
+        void showErrorModal('Nao foi possivel remover a mesa.');
       }
     })();
   };

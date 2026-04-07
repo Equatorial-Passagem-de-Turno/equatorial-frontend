@@ -151,7 +151,8 @@ export const OccurrenceForm = () => {
   const [openDropdown, setOpenDropdown] = useState<'category' | 'priority' | 'status' | null>(null);
 
   const { 
-    formData, previewUrls, isSubmitting, isCritical, 
+    formData, previewUrls, isSubmitting, isCritical,
+    isSupervisorCreator, targetOperators, targetDesks, isLoadingTargets,
     handleChange, handleLocationChange, handleFileAdd, handleRemoveFile, handleSubmit 
   } = useOccurrenceForm();
 
@@ -397,6 +398,69 @@ export const OccurrenceForm = () => {
         </div>
 
       </div>
+
+      {isSupervisorCreator && (
+        <div className="p-6 rounded-2xl border bg-blue-50/60 border-blue-100 dark:bg-blue-950/20 dark:border-blue-900/40 space-y-4">
+          <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300 font-semibold text-sm">
+            <MapPin className="w-4 h-4" />
+            Direcionamento da Ocorrência (Supervisor)
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Encaminhar para</label>
+              <select
+                value={formData.assignmentMode}
+                onChange={(e) => handleChange('assignmentMode', e.target.value)}
+                className={inputClass}
+              >
+                <option value="operator">Operador</option>
+                <option value="desk">Mesa</option>
+              </select>
+            </div>
+
+            {formData.assignmentMode === 'operator' ? (
+              <div>
+                <label className={labelClass}>Operador de destino</label>
+                <select
+                  value={formData.targetOperatorId}
+                  onChange={(e) => handleChange('targetOperatorId', e.target.value)}
+                  className={inputClass}
+                  disabled={isLoadingTargets || targetOperators.length === 0}
+                >
+                  {targetOperators.length === 0 && <option value="">Nenhum operador disponível</option>}
+                  {targetOperators.map((operator) => (
+                    <option key={operator.id} value={operator.id}>
+                      {operator.name}{operator.deskName ? ` - ${operator.deskName}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <div>
+                <label className={labelClass}>Mesa de destino</label>
+                <select
+                  value={formData.targetDeskId}
+                  onChange={(e) => handleChange('targetDeskId', e.target.value)}
+                  className={inputClass}
+                  disabled={isLoadingTargets || targetDesks.length === 0}
+                >
+                  {targetDesks.length === 0 && <option value="">Nenhuma mesa disponível</option>}
+                  {targetDesks.map((desk) => (
+                    <option key={desk.id} value={desk.id}>
+                      {desk.name} - {desk.code}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          <p className="text-xs text-blue-700/80 dark:text-blue-300/80">
+            A ocorrência será entregue para o turno em andamento do destino selecionado.
+          </p>
+        </div>
+      )}
 
       {/* BLOCO LOCALIZACAO */}
       <div className="p-8 rounded-2xl border bg-slate-50 border-slate-200 dark:bg-slate-900/30 dark:border-slate-800/50 space-y-6 shadow-inner">

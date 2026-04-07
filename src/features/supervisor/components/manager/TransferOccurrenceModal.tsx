@@ -3,6 +3,7 @@ import { X, ArrowRightLeft, User } from "lucide-react";
 import { createPortal } from "react-dom";
 import type { Occurrence } from "../../types/index";
 import { useSupervisorStore } from "../../stores/useSupervisorStore";
+import { showWarningModal } from "@/shared/ui/feedbackModal";
 
 interface TransferOccurrenceModalProps {
   isOpen: boolean;
@@ -32,11 +33,11 @@ export function TransferOccurrenceModal({
     e.preventDefault();
 
     if (!selectedOperator) {
-      alert("Selecione um operador.");
+      void showWarningModal("Selecione um operador.");
       return;
     }
     if (!reason.trim()) {
-      alert("Informe o motivo da transferência.");
+      void showWarningModal("Informe o motivo da transferência.");
       return;
     }
 

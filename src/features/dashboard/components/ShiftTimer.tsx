@@ -4,9 +4,10 @@ import { Calendar } from 'lucide-react';
 interface ShiftTimerProps {
   shiftStartTime?: Date;
   shiftDurationHours?: number;
+  workedDurationLabel?: string;
 }
 
-export const ShiftTimer = ({ shiftStartTime, shiftDurationHours = 8 }: ShiftTimerProps) => {
+export const ShiftTimer = ({ shiftStartTime, shiftDurationHours = 8, workedDurationLabel }: ShiftTimerProps) => {
   const [timeState, setTimeState] = useState({
     hours: '00',
     minutes: '00',
@@ -81,6 +82,11 @@ export const ShiftTimer = ({ shiftStartTime, shiftDurationHours = 8 }: ShiftTime
               {timeState.dateString}
             </span>
           </div>
+          {workedDurationLabel && (
+            <div className="mt-2 text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+              Total trabalhado: {workedDurationLabel}
+            </div>
+          )}
         </div>
 
       </div>

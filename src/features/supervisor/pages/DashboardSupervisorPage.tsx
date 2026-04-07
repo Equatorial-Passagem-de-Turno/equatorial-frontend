@@ -1,14 +1,17 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Calendar } from "lucide-react";
 import { ActivityFeed } from "@/features/supervisor/components/ActivityFeed";
 import { OperatorsTable } from "@/features/supervisor/components/analytics/OperatorsTable";
 import { TablesSummary } from "@/features/supervisor/components/TablesSummary";
 import { OccurrencesList } from "@/features/supervisor/components/OccurrencesList";
+import { ShiftHistoryModal } from "@/features/supervisor/components/ShiftHistoryModal";
 import { useSupervisorStore } from "../stores/useSupervisorStore";
 
 
 // import { CriticalTimeline } from "@/app/components/analytics/critical-timeline";
 
 export function DashboardSupervisorPage() {
+  const [showShiftHistoryModal, setShowShiftHistoryModal] = useState(false);
   const loadData = useSupervisorStore((state) => state.loadData);
   const isLoading = useSupervisorStore((state) => state.isLoading);
   const loadError = useSupervisorStore((state) => state.loadError);
@@ -39,8 +42,17 @@ export function DashboardSupervisorPage() {
 
   return (
     <div>
-
       <div className="p-6 space-y-6">
+        <div className="flex items-center justify-end">
+          <button
+            onClick={() => setShowShiftHistoryModal(true)}
+            className="px-4 py-2 bg-theme-accent hover:bg-emerald-400 rounded-lg text-sm text-white transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20"
+          >
+            <Calendar className="w-4 h-4" />
+            Ver Historico de Turnos
+          </button>
+        </div>
+
         {/* Stats Cards */}
         <TablesSummary />
 
@@ -61,6 +73,11 @@ export function DashboardSupervisorPage() {
           <OperatorsTable />
         </div>
       </div>
+
+      <ShiftHistoryModal
+        isOpen={showShiftHistoryModal}
+        onClose={() => setShowShiftHistoryModal(false)}
+      />
     </div>
   );
 }

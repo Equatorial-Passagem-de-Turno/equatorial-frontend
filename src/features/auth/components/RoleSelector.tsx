@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { ArrowRight, Loader2, AlertCircle, Shield, Zap, Activity, Radio, ClipboardList } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { getRolesApi } from '../../occurrences/services/shiftService'; // Ajuste o import se necessário
+import { showConfirmModal } from '@/shared/ui/feedbackModal';
 
 // 1. Dicionário Visual (Mapeado pelo NOME exato que está no banco de dados)
 const VISUAL_MAPPING: Record<string, any> = {
@@ -39,8 +40,11 @@ export const RoleSelector = () => {
   const displayName = user?.name || 'Colaborador';
 
   const handleLogout = async () => {
-    const shouldLogout = window.confirm(
-      'Importante: recomendamos encerrar o turno antes de sair do sistema para evitar pendencias sem repasse.\n\nDeseja sair mesmo assim?'
+    const shouldLogout = await showConfirmModal(
+      'Importante: recomendamos encerrar o turno antes de sair do sistema para evitar pendencias sem repasse.\n\nDeseja sair mesmo assim?',
+      'Sair do Sistema?',
+      'Sair mesmo assim',
+      'Continuar no sistema'
     );
 
     if (!shouldLogout) return;

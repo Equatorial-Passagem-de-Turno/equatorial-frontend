@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Bell, Link as LinkIcon, Save, Trash2, Loader2, FileText } from 'lucide-react';
-import { OccurrenceReportPrintView } from '../../occurrences/components/OccurrenceReportPrintView'; // Verifique o caminho
 import type { Occurrence } from '../types';
+import { generateOccurrenceReportPdf } from '@/features/reports/utils/standardReportPdf';
+import { showErrorModal } from '@/shared/ui/feedbackModal';
 
 interface OccurrenceActionsProps {
   occurrence: Occurrence;
@@ -21,6 +22,7 @@ export const OccurrenceActions = ({
   const [showOsForm, setShowOsForm] = useState(false);
   const [osInput, setOsInput] = useState('');
   const [isLinking, setIsLinking] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
 
   const handleSaveOs = async () => {
     if (!osInput.trim()) return;
@@ -31,6 +33,48 @@ export const OccurrenceActions = ({
       setOsInput('');
     } finally {
       setIsLinking(false);
+    }
+  };
+
+  const handleGenerateReport = () => {
+    try {
+      setIsGeneratingReport(true);
+
+      const locationText = typeof occurrence.location === 'string'
+        ? occurrence.location
+        : [
+            occurrence.location?.city,
+            occurrence.location?.state,
+            occurrence.location?.zone,
+            occurrence.location?.reference,
+          ]
+            .filter(Boolean)
+            .join(' | ');
+
+      generateOccurrenceReportPdf({
+        occurrenceId: String(occurrence.id),
+        title: String(occurrence.title || '--'),
+        status: String(occurrence.status || '--'),
+        priority: String(occurrence.priority || '--'),
+        category: String(occurrence.category || '--'),
+        createdAt: occurrence.createdAt ? new Date(occurrence.createdAt).toLocaleString('pt-BR') : '--',
+        createdBy: String(occurrence.createdBy || '--'),
+        location: locationText || '--',
+        linkedTo: occurrence.linkType ? `${occurrence.linkType} - ${occurrence.linkValue || '--'}` : 'Nenhum vinculo',
+        description: String(occurrence.description || ''),
+        operatorEmail: userEmail,
+        comments: (occurrence.comments || []).map((comment) => ({
+          author: comment.author,
+          type: comment.type,
+          text: comment.text,
+          createdAt: comment.createdAt ? new Date(comment.createdAt).toLocaleString('pt-BR') : '--',
+        })),
+      });
+    } catch (error) {
+      console.error('Erro ao gerar relatorio da ocorrencia:', error);
+      void showErrorModal('Nao foi possivel gerar o relatorio da ocorrencia em PDF.');
+    } finally {
+      setIsGeneratingReport(false);
     }
   };
 
@@ -92,15 +136,13 @@ export const OccurrenceActions = ({
 
         {/* BOTÃO RELATÓRIO PDF */}
         <button 
-          onClick={() => window.print()} 
+          onClick={handleGenerateReport}
+          disabled={isGeneratingReport}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-slate-700 to-slate-900 hover:from-slate-600 hover:to-slate-800 text-white font-bold text-sm shadow-lg shadow-slate-900/20 hover:shadow-slate-900/40 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
         >
-          <FileText className="w-4 h-4" /> 
-          <span>Relatório PDF</span>
+          {isGeneratingReport ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} 
+          <span>{isGeneratingReport ? 'Gerando PDF...' : 'Relatório PDF'}</span>
         </button>
-        
-        {/* Componente oculto para impressão */}
-        <OccurrenceReportPrintView occurrence={occurrence} operatorEmail={userEmail} />
       </div>
     </div>
   );

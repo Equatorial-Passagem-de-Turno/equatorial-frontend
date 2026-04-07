@@ -16,7 +16,6 @@ import { MyShiftOccurrencesPage } from '@/features/occurrences/pages/MyShiftOccu
 import { OccurrenceDetailPage } from '@/features/occurrences/pages/OccurrenceDetailPage';
 import { ShiftControlPage } from '@/features/shifts/pages/ShiftControlPage';
 import { ShiftPreviousPage } from '@/features/shifts/pages/ShiftPreviousPage';
-import { ConstructionPage } from '@/pages/ConstructionPage';
 import { DashboardSupervisorPage } from '@/features/supervisor/pages/DashboardSupervisorPage';
 import { TimelinePage } from '@/features/supervisor/pages/TimelinePage';
 import { AnalyticsPage } from '@/features/supervisor/pages/AnalyticsPage';
@@ -26,13 +25,9 @@ import { SupervisorOccurenceDetailsPage } from '@/features/supervisor/components
 export const AppRoutes = () => {
   const { isAuthenticated, role, table, user } = useAuth();
   const accountRole = String((user as { role?: string } | null)?.role || '').toLowerCase();
-  const isSupervisor = accountRole === 'supervisor';
+  const isSupervisor = accountRole === 'supervisor' || accountRole === 'admin' || accountRole === 'adm';
 
   if (!isAuthenticated) return <AuthPage />;
-
-  if (accountRole === 'admin') {
-    return <ConstructionPage />;
-  }
 
   if (!isSupervisor && !role) return <RoleSelector />;
   if (!isSupervisor && !table) return <TableSelector />;

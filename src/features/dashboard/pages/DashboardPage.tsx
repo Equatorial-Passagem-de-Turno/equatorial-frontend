@@ -14,7 +14,7 @@ export const DashboardPage = () => {
   const currentRoleConfig = ROLES_CONFIG.find(r => r.id === role);
   const RoleIcon = currentRoleConfig?.icon || FileText;
 
-  const { navigate, isLoading, filteredOccurrences, selectedInheritedIds, createdThisShiftIds, filters, handover } = useDashboard();
+  const { navigate, isLoading, filteredOccurrences, selectedInheritedIds, createdThisShiftIds, currentShiftWorkedDuration, filters, handover } = useDashboard();
   const isFlowLocked = handover.isOpen;
 
   const myWorkload = useMemo(() => {
@@ -106,7 +106,7 @@ export const DashboardPage = () => {
            </div>
            <p className="text-[var(--text-muted)] text-sm lg:text-base ml-1">
              Olá, <span className="font-medium text-[var(--text-main)]">{user?.name}</span>. 
-             Mesa ativa: <span className="text-emerald-500 font-medium">{table?.code} - {table?.name}</span>
+             Mesa ativa: <span className="text-emerald-500 font-medium">{table?.code} - {table?.name}</span> • Total trabalhado: <span className="text-slate-700 dark:text-slate-300 font-semibold">{currentShiftWorkedDuration}</span>
            </p>
         </div>
 
@@ -131,7 +131,7 @@ export const DashboardPage = () => {
       )}
 
       <div className="rounded-2xl overflow-hidden shadow-sm border border-[var(--border-color)]">
-         <ShiftTimer shiftStartTime={new Date()} shiftDurationHours={8} />
+        <ShiftTimer shiftStartTime={new Date()} shiftDurationHours={8} workedDurationLabel={currentShiftWorkedDuration} />
       </div>
       
       {/* STATS */}

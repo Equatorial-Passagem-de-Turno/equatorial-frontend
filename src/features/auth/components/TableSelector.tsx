@@ -1,7 +1,8 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { CheckCircle2, Loader2, AlertCircle } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { startShiftApi, getOperationDesksApi } from "../../occurrences/services/shiftService";
+import { showConfirmModal, showErrorModal, showWarningModal } from "@/shared/ui/feedbackModal";
 
 // Tipo da Mesa baseado no que vem do banco de dados
 type Mesa = {
@@ -11,13 +12,23 @@ type Mesa = {
   location: string;
 };
 
+type StartConfirmation = {
+  mode: "started" | "existing";
+  mesaName: string;
+  roleName: string;
+  startedAt: string;
+};
+
 export function TableSelector() {
   const { user, role, selectRole, selectTable, logout } = useAuth();
   const displayName = user?.name || "Operador";
 
   const handleLogout = async () => {
-    const shouldLogout = window.confirm(
-      "Importante: recomendamos encerrar o turno antes de sair do sistema para evitar pendencias sem repasse.\n\nDeseja sair mesmo assim?"
+    const shouldLogout = await showConfirmModal(
+      "Importante: recomendamos encerrar o turno antes de sair do sistema para evitar pendencias sem repasse.\n\nDeseja sair mesmo assim?",
+      "Sair do Sistema?",
+      "Sair mesmo assim",
+      "Continuar no sistema"
     );
 
     if (!shouldLogout) return;
@@ -30,8 +41,19 @@ export function TableSelector() {
   const [isLoadingMesas, setIsLoadingMesas] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false); 
+  const [startConfirmation, setStartConfirmation] = useState<StartConfirmation | null>(null);
+  const confirmationTimeoutRef = useRef<number | null>(null);
 
-  const canConfirm = useMemo(() => Boolean(selectedMesa), [selectedMesa]);
+  const getBrasiliaCurrentTime = () => {
+    return new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }).format(new Date());
+  };
+
+  const canConfirm = useMemo(() => Boolean(selectedMesa && role), [selectedMesa, role]);
 
   // Busca as mesas do banco de dados quando a tela carrega
   useEffect(() => {
@@ -70,39 +92,90 @@ export function TableSelector() {
     }
   }, [mesas, selectedMesa, user?.operation_desk_id]);
 
+  useEffect(() => {
+    return () => {
+      if (confirmationTimeoutRef.current) {
+        window.clearTimeout(confirmationTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleConfirm = async () => {
-    if (!selectedMesa || !role) return;
+    if (!selectedMesa || !role) {
+      await showWarningModal("Selecione uma mesa e confirme o perfil para iniciar o turno.");
+      return;
+    }
 
     // 1. Encontramos o objeto COMPLETO da mesa dentro do array 'mesas'
-    const mesaCompleta = mesas.find(m => m.id === selectedMesa);
+    const mesaCompleta = mesas.find((mesa) => String(mesa.id) === String(selectedMesa));
     
     // Verificação de segurança
-    if (!mesaCompleta) return; 
+    if (!mesaCompleta) {
+      await showWarningModal("Mesa selecionada inválida. Selecione novamente.");
+      return;
+    }
 
-    // 2. Montamos o objeto exatamente como a sua interface Table espera
-    const mesaParaSalvar = {
-      id: mesaCompleta.id.toString(),
+    // 2. Pré-montamos o objeto para uso local/fallback
+    const mesaParaSalvarBase = {
+      id: String(mesaCompleta.id),
       name: mesaCompleta.name,
       code: mesaCompleta.code,
     };
 
     try {
       setIsStarting(true);
-      await startShiftApi(selectedMesa.toString(), role);
+      setStartConfirmation(null);
+      const startedShift = await startShiftApi(String(selectedMesa), String(role));
+
+      // 3. Se o backend retornar a mesa do turno, priorizamos esse payload para manter consistência
+      const mesaParaSalvar = startedShift?.desk
+        ? {
+            id: String(startedShift.desk.id ?? mesaParaSalvarBase.id),
+            name: String(startedShift.desk.name ?? mesaParaSalvarBase.name),
+            code: String(startedShift.desk.code ?? mesaParaSalvarBase.code),
+          }
+        : mesaParaSalvarBase;
+
+      setStartConfirmation({
+        mode: "started",
+        mesaName: mesaParaSalvar.name,
+        roleName: String(role),
+        startedAt: getBrasiliaCurrentTime(),
+      });
+
+      if (confirmationTimeoutRef.current) {
+        window.clearTimeout(confirmationTimeoutRef.current);
+      }
+
+      confirmationTimeoutRef.current = window.setTimeout(() => {
+        selectTable(mesaParaSalvar as any); // (o 'as any' previne erros se o TS ainda estiver lendo o cache antigo)
+      }, 1200);
       
-      // 3. AGORA SIM: Enviamos o objeto completo para o Zustand!
-      selectTable(mesaParaSalvar as any); // (o 'as any' previne erros se o TS ainda estiver lendo o cache antigo)
+      // 4. Só liberamos o app após confirmar início de turno com sucesso.
       
     } catch (error: any) {
-      const errorMessage = error.response?.data?.error;
+      const errorMessage = error?.response?.data?.error || error?.response?.data?.message || "";
 
-      if (errorMessage === 'Já existe um turno em andamento para este operador.') {
-        // Lembre-se de atualizar aqui também para o caso de "fingir" o sucesso
-        selectTable(mesaParaSalvar as any); 
+      if (String(errorMessage).includes('Já existe um turno em andamento para este operador.')) {
+        setStartConfirmation({
+          mode: "existing",
+          mesaName: mesaParaSalvarBase.name,
+          roleName: String(role),
+          startedAt: getBrasiliaCurrentTime(),
+        });
+
+        if (confirmationTimeoutRef.current) {
+          window.clearTimeout(confirmationTimeoutRef.current);
+        }
+
+        confirmationTimeoutRef.current = window.setTimeout(() => {
+          // Se já houver turno ativo, seguimos para o painel com a mesa escolhida.
+          selectTable(mesaParaSalvarBase as any);
+        }, 1200);
         return;
       }
       
-      alert(errorMessage || "Erro ao iniciar turno.");
+      await showErrorModal(errorMessage || "Erro ao iniciar turno.");
     } finally {
       setIsStarting(false);
     }
@@ -124,6 +197,9 @@ export function TableSelector() {
 
         <p className="text-theme-muted">
           Em qual mesa de operação você assumirá o turno hoje?
+        </p>
+        <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-2 font-medium">
+          Ao confirmar a mesa, o turno será iniciado automaticamente.
         </p>
         {!!user?.operation_desk_name && (
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">
@@ -204,7 +280,7 @@ export function TableSelector() {
       <div className="flex items-center gap-4">
         <button
           onClick={() => selectRole(null)} 
-          disabled={isStarting}
+          disabled={isStarting || Boolean(startConfirmation)}
           className="px-6 py-3 rounded-lg font-medium text-base text-slate-500 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Voltar
@@ -212,10 +288,10 @@ export function TableSelector() {
 
         <button
           onClick={handleConfirm}
-          disabled={!canConfirm || isStarting || isLoadingMesas || mesas.length === 0}
+          disabled={!canConfirm || isStarting || isLoadingMesas || mesas.length === 0 || Boolean(startConfirmation)}
           className={[
             "px-10 py-3 rounded-lg font-medium text-base transition-all flex items-center justify-center gap-2",
-            canConfirm && !isStarting && !isLoadingMesas
+            canConfirm && !isStarting && !isLoadingMesas && !startConfirmation
               ? "bg-emerald-600 hover:bg-emerald-700 text-white dark:bg-emerald-600 dark:hover:bg-emerald-700 shadow-lg shadow-emerald-500/20"
               : "bg-slate-200 text-slate-500 cursor-not-allowed dark:bg-slate-800 dark:text-slate-400",
           ].join(" ")}
@@ -231,9 +307,32 @@ export function TableSelector() {
         </button>
       </div>
 
+      {startConfirmation && (
+        <div className="mt-6 max-w-xl w-full rounded-xl border border-emerald-300/40 dark:border-emerald-700/50 bg-emerald-50 dark:bg-emerald-900/20 px-4 py-3">
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+                {startConfirmation.mode === "started"
+                  ? "Turno iniciado com sucesso."
+                  : "Turno já estava em andamento e foi confirmado para acesso."}
+              </p>
+              <p className="text-xs text-emerald-700/90 dark:text-emerald-300/90 mt-1">
+                Mesa: {startConfirmation.mesaName} • Perfil: {startConfirmation.roleName}
+              </p>
+              <p className="text-xs text-emerald-700/90 dark:text-emerald-300/90">
+                Horário de Brasília: {startConfirmation.startedAt}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <button
         onClick={handleLogout}
-        disabled={isStarting}
+        disabled={isStarting || Boolean(startConfirmation)}
         className="mt-6 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 text-sm underline underline-offset-4 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Encerrar sessão

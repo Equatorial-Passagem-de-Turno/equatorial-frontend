@@ -45,6 +45,12 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     roles: ['supervisor'],
   },
   {
+    label: 'Nova Ocorrência',
+    path: '/occurrences/new',
+    icon: Plus,
+    roles: ['supervisor'],
+  },
+  {
     label: 'Linha do Tempo',
     path: '/supervisor/timeline',
     icon: History,

@@ -91,7 +91,7 @@ export const Sidebar = ({ operatorName, stats, onLogout }: SidebarProps) => {
   }, [user?.id]);
 
   const rawAccountRole = String(user?.role || '').toLowerCase();
-  const accountRole = rawAccountRole === 'supervisor' ? 'supervisor' : 'operator';
+  const accountRole = rawAccountRole === 'supervisor' || rawAccountRole === 'admin' || rawAccountRole === 'adm' ? 'supervisor' : 'operator';
   const profileLabel = accountRole === 'supervisor' ? 'Supervisor' : 'Operador';
   const visibleItems = useMemo(
     () =>
@@ -164,7 +164,7 @@ export const Sidebar = ({ operatorName, stats, onLogout }: SidebarProps) => {
                 <Radio className="w-6 h-6 text-white" />
               </div>
               <span className="font-bold text-lg tracking-tight text-slate-800 dark:text-slate-100 whitespace-nowrap">
-                EQ<span className="text-emerald-600 dark:text-emerald-500">Demo</span>
+                EQ<span className="text-emerald-600 dark:text-emerald-500">Continuum</span>
               </span>
             </div>
 

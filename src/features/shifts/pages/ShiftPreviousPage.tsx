@@ -94,6 +94,10 @@ export const ShiftPreviousPage = () => {
                 <span className="text-theme-muted mr-1">Data:</span>
                 <span className="text-theme-text">{data.date}</span>
               </div>
+              <div>
+                <span className="text-theme-muted mr-1">Total Trabalhado:</span>
+                <span className="text-theme-text">{data.tempoTrabalhadoTurnoAnterior || '--'}</span>
+              </div>
             </div>
 
             {data.criticalCount > 0 && (

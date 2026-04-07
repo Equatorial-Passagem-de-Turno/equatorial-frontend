@@ -6,13 +6,20 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  Search,
+  Eye,
 } from "lucide-react";
 import { api } from "@/services/api";
+import { ShiftDetailModal } from "@/features/shifts/components/history/ShiftDetailModal";
+import type { HistoryItem } from "@/features/shifts/components/history/HistoryTable";
 
 interface Shift {
+  shiftId?: number;
   id: string;
   operador: string;
   horario: string;
+  tipo?: string;
+  workedDuration?: string;
   status: "ativo" | "concluido" | "pendente";
 }
 
@@ -32,6 +39,9 @@ export function ShiftHistoryModal({ isOpen, onClose }: ShiftHistoryModalProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
   const [turnos, setTurnos] = useState<Shift[]>([]);
+  const [operatorSearchTerm, setOperatorSearchTerm] = useState("");
+  const [selectedShiftForDetail, setSelectedShiftForDetail] = useState<HistoryItem | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const getDaysInMonth = (date: Date) => {
@@ -79,11 +89,14 @@ export function ShiftHistoryModal({ isOpen, onClose }: ShiftHistoryModalProps) {
       setIsLoading(true);
       setTurnos([]);
       try {
-        const response = await api.get<Array<{ id: string; operador: string; horario: string; status: string }>>(`/shifts/by-date?date=${selectedDateKey}`);
+        const response = await api.get<Array<{ shift_id?: number; id: string; operador: string; horario: string; tipo?: string; workedDuration?: string; tempo_trabalhado?: string; status: string }>>(`/shifts/by-date?date=${selectedDateKey}`);
         const mapped: Shift[] = (response.data || []).map((item) => ({
+          shiftId: item.shift_id,
           id: item.id,
           operador: item.operador,
           horario: item.horario,
+          tipo: item.tipo || "--",
+          workedDuration: item.workedDuration || item.tempo_trabalhado || "--",
           status: String(item.status).toLowerCase().includes("aberto") ? "ativo" : "concluido",
         }));
         setTurnos(mapped);
@@ -117,9 +130,37 @@ export function ShiftHistoryModal({ isOpen, onClose }: ShiftHistoryModalProps) {
 
   if (!isOpen) return null;
 
+  const normalizedSearch = operatorSearchTerm.trim().toLowerCase();
+  const visibleTurnos = turnos.filter((turno) => {
+    if (!normalizedSearch) return true;
+    return (
+      turno.operador.toLowerCase().includes(normalizedSearch) ||
+      turno.id.toLowerCase().includes(normalizedSearch) ||
+      String(turno.tipo || '').toLowerCase().includes(normalizedSearch)
+    );
+  });
+
+  const handleOpenShiftDetail = (turno: Shift) => {
+    const parsedFromDisplayId = Number(String(turno.id ?? "").replace(/\D/g, ""));
+    const normalizedShiftId = Number(turno.shiftId ?? parsedFromDisplayId);
+
+    setSelectedShiftForDetail({
+      shiftId: Number.isFinite(normalizedShiftId) ? normalizedShiftId : 0,
+      id: String(turno.id ?? ""),
+      operador: String(turno.operador ?? "Desconhecido"),
+      horario: String(turno.horario ?? "--:-- - --:--"),
+      tipo: String(turno.tipo ?? "--"),
+      status: turno.status === "ativo" ? "Aberto" : "Fechado",
+      workedDuration: String(turno.workedDuration ?? "--"),
+    });
+
+    setIsDetailModalOpen(true);
+  };
+
   return createPortal(
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-      <div className="bg-theme-panel border border-slate-700 rounded-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+    <>
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+        <div className="bg-theme-panel border border-slate-700 rounded-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
         <div className="p-6 border-b border-slate-700 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-emerald-600/10 flex items-center justify-center">
@@ -188,9 +229,22 @@ export function ShiftHistoryModal({ isOpen, onClose }: ShiftHistoryModalProps) {
               <div className="bg-slate-700/40 border border-slate-700 rounded-lg overflow-hidden">
                 <div className="p-4 border-b border-slate-700 flex items-center justify-between">
                   <h3 className="font-semibold text-slate-200">
-                    {selectedDate ? `Shifts de ${formatDateDisplay(selectedDate)}` : "Selecione uma data"}
+                    {selectedDate ? `Historico de turnos de todos os operadores em ${formatDateDisplay(selectedDate)}` : "Selecione uma data"}
                   </h3>
-                  <span className="text-xs text-slate-400 bg-slate-700 px-3 py-1 rounded">{turnos.length} registros</span>
+                  <span className="text-xs text-slate-400 bg-slate-700 px-3 py-1 rounded">{visibleTurnos.length} registros</span>
+                </div>
+
+                <div className="p-4 border-b border-slate-700 bg-slate-800/40">
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={operatorSearchTerm}
+                      onChange={(event) => setOperatorSearchTerm(event.target.value)}
+                      placeholder="Filtrar por operador, turno ou perfil"
+                      className="w-full pl-9 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    />
+                  </div>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -199,26 +253,54 @@ export function ShiftHistoryModal({ isOpen, onClose }: ShiftHistoryModalProps) {
                       <tr className="border-b border-slate-700 bg-slate-700/50">
                         <th className="px-4 py-3 text-left text-xs text-slate-400 uppercase">Shift / ID</th>
                         <th className="px-4 py-3 text-left text-xs text-slate-400 uppercase">Operador</th>
+                        <th className="px-4 py-3 text-left text-xs text-slate-400 uppercase">Perfil</th>
                         <th className="px-4 py-3 text-left text-xs text-slate-400 uppercase">Horario</th>
+                        <th className="px-4 py-3 text-left text-xs text-slate-400 uppercase">Total Trabalhado</th>
+                        <th className="px-4 py-3 text-left text-xs text-slate-400 uppercase">Status</th>
+                        <th className="px-4 py-3 text-right text-xs text-slate-400 uppercase">Acao</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-700">
                       {isLoading && (
                         <tr>
-                          <td className="px-4 py-3 text-slate-400" colSpan={3}>Carregando...</td>
+                          <td className="px-4 py-3 text-slate-400" colSpan={7}>Carregando...</td>
                         </tr>
                       )}
 
-                      {!isLoading && turnos.map((turno) => (
+                      {!isLoading && visibleTurnos.map((turno) => (
                         <tr key={turno.id} className="hover:bg-slate-700/40">
                           <td className="px-4 py-3 text-slate-200 flex items-center gap-2">
                             <FileText className="w-4 h-4 text-slate-400" />
                             {turno.id}
                           </td>
                           <td className="px-4 py-3 text-slate-400">{turno.operador}</td>
+                          <td className="px-4 py-3 text-slate-300">{turno.tipo || "--"}</td>
                           <td className="px-4 py-3 text-slate-200">{turno.horario}</td>
+                          <td className="px-4 py-3 text-slate-300">{turno.workedDuration || "--"}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex px-2 py-1 rounded text-xs font-semibold ${turno.status === 'ativo' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-slate-600/30 text-slate-200 border border-slate-500/30'}`}>
+                              {turno.status === 'ativo' ? 'Aberto' : 'Fechado'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button
+                              onClick={() => handleOpenShiftDetail(turno)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 text-xs font-semibold hover:bg-emerald-500/20 transition-colors"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              Detalhar
+                            </button>
+                          </td>
                         </tr>
                       ))}
+
+                      {!isLoading && visibleTurnos.length === 0 && (
+                        <tr>
+                          <td className="px-4 py-4 text-slate-400" colSpan={7}>
+                            Nenhum turno encontrado para o filtro informado.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -227,7 +309,13 @@ export function ShiftHistoryModal({ isOpen, onClose }: ShiftHistoryModalProps) {
           </div>
         </div>
       </div>
-    </div>,
+      </div>
+      <ShiftDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        shiftData={selectedShiftForDetail}
+      />
+    </>,
     document.body
   );
 }

@@ -4,6 +4,7 @@ import { useOccurrenceStore } from '@/features/occurrences/stores/useOccurrenceS
 import { getShiftHandoverData } from '@/features/occurrences/services/occurrenceService';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { api } from '@/services/api';
+import { showErrorModal } from '@/shared/ui/feedbackModal';
 import {
   getCreatedThisShiftOccurrenceIds,
   getSelectedInheritedIds,
@@ -24,6 +25,7 @@ export const useDashboard = () => {
   const [selectedInheritedIds, setSelectedInheritedIdsState] = useState<string[]>([]);
   const [createdThisShiftIds, setCreatedThisShiftIds] = useState<string[]>([]);
   const [isHandoverRequired, setIsHandoverRequired] = useState(false);
+  const [currentShiftWorkedDuration, setCurrentShiftWorkedDuration] = useState<string>('--');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [priority, setPriority] = useState('todas');
@@ -32,6 +34,43 @@ export const useDashboard = () => {
   useEffect(() => {
     fetchOccurrences();
   }, [fetchOccurrences]);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setCurrentShiftWorkedDuration('--');
+      return;
+    }
+
+    let isCancelled = false;
+
+    const fetchCurrentShiftDuration = async () => {
+      try {
+        const response = await api.get('/shifts/current');
+        if (isCancelled) return;
+
+        const payload = response?.data;
+        if (!payload) {
+          setCurrentShiftWorkedDuration('--');
+          return;
+        }
+
+        const worked = String(payload?.workedDuration ?? payload?.tempo_trabalhado ?? '--');
+        setCurrentShiftWorkedDuration(worked);
+      } catch {
+        if (!isCancelled) {
+          setCurrentShiftWorkedDuration('--');
+        }
+      }
+    };
+
+    fetchCurrentShiftDuration();
+    const intervalId = window.setInterval(fetchCurrentShiftDuration, 60_000);
+
+    return () => {
+      isCancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     if (!user?.id) {
@@ -94,6 +133,7 @@ export const useDashboard = () => {
     filteredOccurrences,
     selectedInheritedIds,
     createdThisShiftIds,
+    currentShiftWorkedDuration,
     isHandoverRequired,
     stats,
     filters: { searchTerm, setSearchTerm, priority, setPriority, status, setStatus },
@@ -159,7 +199,7 @@ export const useDashboard = () => {
           setIsHandoverOpen(false);
         } catch (error) {
           console.error("Erro ao salvar herança:", error);
-          alert('Não foi possível salvar as ocorrências herdadas no banco de dados. Tente novamente.');
+          void showErrorModal('Não foi possível salvar as ocorrências herdadas no banco de dados. Tente novamente.');
         }
       }
     }

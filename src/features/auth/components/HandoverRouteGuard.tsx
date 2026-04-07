@@ -16,10 +16,11 @@ export const HandoverRouteGuard = ({ children }: HandoverRouteGuardProps) => {
 
   const [isChecking, setIsChecking] = useState(true);
   const [mustCompleteHandover, setMustCompleteHandover] = useState(false);
+  const roleNormalized = String(role || '').toLowerCase();
 
   useEffect(() => {
     const checkHandoverStatus = async () => {
-      if (!user?.id || !role || role.toLowerCase() === 'admin') {
+      if (!user?.id || !role || roleNormalized === 'admin' || roleNormalized === 'adm' || roleNormalized === 'supervisor') {
         setMustCompleteHandover(false);
         setIsChecking(false);
         return;
@@ -45,7 +46,7 @@ export const HandoverRouteGuard = ({ children }: HandoverRouteGuardProps) => {
     };
 
     checkHandoverStatus();
-  }, [user?.id, role]);
+  }, [user?.id, role, roleNormalized]);
 
   if (isChecking) {
     return (

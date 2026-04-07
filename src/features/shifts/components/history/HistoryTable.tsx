@@ -2,11 +2,13 @@ import React from 'react';
 import { FileText } from 'lucide-react';
 
 export interface HistoryItem {
+  shiftId: number;
   id: string;
   operador: string;
   horario: string;
   tipo: string;
   status: 'Fechado' | 'Aberto';
+  workedDuration?: string;
 }
 
 interface Props {
@@ -27,6 +29,7 @@ export const HistoryTable: React.FC<Props> = ({ data, isLoading, onViewClick }) 
             <th className="p-3">Turno / ID</th>
             <th className="p-3">Operador</th>
             <th className="p-3">Horário</th>
+            <th className="p-3">Total Trabalhado</th>
             <th className="p-3 text-center">Farol</th>
             <th className="p-3 text-right">Ação</th>
           </tr>
@@ -42,6 +45,7 @@ export const HistoryTable: React.FC<Props> = ({ data, isLoading, onViewClick }) 
               </td>
               <td className="p-3 text-slate-600 dark:text-slate-400">{item.operador}</td>
               <td className="p-3 text-slate-600 dark:text-slate-400">{item.horario}</td>
+              <td className="p-3 text-slate-600 dark:text-slate-400 font-medium">{item.workedDuration || '--'}</td>
               <td className="p-3 text-center">
                 <span className={`inline-flex h-3 w-3 rounded-full ${
                     item.status === 'Fechado' ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50' : 'bg-red-500 shadow-sm shadow-red-500/50 animate-pulse'

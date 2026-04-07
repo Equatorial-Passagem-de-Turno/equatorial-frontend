@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { X, User, Mail} from "lucide-react";
 import type { OperatorProfile } from "../../types/index";
+import { showWarningModal } from "@/shared/ui/feedbackModal";
 
 interface RegisterOperatorModalProps {
   isOpen: boolean;
@@ -33,7 +34,7 @@ export function RegisterOperatorModal({
     event.preventDefault();
 
     if (!name.trim() || !email.trim()) {
-      alert("Por favor, preencha todos os campos obrigatórios.");
+      void showWarningModal("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
 

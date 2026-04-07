@@ -29,7 +29,7 @@ export const useAuth = create<AuthState>()(
           const hasActiveShift = Boolean(activeShift);
 
         const accountRole = String(data?.usuario?.role || '').toLowerCase();
-        const isSupervisor = accountRole === 'supervisor';
+        const isSupervisor = accountRole === 'supervisor' || accountRole === 'admin' || accountRole === 'adm';
         const operatorRoleFromShift = activeShift?.role
           ? String(activeShift.role)
           : (data?.usuario?.voltage_level ? String(data.usuario.voltage_level) : null);
