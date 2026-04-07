@@ -101,7 +101,7 @@ export const LoginForm = ({ onForgotPassword }: LoginFormProps) => {
 
       <main className="relative z-10 mx-auto flex min-h-screen w-full max-w-7xl items-center px-4 py-10 sm:px-6 lg:px-8">
         <section className="grid w-full gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-          <div className="order-2 rounded-[30px] border border-white/60 bg-white/65 p-6 shadow-[0_24px_70px_rgba(6,95,70,0.2)] backdrop-blur-xl dark:border-emerald-900/30 dark:bg-slate-900/55 dark:shadow-[0_24px_70px_rgba(2,6,23,0.85)] sm:p-8 lg:order-1 lg:p-10">
+          <div className="order-2 rounded-[30px] border border-white/60 bg-white/65 p-6 shadow-[0_24px_70px_rgba(6,95,70,0.2)] backdrop-blur dark:border-emerald-900/30 dark:bg-slate-900/55 dark:shadow-[0_24px_70px_rgba(2,6,23,0.85)] sm:p-8 lg:order-1 lg:p-10">
             <div className="mt-7 space-y-4">
               <h1 className="text-3xl font-black leading-tight tracking-tight text-slate-900 dark:text-white sm:text-4xl">
                 Olá!
@@ -131,7 +131,7 @@ export const LoginForm = ({ onForgotPassword }: LoginFormProps) => {
             </div>
           </div>
 
-          <div className="order-1 rounded-[30px] border border-slate-200/90 bg-white/88 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.2)] backdrop-blur-xl dark:border-slate-800 dark:bg-slate-900/75 dark:shadow-[0_24px_70px_rgba(2,6,23,0.8)] sm:p-8 lg:order-2">
+          <div className="order-1 rounded-[30px] border border-slate-200/90 bg-white/88 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.2)] backdrop-blur dark:border-slate-800 dark:bg-slate-900/75 dark:shadow-[0_24px_70px_rgba(2,6,23,0.8)] sm:p-8 lg:order-2">
             <div className="mb-8 text-center">
               <p className="text-[11px] font-extrabold uppercase tracking-[0.24em] text-emerald-600 dark:text-emerald-300">Bem-vindo</p>
               <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-200 dark:text-white">
