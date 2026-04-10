@@ -18,6 +18,8 @@ import type { Occurrence } from "../../types/index";
 type TimeRange = "24h" | "48h" | "72h";
 type ChartType = "bars" | "line";
 type PriorityKey = "baixa" | "media" | "alta" | "critica";
+type TooltipValue = number | string | ReadonlyArray<number | string> | undefined;
+type TooltipName = string | number | undefined;
 
 type TimeRow = {
   hour: string;
@@ -65,6 +67,18 @@ const PRIORITY_TOOLTIP_LABEL: Record<PriorityKey, string> = {
   alta: "Alta",
   critica: "Critica",
 };
+
+function formatTooltipValue(value: TooltipValue): string {
+  if (Array.isArray(value)) {
+    return value.join(" / ");
+  }
+
+  return value === undefined ? "-" : String(value);
+}
+
+function formatTooltipLabel(label: unknown): string {
+  return `Hora ${String(label ?? "-")}`;
+}
 
 function generateHourlyData(
   range: TimeRange,
@@ -315,11 +329,11 @@ export function OperationsChart() {
                 }}
                 cursor={{ stroke: "#64748b", strokeDasharray: "3 3" }}
                 labelStyle={{ color: "#cbd5e1", fontWeight: 600 }}
-                formatter={(value: number | string, name: string) => [
-                  `${value}`,
-                  PRIORITY_TOOLTIP_LABEL[name as PriorityKey] ?? name,
+                formatter={(value: TooltipValue, name: TooltipName) => [
+                  formatTooltipValue(value),
+                  PRIORITY_TOOLTIP_LABEL[String(name) as PriorityKey] ?? String(name ?? ""),
                 ]}
-                labelFormatter={(label: string) => `Hora ${label}`}
+                labelFormatter={formatTooltipLabel}
               />
 
               {visible.baixa && (
@@ -401,11 +415,11 @@ export function OperationsChart() {
                 }}
                 cursor={{ fill: "rgba(148, 163, 184, 0.08)" }}
                 labelStyle={{ color: "#cbd5e1", fontWeight: 600 }}
-                formatter={(value: number | string, name: string) => [
-                  `${value}`,
-                  PRIORITY_TOOLTIP_LABEL[name as PriorityKey] ?? name,
+                formatter={(value: TooltipValue, name: TooltipName) => [
+                  formatTooltipValue(value),
+                  PRIORITY_TOOLTIP_LABEL[String(name) as PriorityKey] ?? String(name ?? ""),
                 ]}
-                labelFormatter={(label: string) => `Hora ${label}`}
+                labelFormatter={formatTooltipLabel}
               />
 
               {visible.baixa && (

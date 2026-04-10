@@ -22,6 +22,21 @@ import { OperatorsOverview } from "@/features/supervisor/components/analytics/Op
 import { OperationsChart } from "../components/analytics/OperationsChart";
 import { useSupervisorStore } from "../stores/useSupervisorStore";
 
+type TooltipValue = number | string | ReadonlyArray<number | string> | undefined;
+type TooltipName = string | number | undefined;
+
+function formatTooltipValue(value: TooltipValue): string {
+  if (Array.isArray(value)) {
+    return value.join(" / ");
+  }
+
+  return value === undefined ? "-" : String(value);
+}
+
+function formatTooltipName(name: TooltipName): string {
+  return name === undefined ? "" : String(name);
+}
+
 export function AnalyticsPage() {
   const [tempoFiltro, setTempoFiltro] = useState<"all" | "within" | "above">("all");
 
@@ -274,9 +289,13 @@ export function AnalyticsPage() {
                 <YAxis stroke="#64748b" allowDecimals={false} />
                 <Tooltip
                   {...tooltipProps}
-                  formatter={(value: number | string, name: string) => [
-                    `${value}`,
-                    name === "total" ? "Total" : name === "criticas" ? "Criticas" : "Taxa de resolucao",
+                  formatter={(value: TooltipValue, name: TooltipName) => [
+                    formatTooltipValue(value),
+                    name === "total"
+                      ? "Total"
+                      : name === "criticas"
+                        ? "Criticas"
+                        : "Taxa de resolucao",
                   ]}
                 />
                 <Legend />
@@ -300,7 +319,13 @@ export function AnalyticsPage() {
               <CartesianGrid stroke="#cbd5e1" strokeDasharray="3 3" />
               <XAxis dataKey="perfil" stroke="#64748b" />
               <YAxis stroke="#64748b" domain={[0, 90]} />
-              <Tooltip {...tooltipProps} formatter={(value: number | string, name: string) => [`${value}`, name === "meta" ? "Meta" : "Tempo medio"]} />
+              <Tooltip
+                {...tooltipProps}
+                formatter={(value: TooltipValue, name: TooltipName) => [
+                  formatTooltipValue(value),
+                  name === "meta" ? "Meta" : "Tempo medio",
+                ]}
+              />
               <Legend />
               <Bar dataKey="meta" fill="rgba(100,116,139,0.3)" name="Meta (60 min)" />
               <Bar dataKey="tempoMedio" fill="#10b981" name="Tempo Medio" radius={[4, 4, 0, 0]} />
@@ -320,7 +345,10 @@ export function AnalyticsPage() {
             <PieChart>
               <Tooltip
                 {...tooltipProps}
-                formatter={(value: number | string, name: string) => [`${value}`, String(name)]}
+                formatter={(value: TooltipValue, name: TooltipName) => [
+                  formatTooltipValue(value),
+                  formatTooltipName(name),
+                ]}
               />
               <Legend />
               <Pie
