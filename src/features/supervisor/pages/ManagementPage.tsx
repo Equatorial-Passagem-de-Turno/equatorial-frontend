@@ -35,6 +35,7 @@ export function ManegementPage() {
   const loadData = useSupervisorStore((state) => state.loadData);
   const sourceOperators = useSupervisorStore((state) => state.operators);
   const isLoading = useSupervisorStore((state) => state.isLoading);
+  const hydratedAt = useSupervisorStore((state) => state.hydratedAt);
 
   const TABLE_DESCRIPTIONS: Record<string, string> = {
   "MCZ I": "Operação da região central de Maceió",
@@ -72,8 +73,10 @@ export function ManegementPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   useEffect(() => {
-    void loadData();
-  }, [loadData]);
+    if (!hydratedAt) {
+      void loadData();
+    }
+  }, [hydratedAt, loadData]);
 
   useEffect(() => {
     setOperatorsData(sourceOperators);

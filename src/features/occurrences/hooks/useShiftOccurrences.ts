@@ -11,7 +11,7 @@ export const useShiftOccurrences = () => {
   // Garante que os dados sejam buscados ao abrir a tela
   useEffect(() => {
     if (fetchOccurrences) {
-      fetchOccurrences();
+      void fetchOccurrences({ silent: true });
     }
   }, [fetchOccurrences]);
 

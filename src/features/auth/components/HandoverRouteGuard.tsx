@@ -3,7 +3,8 @@ import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { getShiftHandoverData } from '@/features/occurrences/services/shiftService';
+import { getShiftHandoverDataCached } from '@/features/occurrences/services/shiftService';
+import type { ShiftHandoverSummary } from '@/features/occurrences/services/shiftService';
 import { hasCompletedInheritedSelection } from '@/features/occurrences/utils/handoverPersistence';
 
 type HandoverRouteGuardProps = {
@@ -27,7 +28,7 @@ export const HandoverRouteGuard = ({ children }: HandoverRouteGuardProps) => {
       }
 
       try {
-        const data = await getShiftHandoverData();
+        const data: ShiftHandoverSummary = await getShiftHandoverDataCached();
         const hasPendingHandover = Array.isArray(data?.occurrences) && data.occurrences.length > 0;
 
         if (!hasPendingHandover) {

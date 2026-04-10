@@ -4,6 +4,7 @@ import type { InternalAxiosRequestConfig } from 'axios';
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'https://equatorial-backend.onrender.com/api',
+  timeout: 12000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',

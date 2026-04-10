@@ -15,10 +15,13 @@ export function DashboardSupervisorPage() {
   const loadData = useSupervisorStore((state) => state.loadData);
   const isLoading = useSupervisorStore((state) => state.isLoading);
   const loadError = useSupervisorStore((state) => state.loadError);
+  const hydratedAt = useSupervisorStore((state) => state.hydratedAt);
 
   useEffect(() => {
-    void loadData();
-  }, [loadData]);
+    if (!hydratedAt) {
+      void loadData();
+    }
+  }, [hydratedAt, loadData]);
 
   if (isLoading) {
     return (

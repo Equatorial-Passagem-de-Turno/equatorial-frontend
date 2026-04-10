@@ -37,7 +37,9 @@ export const OccurrenceDetailPage = () => {
   const paramClean = clean(paramNormalized);
 
   useEffect(() => {
-    if (fetchOccurrences) fetchOccurrences();
+    if (fetchOccurrences) {
+      void fetchOccurrences({ silent: true });
+    }
   }, [fetchOccurrences]);
 
   const occurrence = occurrences.find(o => {

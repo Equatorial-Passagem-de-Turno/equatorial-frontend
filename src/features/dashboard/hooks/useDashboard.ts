@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOccurrenceStore } from '@/features/occurrences/stores/useOccurrenceStore';
-import { getShiftHandoverData } from '@/features/occurrences/services/occurrenceService';
+import { getShiftHandoverDataCached } from '@/features/occurrences/services/shiftService';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { api } from '@/services/api';
 import { showErrorModal } from '@/shared/ui/feedbackModal';
@@ -32,7 +32,7 @@ export const useDashboard = () => {
   const [status, setStatus] = useState('todas');
 
   useEffect(() => {
-    fetchOccurrences();
+    void fetchOccurrences({ silent: true });
   }, [fetchOccurrences]);
 
   useEffect(() => {
@@ -88,7 +88,7 @@ export const useDashboard = () => {
       if (!user?.id || !table?.id) return;
 
       try {
-        const data = await getShiftHandoverData();
+        const data = await getShiftHandoverDataCached() as ShiftHandoverData;
 
         // Toda a lógica de localStorage foi removida daqui!
         // Agora confiamos 100% no Back-end: se ele enviou pendências, nós abrimos.
@@ -193,7 +193,7 @@ export const useDashboard = () => {
           setSelectedInheritedIdsState(persistedIds);
 
           if (mapped.length > 0) {
-            fetchOccurrences();
+            void fetchOccurrences({ force: true, silent: true });
           }
 
           setIsHandoverOpen(false);

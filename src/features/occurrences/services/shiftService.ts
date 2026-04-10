@@ -62,6 +62,35 @@ export interface ShiftDetailResponse {
   occurrences: ShiftDetailOccurrence[];
 }
 
+export interface ShiftHandoverSummary {
+  previousOperator?: string;
+  shiftTime?: string;
+  date?: string;
+  reportText?: string;
+  criticalCount?: number;
+  occurrences?: Array<unknown>;
+}
+
+const HANDOVER_CACHE_TTL_MS = 60_000;
+let handoverCache: {
+  key: string;
+  value: ShiftHandoverSummary;
+  expiresAt: number;
+} | null = null;
+let handoverInFlight: Promise<ShiftHandoverSummary> | null = null;
+
+const getCurrentAuthCacheKey = () => {
+  try {
+    const raw = localStorage.getItem('auth-storage');
+    if (!raw) return 'anonymous';
+    const parsed = JSON.parse(raw);
+    const userId = parsed?.state?.user?.id;
+    return userId ? `user:${String(userId)}` : 'anonymous';
+  } catch {
+    return 'anonymous';
+  }
+};
+
 export const startShiftApi = async (deskId: string, role: string) => {
   const response = await api.post('/shifts/start', {
     operation_desk_id: deskId,
@@ -86,7 +115,36 @@ export const reopenShiftApi = async () => {
 
 export const getShiftHandoverData = async () => {
   const response = await api.get('/shifts/handover/previous');
-  return response.data;
+  return response.data as ShiftHandoverSummary;
+};
+
+export const getShiftHandoverDataCached = async (options?: { force?: boolean }): Promise<ShiftHandoverSummary> => {
+  const force = Boolean(options?.force);
+  const key = getCurrentAuthCacheKey();
+  const now = Date.now();
+
+  if (!force && handoverCache && handoverCache.key === key && handoverCache.expiresAt > now) {
+    return handoverCache.value;
+  }
+
+  if (!force && handoverInFlight) {
+    return handoverInFlight;
+  }
+
+  handoverInFlight = getShiftHandoverData()
+    .then((data) => {
+      handoverCache = {
+        key,
+        value: data,
+        expiresAt: Date.now() + HANDOVER_CACHE_TTL_MS,
+      };
+      return data;
+    })
+    .finally(() => {
+      handoverInFlight = null;
+    });
+
+  return handoverInFlight;
 };
 
 export const getOperationDesksApi = async () => {

@@ -19,7 +19,7 @@ export const useOccurrenceDetails = () => {
   useEffect(() => {
     // Se a função existir na store, garantimos que os dados mais recentes sejam buscados
     if (fetchOccurrences) {
-        fetchOccurrences();
+        void fetchOccurrences({ silent: true });
     }
   }, [fetchOccurrences]);
 

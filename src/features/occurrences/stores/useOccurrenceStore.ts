@@ -19,7 +19,8 @@ const getCurrentUserIdFromStorage = (): string | null => {
 interface OccurrenceState {
   occurrences: Occurrence[];
   isLoading: boolean;
-  fetchOccurrences: () => Promise<void>;
+  hydratedAt: number | null;
+  fetchOccurrences: (options?: { force?: boolean; silent?: boolean }) => Promise<void>;
   createOccurrence: (data: Partial<Occurrence>) => Promise<void>; // NOVO
   updateOccurrence: (id: string, patch: Partial<Occurrence>) => Promise<void>; // ATUALIZADO
   deleteOccurrence: (id: string) => Promise<void>; // NOVO
@@ -27,13 +28,35 @@ interface OccurrenceState {
   reset: () => void;
 }
 
+const OCCURRENCES_CACHE_TTL_MS = 45_000;
+let occurrencesInFlight: Promise<void> | null = null;
+
 export const useOccurrenceStore = create<OccurrenceState>((set) => ({
   occurrences: [],
   isLoading: false,
+  hydratedAt: null,
 
   // LISTAR (GET)
-  fetchOccurrences: async () => {
-    set({ isLoading: true });
+  fetchOccurrences: async (options) => {
+    const force = Boolean(options?.force);
+    const silent = Boolean(options?.silent);
+    const state = useOccurrenceStore.getState();
+    const isFresh = Boolean(state.hydratedAt) && (Date.now() - Number(state.hydratedAt) < OCCURRENCES_CACHE_TTL_MS);
+
+    if (!force && isFresh) {
+      return;
+    }
+
+    if (!force && occurrencesInFlight) {
+      return occurrencesInFlight;
+    }
+
+    const shouldShowBlockingLoader = !silent && state.occurrences.length === 0;
+    if (shouldShowBlockingLoader) {
+      set({ isLoading: true });
+    }
+
+    occurrencesInFlight = (async () => {
     try {
       const response = await api.get('/occurrences');
       // Mapeamento opcional: Se o Laravel manda user_id e o React espera authorId
@@ -43,10 +66,15 @@ export const useOccurrenceStore = create<OccurrenceState>((set) => ({
         createdAt: occ.created_at ? new Date(occ.created_at).toLocaleString('pt-BR') : occ.createdAt
       }));
       
-      set({ occurrences: mappedData, isLoading: false });
+      set({ occurrences: mappedData, hydratedAt: Date.now(), isLoading: false });
     } catch (err) {
       set({ isLoading: false });
     }
+    })().finally(() => {
+      occurrencesInFlight = null;
+    });
+
+    return occurrencesInFlight;
   },
 
   addOccurrences: (newItems) => {
@@ -55,7 +83,8 @@ export const useOccurrenceStore = create<OccurrenceState>((set) => ({
       const itemsToAdd = newItems.filter(item => !existingIds.has(item.id));
       
       return {
-        occurrences: [...itemsToAdd, ...state.occurrences]
+        occurrences: [...itemsToAdd, ...state.occurrences],
+        hydratedAt: Date.now(),
       };
     });
   },
@@ -82,6 +111,8 @@ export const useOccurrenceStore = create<OccurrenceState>((set) => ({
         set((state) => ({
           occurrences: [normalizedCreated, ...state.occurrences]
         }));
+
+        set({ hydratedAt: Date.now() });
 
         const userId = getCurrentUserIdFromStorage();
         if (userId) {
@@ -119,11 +150,12 @@ export const useOccurrenceStore = create<OccurrenceState>((set) => ({
       set((state) => ({
         occurrences: state.occurrences.filter(o => o.id !== id)
       }));
+      set({ hydratedAt: Date.now() });
     } catch (err) {
       console.error('Erro ao excluir:', err);
       throw err;
     }
   },
 
-  reset: () => set({ occurrences: [], isLoading: false }),
+  reset: () => set({ occurrences: [], isLoading: false, hydratedAt: null }),
 }));
