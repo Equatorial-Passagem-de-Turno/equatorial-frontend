@@ -30,6 +30,7 @@ interface OccurrenceState {
 
 const OCCURRENCES_CACHE_TTL_MS = 45_000;
 let occurrencesInFlight: Promise<void> | null = null;
+let emptyFetchRetryScheduled = false;
 
 export const useOccurrenceStore = create<OccurrenceState>((set) => ({
   occurrences: [],
@@ -65,10 +66,41 @@ export const useOccurrenceStore = create<OccurrenceState>((set) => ({
         authorId: occ.user_id || occ.authorId, // Normaliza o ID do autor
         createdAt: occ.created_at ? new Date(occ.created_at).toLocaleString('pt-BR') : occ.createdAt
       }));
+
+      const currentItems = useOccurrenceStore.getState().occurrences;
+
+      if (mappedData.length === 0 && currentItems.length > 0) {
+        // Mantem dados atuais quando o backend retorna vazio temporariamente.
+        set({ hydratedAt: Date.now(), isLoading: false });
+        return;
+      }
+
+      if (mappedData.length === 0 && currentItems.length === 0 && !emptyFetchRetryScheduled) {
+        emptyFetchRetryScheduled = true;
+        window.setTimeout(() => {
+          emptyFetchRetryScheduled = false;
+          void useOccurrenceStore.getState().fetchOccurrences({ force: true, silent: true });
+        }, 1500);
+      }
       
       set({ occurrences: mappedData, hydratedAt: Date.now(), isLoading: false });
     } catch (err) {
-      set({ isLoading: false });
+      const currentItems = useOccurrenceStore.getState().occurrences;
+
+      if (currentItems.length > 0) {
+        // Em erro transitório, preserva o ultimo snapshot ao inves de piscar vazio.
+        set({ hydratedAt: Date.now(), isLoading: false });
+      } else {
+        set({ isLoading: false });
+      }
+
+      if (!emptyFetchRetryScheduled) {
+        emptyFetchRetryScheduled = true;
+        window.setTimeout(() => {
+          emptyFetchRetryScheduled = false;
+          void useOccurrenceStore.getState().fetchOccurrences({ force: true, silent: true });
+        }, 2000);
+      }
     }
     })().finally(() => {
       occurrencesInFlight = null;
