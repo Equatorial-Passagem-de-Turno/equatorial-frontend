@@ -68,7 +68,7 @@ export function OperatorsOverview() {
   const averageResolutionTime = activeOperators.length > 0
     ? (
         activeOperators.reduce(
-          (acc, operator) => acc + operator.resolutionRate,
+          (acc, operator) => acc + operator.averageResolutionTime,
           0
         ) / activeOperators.length
       ).toFixed(0)
@@ -216,7 +216,7 @@ export function OperatorsOverview() {
                     <div className="flex items-center justify-center gap-2">
                       <Clock className="w-4 h-4 text-blue-500" />
                       <span className="font-semibold text-zinc-900 dark:text-white">
-                        {operator.resolutionRate}
+                        {operator.averageResolutionTime}
                         <span className="text-xs text-zinc-500 dark:text-[#64748b] ml-1">
                           min
                         </span>

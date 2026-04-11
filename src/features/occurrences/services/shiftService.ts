@@ -72,12 +72,23 @@ export interface ShiftHandoverSummary {
 }
 
 const HANDOVER_CACHE_TTL_MS = 60_000;
+const HANDOVER_FAILURE_COOLDOWN_MS = 120_000;
+const USERS_CACHE_TTL_MS = 60_000;
+const USERS_FAILURE_COOLDOWN_MS = 30_000;
+const HANDOVER_SNAPSHOT_KEY_PREFIX = 'handover_previous_snapshot_v1';
 let handoverCache: {
   key: string;
   value: ShiftHandoverSummary;
   expiresAt: number;
 } | null = null;
 let handoverInFlight: Promise<ShiftHandoverSummary> | null = null;
+let handoverRetryAfter = 0;
+let usersCache: {
+  value: SystemUser[];
+  expiresAt: number;
+} | null = null;
+let usersInFlight: Promise<SystemUser[]> | null = null;
+let usersRetryAfter = 0;
 
 const getCurrentAuthCacheKey = () => {
   try {
@@ -88,6 +99,27 @@ const getCurrentAuthCacheKey = () => {
     return userId ? `user:${String(userId)}` : 'anonymous';
   } catch {
     return 'anonymous';
+  }
+};
+
+const getHandoverSnapshotStorageKey = (authKey: string) => `${HANDOVER_SNAPSHOT_KEY_PREFIX}_${authKey}`;
+
+const readHandoverSnapshot = (authKey: string): ShiftHandoverSummary | null => {
+  try {
+    const raw = localStorage.getItem(getHandoverSnapshotStorageKey(authKey));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? (parsed as ShiftHandoverSummary) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeHandoverSnapshot = (authKey: string, value: ShiftHandoverSummary) => {
+  try {
+    localStorage.setItem(getHandoverSnapshotStorageKey(authKey), JSON.stringify(value));
+  } catch {
+    // Ignora falhas de armazenamento local.
   }
 };
 
@@ -122,6 +154,14 @@ export const getShiftHandoverDataCached = async (options?: { force?: boolean }):
   const force = Boolean(options?.force);
   const key = getCurrentAuthCacheKey();
   const now = Date.now();
+  const cachedSnapshot = readHandoverSnapshot(key);
+
+  if (!force && now < handoverRetryAfter) {
+    if (handoverCache && handoverCache.key === key) {
+      return handoverCache.value;
+    }
+    return cachedSnapshot ?? { occurrences: [] };
+  }
 
   if (!force && handoverCache && handoverCache.key === key && handoverCache.expiresAt > now) {
     return handoverCache.value;
@@ -133,12 +173,23 @@ export const getShiftHandoverDataCached = async (options?: { force?: boolean }):
 
   handoverInFlight = getShiftHandoverData()
     .then((data) => {
+      handoverRetryAfter = 0;
       handoverCache = {
         key,
         value: data,
         expiresAt: Date.now() + HANDOVER_CACHE_TTL_MS,
       };
+      writeHandoverSnapshot(key, data);
       return data;
+    })
+    .catch(() => {
+      handoverRetryAfter = Date.now() + HANDOVER_FAILURE_COOLDOWN_MS;
+
+      if (handoverCache && handoverCache.key === key) {
+        return handoverCache.value;
+      }
+
+      return cachedSnapshot ?? { occurrences: [] };
     })
     .finally(() => {
       handoverInFlight = null;
@@ -158,8 +209,43 @@ export const getRolesApi = async () => {
 };
 
 export const getSystemUsersApi = async (): Promise<SystemUser[]> => {
-  const response = await api.get<SystemUser[]>('/users');
-  return response.data;
+  const now = Date.now();
+
+  if (now < usersRetryAfter) {
+    return [];
+  }
+
+  if (usersCache && usersCache.expiresAt > now) {
+    return usersCache.value;
+  }
+
+  if (usersInFlight) {
+    return usersInFlight;
+  }
+
+  usersInFlight = api
+    .get<SystemUser[]>('/users')
+    .then((response) => {
+      const users = Array.isArray(response.data) ? response.data : [];
+      usersRetryAfter = 0;
+
+      usersCache = {
+        value: users,
+        expiresAt: Date.now() + USERS_CACHE_TTL_MS,
+      };
+
+      return users;
+    })
+    .finally(() => {
+      usersInFlight = null;
+    });
+
+  usersInFlight = usersInFlight.catch((error) => {
+    usersRetryAfter = Date.now() + USERS_FAILURE_COOLDOWN_MS;
+    throw error;
+  });
+
+  return usersInFlight;
 };
 
 export const sendShiftFinishEmailApi = async (

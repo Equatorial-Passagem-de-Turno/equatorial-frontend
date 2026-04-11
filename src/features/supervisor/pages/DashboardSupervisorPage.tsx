@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Calendar } from "lucide-react";
+import { AlertTriangle, Calendar } from "lucide-react";
 import { ActivityFeed } from "@/features/supervisor/components/ActivityFeed";
 import { OperatorsTable } from "@/features/supervisor/components/analytics/OperatorsTable";
 import { TablesSummary } from "@/features/supervisor/components/TablesSummary";
@@ -16,6 +16,7 @@ export function DashboardSupervisorPage() {
   const isLoading = useSupervisorStore((state) => state.isLoading);
   const loadError = useSupervisorStore((state) => state.loadError);
   const hydratedAt = useSupervisorStore((state) => state.hydratedAt);
+  const isUsingCachedData = useSupervisorStore((state) => state.isUsingCachedData);
 
   useEffect(() => {
     if (!hydratedAt) {
@@ -46,6 +47,13 @@ export function DashboardSupervisorPage() {
   return (
     <div>
       <div className="p-6 space-y-6">
+        {isUsingCachedData && (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-900/10 px-4 py-3 text-amber-300 text-sm flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            Exibindo ultimo snapshot salvo devido a instabilidade temporaria da API.
+          </div>
+        )}
+
         <div className="flex items-center justify-end">
           <button
             onClick={() => setShowShiftHistoryModal(true)}

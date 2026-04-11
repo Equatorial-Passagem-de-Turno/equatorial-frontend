@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { api } from '@/services/api';
+import axios from 'axios';
 import { type Occurrence } from '../types/index';
 import { addCreatedThisShiftOccurrenceId } from '@/features/occurrences/utils/handoverPersistence';
 
@@ -29,11 +30,42 @@ interface OccurrenceState {
 }
 
 const OCCURRENCES_CACHE_TTL_MS = 45_000;
+const MAX_OCCURRENCE_ERROR_RETRIES = 1;
 let occurrencesInFlight: Promise<void> | null = null;
 let emptyFetchRetryScheduled = false;
+let occurrenceErrorRetryCount = 0;
+const OCCURRENCES_SNAPSHOT_KEY_PREFIX = 'occurrences_snapshot_v1';
+
+const getOccurrencesSnapshotKey = () => {
+  const userId = getCurrentUserIdFromStorage();
+  return `${OCCURRENCES_SNAPSHOT_KEY_PREFIX}_${userId ?? 'anonymous'}`;
+};
+
+const readOccurrencesSnapshot = (): Occurrence[] => {
+  try {
+    const raw = localStorage.getItem(getOccurrencesSnapshotKey());
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeOccurrencesSnapshot = (items: Occurrence[]) => {
+  try {
+    localStorage.setItem(getOccurrencesSnapshotKey(), JSON.stringify(items));
+  } catch {
+    // Ignora falhas de armazenamento (quota/permissoes).
+  }
+};
+
+const getInitialOccurrences = (): Occurrence[] => {
+  return readOccurrencesSnapshot();
+};
 
 export const useOccurrenceStore = create<OccurrenceState>((set) => ({
-  occurrences: [],
+  occurrences: getInitialOccurrences(),
   isLoading: false,
   hydratedAt: null,
 
@@ -84,18 +116,35 @@ export const useOccurrenceStore = create<OccurrenceState>((set) => ({
       }
       
       set({ occurrences: mappedData, hydratedAt: Date.now(), isLoading: false });
+      writeOccurrencesSnapshot(mappedData);
+      occurrenceErrorRetryCount = 0;
     } catch (err) {
       const currentItems = useOccurrenceStore.getState().occurrences;
+      const isAxiosErr = axios.isAxiosError(err);
+      const status = isAxiosErr ? err.response?.status : undefined;
+      const isNetworkError = isAxiosErr && !err.response;
 
       if (currentItems.length > 0) {
         // Em erro transitório, preserva o ultimo snapshot ao inves de piscar vazio.
         set({ hydratedAt: Date.now(), isLoading: false });
       } else {
-        set({ isLoading: false });
+        const snapshot = readOccurrencesSnapshot();
+        if (snapshot.length > 0) {
+          set({ occurrences: snapshot, hydratedAt: Date.now(), isLoading: false });
+        } else {
+          set({ isLoading: false });
+        }
       }
 
-      if (!emptyFetchRetryScheduled) {
+      if (status) {
+        console.warn(`[Occurrences] Falha ao carregar ocorrencias (status ${status}).`);
+      }
+
+      const canRetryNetworkError = isNetworkError && occurrenceErrorRetryCount < MAX_OCCURRENCE_ERROR_RETRIES;
+
+      if (canRetryNetworkError && !emptyFetchRetryScheduled) {
         emptyFetchRetryScheduled = true;
+        occurrenceErrorRetryCount += 1;
         window.setTimeout(() => {
           emptyFetchRetryScheduled = false;
           void useOccurrenceStore.getState().fetchOccurrences({ force: true, silent: true });
@@ -113,9 +162,11 @@ export const useOccurrenceStore = create<OccurrenceState>((set) => ({
     set((state) => {
       const existingIds = new Set(state.occurrences.map(o => o.id));
       const itemsToAdd = newItems.filter(item => !existingIds.has(item.id));
+      const merged = [...itemsToAdd, ...state.occurrences];
+      writeOccurrencesSnapshot(merged);
       
       return {
-        occurrences: [...itemsToAdd, ...state.occurrences],
+        occurrences: merged,
         hydratedAt: Date.now(),
       };
     });
@@ -145,6 +196,7 @@ export const useOccurrenceStore = create<OccurrenceState>((set) => ({
         }));
 
         set({ hydratedAt: Date.now() });
+        writeOccurrencesSnapshot(useOccurrenceStore.getState().occurrences);
 
         const userId = getCurrentUserIdFromStorage();
         if (userId) {
@@ -169,6 +221,7 @@ export const useOccurrenceStore = create<OccurrenceState>((set) => ({
           o.id === id ? { ...o, ...patch } : o
         )
       }));
+      writeOccurrencesSnapshot(useOccurrenceStore.getState().occurrences);
     } catch (err) {
       console.error('Erro ao atualizar:', err);
       throw err;
@@ -183,6 +236,7 @@ export const useOccurrenceStore = create<OccurrenceState>((set) => ({
         occurrences: state.occurrences.filter(o => o.id !== id)
       }));
       set({ hydratedAt: Date.now() });
+      writeOccurrencesSnapshot(useOccurrenceStore.getState().occurrences);
     } catch (err) {
       console.error('Erro ao excluir:', err);
       throw err;

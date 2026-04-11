@@ -2,6 +2,8 @@ import { api } from '@/services/api';
 import type { Occurrence, Operator } from '../types/index.ts';
 import type { AtividadeRecente } from '../types/index.ts';
 
+const ENABLE_ACTIVE_OPERATORS_ENDPOINT = import.meta.env.VITE_ENABLE_SUPERVISOR_ACTIVE_OPERATORS_ENDPOINT === 'true';
+
 type ApiOccurrence = {
   id: string;
   title: string;
@@ -119,10 +121,15 @@ const mapOperator = (
   const stat = activeStatsById.get(String(user.id));
 
   const inherited = Number(stat?.inherited_occurrences ?? 0);
-  const created = Number(stat?.created_occurrences ?? 0);
+  const created = Number(stat?.created_occurrences ?? mine.length);
   const resolved = Number(stat?.resolved_occurrences ?? mine.filter((o) => o.status === 'resolvida').length);
-  const assumed = Number(stat?.assumed_occurrences ?? inherited + created + resolved);
-  const avgResolution = 45;
+  const assumed = Number(stat?.assumed_occurrences ?? Math.max(inherited + created, mine.length));
+
+  const hasOpenOccurrence = mine.some((o) => o.status === 'aberta' || o.status === 'em_andamento');
+  const hasRecentActivity = mine.some((o) => Date.now() - o.timestamp <= 12 * 60 * 60 * 1000);
+  const derivedStatus: Operator['status'] = hasOpenOccurrence || hasRecentActivity ? 'Ativo' : 'Inativo';
+
+  const avgResolution = mine.length > 0 ? 45 : 0;
 
   return {
     id: String(user.id),
@@ -130,7 +137,7 @@ const mapOperator = (
     email: user.email,
     profile: normalizeProfile(stat?.profile || user.voltage_level || user.role),
     shift: 'Atual',
-    status: (stat?.status as Operator['status']) || 'Inativo',
+    status: (stat?.status as Operator['status']) || derivedStatus,
     accountActive: Boolean(user.active),
     assumedOccurrences: assumed,
     resolvedOccurrences: resolved,
@@ -165,21 +172,25 @@ const mapActivities = (occurrences: Occurrence[]): AtividadeRecente[] => {
 };
 
 export async function fetchSupervisorData() {
+  const activeOperatorsRequest = ENABLE_ACTIVE_OPERATORS_ENDPOINT
+    ? api.get<ApiActiveOperator[]>('/shifts/operators/active')
+    : Promise.resolve({ data: [] as ApiActiveOperator[] });
+
   const [occRes, usersRes, activeOperatorsRes] = await Promise.allSettled([
     api.get<ApiOccurrence[]>('/occurrences'),
     api.get<ApiUser[]>('/users', { params: { include_inactive: true } }),
-    api.get<ApiActiveOperator[]>('/shifts/operators/active'),
+    activeOperatorsRequest,
   ]);
 
-  const users: ApiUser[] = usersRes.status === 'fulfilled' ? (usersRes.value.data || []) : [];
-  const occurrencesPayload: ApiOccurrence[] = occRes.status === 'fulfilled' ? (occRes.value.data || []) : [];
+  if (occRes.status === 'rejected' || usersRes.status === 'rejected') {
+    throw new Error('Falha ao carregar dados reais do supervisor. Verifique os endpoints /occurrences e /users.');
+  }
+
+  const users: ApiUser[] = usersRes.value.data || [];
+  const occurrencesPayload: ApiOccurrence[] = occRes.value.data || [];
   const activeOperatorsPayload: ApiActiveOperator[] =
     activeOperatorsRes.status === 'fulfilled' ? (activeOperatorsRes.value.data || []) : [];
 
-  // If everything failed, propagate a meaningful error for the store.
-  if (usersRes.status === 'rejected' && occRes.status === 'rejected' && activeOperatorsRes.status === 'rejected') {
-    throw new Error('Falha ao carregar endpoints de supervisor');
-  }
   const usersById = new Map<string, ApiUser>(users.map((u: ApiUser) => [String(u.id), u]));
   const activeStatsById = new Map<string, ApiActiveOperator>(
     activeOperatorsPayload.map((item: ApiActiveOperator) => [String(item.id), item])

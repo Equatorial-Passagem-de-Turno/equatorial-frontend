@@ -19,34 +19,33 @@ export const useShiftControl = () => {
     const fetchActiveShiftAndToday = async () => {
       try {
         setLoading(true);
-        const responseCurrent = await api.get('/shifts/current'); 
+        const responseCurrent = await api.get('/shifts/current');
+
         if (responseCurrent.data) {
           setTurnoAtual(responseCurrent.data);
           setBriefing(responseCurrent.data.briefing || '');
+
+          const currentShiftAsTodayItem: HistoryItem = {
+            shiftId: Number(responseCurrent.data.id ?? 0),
+            id: `TUR-${String(responseCurrent.data.id ?? '').padStart(4, '0')}`,
+            operador: String(responseCurrent.data.operador ?? user?.name ?? 'Desconhecido'),
+            horario: `${String(responseCurrent.data.inicio ?? '--:--')} - ...`,
+            tipo: String(responseCurrent.data.funcao ?? user?.role ?? 'BT'),
+            status: 'Aberto',
+            workedDuration: String(responseCurrent.data.workedDuration ?? responseCurrent.data.tempo_trabalhado ?? '--'),
+          };
+
+          setTodaysShifts([currentShiftAsTodayItem]);
+        } else {
+          setTurnoAtual(null);
+          setBriefing('');
+          setTodaysShifts([]);
         }
-
-        const responseToday = await api.get('/shifts/by-date');
-        if (responseToday.data) {
-            const normalizedShifts: HistoryItem[] = (Array.isArray(responseToday.data) ? responseToday.data : []).map((item: any) => {
-              const parsedFromDisplayId = Number(String(item?.id ?? '').replace(/\D/g, ''));
-              const normalizedShiftId = Number(item?.shiftId ?? item?.shift_id ?? parsedFromDisplayId);
-
-              return {
-                shiftId: Number.isFinite(normalizedShiftId) ? normalizedShiftId : 0,
-                id: String(item?.id ?? ''),
-                operador: String(item?.operador ?? 'Desconhecido'),
-                horario: String(item?.horario ?? '--:-- - --:--'),
-                tipo: String(item?.tipo ?? 'BT'),
-                status: item?.status === 'Aberto' ? 'Aberto' : 'Fechado',
-                workedDuration: String(item?.workedDuration ?? item?.tempo_trabalhado ?? '--'),
-              };
-            });
-
-            setTodaysShifts(normalizedShifts);
-        }
-
       } catch (error) {
         console.error("Erro ao buscar dados do turno:", error);
+        setTurnoAtual(null);
+        setBriefing('');
+        setTodaysShifts([]);
       } finally {
         setLoading(false);
       }

@@ -31,6 +31,8 @@ export const useDashboard = () => {
   const [priority, setPriority] = useState('todas');
   const [status, setStatus] = useState('todas');
 
+  const getWorkedDurationCacheKey = (userId: string | number) => `dashboard_worked_duration_${String(userId)}`;
+
   useEffect(() => {
     void fetchOccurrences({ silent: true });
   }, [fetchOccurrences]);
@@ -42,6 +44,14 @@ export const useDashboard = () => {
     }
 
     let isCancelled = false;
+    const cacheKey = getWorkedDurationCacheKey(user.id);
+
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      setCurrentShiftWorkedDuration(cached);
+    } else {
+      setCurrentShiftWorkedDuration('--');
+    }
 
     const fetchCurrentShiftDuration = async () => {
       try {
@@ -50,21 +60,21 @@ export const useDashboard = () => {
 
         const payload = response?.data;
         if (!payload) {
-          setCurrentShiftWorkedDuration('--');
           return;
         }
 
         const worked = String(payload?.workedDuration ?? payload?.tempo_trabalhado ?? '--');
         setCurrentShiftWorkedDuration(worked);
+        localStorage.setItem(cacheKey, worked);
       } catch {
-        if (!isCancelled) {
-          setCurrentShiftWorkedDuration('--');
-        }
+        // Mantem ultimo valor conhecido para evitar piscar '--' em falha intermitente.
       }
     };
 
-    fetchCurrentShiftDuration();
-    const intervalId = window.setInterval(fetchCurrentShiftDuration, 60_000);
+    void fetchCurrentShiftDuration();
+    const intervalId = window.setInterval(() => {
+      void fetchCurrentShiftDuration();
+    }, 60_000);
 
     return () => {
       isCancelled = true;

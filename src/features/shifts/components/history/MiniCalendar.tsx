@@ -36,8 +36,8 @@ export const MiniCalendar: React.FC<Props> = ({ selectedDate, onSelectDate, mark
 
       {/* Grid de Dias */}
       <div className="grid grid-cols-7 gap-1 text-center">
-        {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map(day => (
-          <div key={day} className="text-xs font-bold text-slate-400 mb-2">{day}</div>
+        {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, dayIndex) => (
+          <div key={`${day}-${dayIndex}`} className="text-xs font-bold text-slate-400 mb-2">{day}</div>
         ))}
         
         {days.map((day, idx) => {

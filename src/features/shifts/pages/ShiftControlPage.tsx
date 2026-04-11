@@ -72,6 +72,8 @@ export const ShiftControlPage = () => {
   const [isEmailDropdownOpen, setIsEmailDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
     const [availableOperators, setAvailableOperators] = useState<SystemUser[]>([]);
+    const [hasLoadedOperators, setHasLoadedOperators] = useState(false);
+    const [isLoadingOperators, setIsLoadingOperators] = useState(false);
 
   // Estados de Negócio
   const [resolvedItems, setResolvedItems] = useState<string[]>([]);
@@ -92,17 +94,29 @@ export const ShiftControlPage = () => {
   }, []);
 
     useEffect(() => {
-        const loadUsers = async () => {
-            try {
-                const users = await getSystemUsersApi();
-                setAvailableOperators(users);
-            } catch (error) {
-                console.error('Erro ao carregar usuários para turno/e-mail:', error);
-            }
-        };
+        setAvailableOperators([]);
+        setHasLoadedOperators(false);
+        setIsLoadingOperators(false);
+    }, [user?.id]);
 
-        loadUsers();
-    }, []);
+    const ensureOperatorsLoaded = async () => {
+        if (!user?.id || hasLoadedOperators || isLoadingOperators) {
+            return;
+        }
+
+        setIsLoadingOperators(true);
+
+        try {
+            const users = await getSystemUsersApi();
+            setAvailableOperators(users);
+        } catch {
+            setAvailableOperators([]);
+            console.warn('Falha ao carregar usuarios para turno/e-mail.');
+        } finally {
+            setHasLoadedOperators(true);
+            setIsLoadingOperators(false);
+        }
+    };
 
     useEffect(() => {
         if (!shiftSnapshotKey) return;
@@ -161,6 +175,7 @@ export const ShiftControlPage = () => {
     const currentWorkedDuration = String((turnoAtual as any)?.workedDuration ?? (turnoAtual as any)?.tempo_trabalhado ?? '--');
 
   const handleAttemptFinish = () => {
+        void ensureOperatorsLoaded();
     setIsFinishModalOpen(true);
   };
 
@@ -478,7 +493,12 @@ export const ShiftControlPage = () => {
                             <div className="flex gap-2 items-start" ref={dropdownRef}>
                                 <div className="relative flex-1">
                                     <button
-                                        onClick={() => setIsEmailDropdownOpen(!isEmailDropdownOpen)}
+                                        onClick={() => {
+                                            if (!isEmailDropdownOpen) {
+                                                void ensureOperatorsLoaded();
+                                            }
+                                            setIsEmailDropdownOpen(!isEmailDropdownOpen);
+                                        }}
                                         disabled={isSendingEmail}
                                         className="w-full bg-white dark:bg-slate-900 border border-amber-300 dark:border-amber-700 rounded-lg px-3 py-2.5 text-sm text-left flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
                                     >
@@ -859,6 +879,9 @@ export const ShiftControlPage = () => {
                                 <select
                                     value={nextOperator}
                                     onChange={(e) => setNextOperator(e.target.value)}
+                                    onFocus={() => {
+                                        void ensureOperatorsLoaded();
+                                    }}
                                     className={`w-full appearance-none rounded-lg border px-4 py-3 pr-10 bg-white dark:bg-slate-950 focus:outline-none focus:ring-2 transition-all cursor-pointer
                                     ${nextOperator 
                                         ? 'border-emerald-300 ring-emerald-100 text-slate-800 dark:text-white font-medium' 
