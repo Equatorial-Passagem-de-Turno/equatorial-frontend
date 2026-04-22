@@ -73,13 +73,21 @@ export const DashboardPage = () => {
         return true;
       }
 
-      // Fallback seguro para ocorrências criadas no momento atual que ainda não foram mapeadas no localStorage.
-      if (createdSet.size === 0) {
-        const rawCreatedAt = (occ as { created_at?: string }).created_at;
-        return isCreatedToday(rawCreatedAt);
-      }
+      // Fallback: exibe qualquer ocorrência própria aberta criada hoje,
+      // independentemente do createdSet (cobre seeders e casos onde o ID
+      // ainda não foi persistido no localStorage).
+      const rawCreatedAt = (occ as { created_at?: string }).created_at;
+      return isCreatedToday(rawCreatedAt);
 
       return false;
+    }).sort((a, b) => {
+      const dateA = new Date(
+        (a as { created_at?: string }).created_at ?? a.createdAt ?? 0
+      ).getTime();
+      const dateB = new Date(
+        (b as { created_at?: string }).created_at ?? b.createdAt ?? 0
+      ).getTime();
+      return dateB - dateA; // mais recente primeiro
     });
   }, [filteredOccurrences, selectedInheritedIds, createdThisShiftIds, user?.id]);
 
