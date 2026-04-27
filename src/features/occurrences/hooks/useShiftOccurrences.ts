@@ -36,7 +36,7 @@ export const useShiftOccurrences = () => {
 
       const matchesAuthor = (item.createdBy || '').toLowerCase().includes(author.toLowerCase());
       const matchesPriority = priority === 'todas' || item.priority === priority;
-      const matchesStatus = status === 'todas' || item.status === status;
+      const matchesStatus = status === 'todas' || item.status === status || (status === 'Pendente' && item.status === 'Aberta');
       
       // Se houver campos 'mesa' e 'base' reais no banco, descomente abaixo:
       // const matchesMesa = mesa === 'todas' || item.mesa === mesa; 
@@ -52,7 +52,7 @@ export const useShiftOccurrences = () => {
   const stats = useMemo(() => ({
     total: filteredData.length,
     criticas: filteredData.filter(i => i.priority === 'crítica').length,
-    pendentes: filteredData.filter(i => i.status === 'Pendente').length,
+    pendentes: filteredData.filter(i => i.status === 'Pendente' || i.status === 'Aberta').length,
   }), [filteredData]);
 
   return {

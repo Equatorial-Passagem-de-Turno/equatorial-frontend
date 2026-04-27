@@ -2,37 +2,31 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { 
   Radio, CheckCircle2, MapPin, Clock, 
-  CheckSquare, Square, MousePointerClick // Novos ícones importados
+  CheckSquare, Square, MousePointerClick, Loader2 // Loader2 adicionado
 } from 'lucide-react';
 import { type ShiftHandoverData } from '../services/occurrenceService'; 
 
 interface Props {
   isOpen: boolean;
   data: ShiftHandoverData | null;
-  // ATUALIZADO: Agora recebe também a lista de IDs selecionados
+  isSubmitting?: boolean; // ADICIONADO
   onAcknowledge: (observation: string, selectedIds: string[]) => void;
 }
 
-export const InheritedOccurrencesModal = ({ isOpen, data, onAcknowledge }: Props) => {
+export const InheritedOccurrencesModal = ({ isOpen, data, isSubmitting = false, onAcknowledge }: Props) => {
   const [observation, setObservation] = useState('');
   const [mounted, setMounted] = useState(false);
   
-  // NOVO: Estado para armazenar os IDs das ocorrências selecionadas
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
-  // Garante montagem do componente
   useEffect(() => {
     setMounted(true);
     return () => setMounted(false);
   }, []);
 
-  // Bloqueio de scroll
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-      // Quando abrir, podemos pré-selecionar todos (opcional, mas recomendado)
-      // ou deixar vazio para o usuário selecionar manualmente.
-      // Aqui estou deixando vazio para forçar a seleção manual conforme seu pedido.
       if (data) {
          setSelectedIds([]); 
       }
@@ -42,18 +36,16 @@ export const InheritedOccurrencesModal = ({ isOpen, data, onAcknowledge }: Props
     return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen, data]);
 
-  // NOVO: Função para alternar a seleção de uma ocorrência
   const toggleSelection = (id: string) => {
     setSelectedIds(prev => {
       if (prev.includes(id)) {
-        return prev.filter(item => item !== id); // Remove se já existe
+        return prev.filter(item => item !== id);
       } else {
-        return [...prev, id]; // Adiciona se não existe
+        return [...prev, id];
       }
     });
   };
 
-  // NOVO: Selecionar ou Desmarcar tudo
   const toggleAll = () => {
     if (!data) return;
     if (selectedIds.length === data.occurrences.length) {
@@ -151,7 +143,6 @@ export const InheritedOccurrencesModal = ({ isOpen, data, onAcknowledge }: Props
                 const isSelected = selectedIds.includes(occ.id);
                 
                 return (
-                  // ATUALIZADO: Card agora é clicável e muda de estilo
                   <div 
                     key={occ.id} 
                     onClick={() => toggleSelection(occ.id)}
@@ -211,16 +202,20 @@ export const InheritedOccurrencesModal = ({ isOpen, data, onAcknowledge }: Props
           </div>
 
           <button 
-            // ATUALIZADO: Passa a observação E os IDs selecionados
             onClick={() => onAcknowledge(observation, selectedIds)}
-            disabled={selectedIds.length === 0} // Impede assumir se não selecionar nada? (opcional)
+            disabled={selectedIds.length === 0 || isSubmitting}
             className={`w-full font-bold py-4 rounded-lg flex items-center justify-center gap-2 transition-all shadow-lg text-lg
-              ${selectedIds.length > 0 
+              ${selectedIds.length > 0 && !isSubmitting
                 ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-900/20 active:scale-[0.99] cursor-pointer' 
                 : 'bg-theme-panel border border-theme-border text-theme-muted cursor-not-allowed opacity-50'}
             `}
           >
-            {selectedIds.length > 0 ? (
+            {isSubmitting ? (
+                <>
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    Salvando...
+                </>
+            ) : selectedIds.length > 0 ? (
                 <>
                     <CheckCircle2 className="w-6 h-6" />
                     Assumir {selectedIds.length} Evento{selectedIds.length !== 1 && 's'}

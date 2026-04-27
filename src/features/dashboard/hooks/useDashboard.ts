@@ -26,12 +26,14 @@ export const useDashboard = () => {
   const [createdThisShiftIds, setCreatedThisShiftIds] = useState<string[]>([]);
   const [isHandoverRequired, setIsHandoverRequired] = useState(false);
   const [currentShiftWorkedDuration, setCurrentShiftWorkedDuration] = useState<string>('--');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [priority, setPriority] = useState('todas');
   const [status, setStatus] = useState('todas');
 
-  const getWorkedDurationCacheKey = (userId: string | number) => `dashboard_worked_duration_${String(userId)}`;
+  const getWorkedDurationCacheKey = (userId: string | number) =>
+    `dashboard_worked_duration_${String(userId)}`;
 
   useEffect(() => {
     void fetchOccurrences({ silent: true });
@@ -59,9 +61,7 @@ export const useDashboard = () => {
         if (isCancelled) return;
 
         const payload = response?.data;
-        if (!payload) {
-          return;
-        }
+        if (!payload) return;
 
         const worked = String(payload?.workedDuration ?? payload?.tempo_trabalhado ?? '--');
         setCurrentShiftWorkedDuration(worked);
@@ -100,9 +100,6 @@ export const useDashboard = () => {
       try {
         const data = await getShiftHandoverDataCached() as ShiftHandoverData;
 
-        // Toda a lógica de localStorage foi removida daqui!
-        // Agora confiamos 100% no Back-end: se ele enviou pendências, nós abrimos.
-        // Se já assumimos antes, ele envia vazio e o modal não abre.
         if (data && data.occurrences && data.occurrences.length > 0) {
           setHandoverData(data);
           setIsHandoverRequired(true);
@@ -121,21 +118,44 @@ export const useDashboard = () => {
     checkHandover();
   }, [user?.id, table?.id]);
 
+  // Lista exibida na tela — aplica search, priority e status
   const filteredOccurrences = useMemo(() => {
     return occurrences.filter((occ) => {
       const matchesSearch = (occ.title || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchesPriority = priority === 'todas' || occ.priority === priority;
-      const matchesStatus = status === 'todas' || occ.status === status;
+      const matchesStatus = status === 'todas' || occ.status === status || (status === 'Pendente' && occ.status === 'Aberta');
       return matchesSearch && matchesPriority && matchesStatus;
     });
   }, [occurrences, searchTerm, priority, status]);
 
-  const stats = useMemo(() => ({
-    total: filteredOccurrences.length,
-    criticas: filteredOccurrences.filter(o => o.priority === 'crítica').length,
-    pendentes: filteredOccurrences.filter(o => o.status === 'Pendente' || o.status === 'Aberta').length,
-    analise: filteredOccurrences.filter(o => o.status === 'Em Análise').length,
-  }), [filteredOccurrences]);
+  // Stats dos cards — calculados sobre as ocorrências BRUTAS (sem filtros de UI)
+  // para que os totais nunca mudem ao filtrar a lista
+  const baseStats = useMemo(() => {
+    const currentUserId = user?.id ? String(user.id) : '';
+    const closedStatuses = new Set(['resolvida', 'finalizada', 'cancelada', 'fechada', 'encerrada']);
+
+    const normalizeText = (value: string) =>
+      value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+    const ownedOpen = occurrences.filter((occ) => {
+      const authorId = occ.authorId != null ? String(occ.authorId) : '';
+      const userId = occ.user_id != null ? String(occ.user_id) : '';
+      const isMine = Boolean(currentUserId) && (authorId === currentUserId || userId === currentUserId);
+      const normalizedStatus = normalizeText(String(occ.status || ''));
+      const apiIsOpen = (occ as { is_open?: boolean }).is_open;
+      const isOpen = typeof apiIsOpen === 'boolean'
+        ? apiIsOpen
+        : normalizedStatus.length === 0 || !closedStatuses.has(normalizedStatus);
+      return isMine && isOpen;
+    });
+
+    return {
+      total: ownedOpen.length,
+      criticas: ownedOpen.filter(o => o.priority === 'crítica').length,
+      pendentes: ownedOpen.filter(o => o.status === 'Pendente' || o.status === 'Aberta').length,
+      analise: ownedOpen.filter(o => o.status === 'Em Análise').length,
+    };
+  }, [occurrences, user?.id]);
 
   return {
     navigate,
@@ -145,26 +165,29 @@ export const useDashboard = () => {
     createdThisShiftIds,
     currentShiftWorkedDuration,
     isHandoverRequired,
-    stats,
+    baseStats,
     filters: { searchTerm, setSearchTerm, priority, setPriority, status, setStatus },
     handover: {
       isOpen: isHandoverOpen,
+      isSubmitting,
       data: handoverData,
       handleAcknowledge: async (observation: string, selectedIds: string[]) => {
         if (!handoverData?.occurrences || !user?.id) {
+          void showErrorModal('Sessão inválida. Recarregue a página e tente novamente.');
           return;
         }
 
         const normalizedSelectedIds = selectedIds.map((id) => String(id));
         if (normalizedSelectedIds.length === 0) {
+          void showErrorModal('Selecione pelo menos uma ocorrência para assumir.');
           return;
         }
 
         const mapped = handoverData.occurrences
           .filter(inherited => normalizedSelectedIds.includes(String(inherited.id)))
           .map(inherited => {
-            let validLinkType: "OS" | "External" | undefined = undefined;
-            if (inherited.linkType === "OS" || inherited.linkType === "External") {
+            let validLinkType: 'OS' | 'External' | undefined = undefined;
+            if (inherited.linkType === 'OS' || inherited.linkType === 'External') {
               validLinkType = inherited.linkType;
             }
             return {
@@ -176,16 +199,19 @@ export const useDashboard = () => {
               description: inherited.description,
               createdAt: new Date().toLocaleString('pt-BR'),
               linkType: validLinkType,
-              comments: observation ? [{
-                id: `obs-${Date.now()}`,
-                author: user.name,
-                text: `Observação no recebimento: ${observation}`,
-                type: 'Geral',
-                createdAt: new Date().toISOString()
-              }] : []
+              comments: observation
+                ? [{
+                    id: `obs-${Date.now()}`,
+                    author: user.name,
+                    text: `Observação no recebimento: ${observation}`,
+                    type: 'Geral',
+                    createdAt: new Date().toISOString(),
+                  }]
+                : [],
             } as Occurrence;
           });
 
+        setIsSubmitting(true);
         try {
           const response = await api.post('/occurrences/bulk', { occurrences: mapped });
 
@@ -208,10 +234,12 @@ export const useDashboard = () => {
 
           setIsHandoverOpen(false);
         } catch (error) {
-          console.error("Erro ao salvar herança:", error);
+          console.error('Erro ao salvar herança:', error);
           void showErrorModal('Não foi possível salvar as ocorrências herdadas no banco de dados. Tente novamente.');
+        } finally {
+          setIsSubmitting(false);
         }
-      }
-    }
+      },
+    },
   };
 };
