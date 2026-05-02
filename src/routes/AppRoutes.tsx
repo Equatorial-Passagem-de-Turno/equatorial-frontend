@@ -13,7 +13,9 @@ import { ShiftFinishLockGuard } from "@/features/auth/components/ShiftFinishLock
 import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
 import { NewEventPage } from "@/features/events/pages/NewEventPage";
 import { CircuitSwitchingPage } from "@/features/circuit-switching/pages/CircuitSwitchingPage";
+import { CircuitSwitchingDetailPage } from "@/features/circuit-switching/pages/CircuitSwitchingDetailPage";
 import { UnavailableEquipmentPage } from "@/features/unavailable-equipment/pages/UnavailableEquipmentPage";
+import { UnavailableEquipmentDetailPage } from "@/features/unavailable-equipment/pages/UnavailableEquipmentDetailPage";
 import { NewOccurrencePage } from "@/features/occurrences/pages/NewOccurrencePage";
 import { MyShiftOccurrencesPage } from "@/features/occurrences/pages/MyShiftOccurrencesPage";
 import { OccurrenceDetailPage } from "@/features/occurrences/pages/OccurrenceDetailPage";
@@ -71,7 +73,7 @@ export const AppRoutes = () => {
           path="events/new"
           element={
             <ShiftFinishLockGuard>
-              <HandoverRouteGuard>
+               <HandoverRouteGuard>
                 <NewEventPage />
               </HandoverRouteGuard>
             </ShiftFinishLockGuard>
@@ -83,7 +85,7 @@ export const AppRoutes = () => {
             path="new"
             element={
               <ShiftFinishLockGuard>
-                <HandoverRouteGuard>
+                 <HandoverRouteGuard>
                   <NewOccurrencePage />
                 </HandoverRouteGuard>
               </ShiftFinishLockGuard>
@@ -93,7 +95,7 @@ export const AppRoutes = () => {
             path="my-shift"
             element={
               <ShiftFinishLockGuard>
-                <HandoverRouteGuard>
+                 <HandoverRouteGuard>
                   <MyShiftOccurrencesPage />
                 </HandoverRouteGuard>
               </ShiftFinishLockGuard>
@@ -103,7 +105,7 @@ export const AppRoutes = () => {
             path=":id"
             element={
               <ShiftFinishLockGuard>
-                <HandoverRouteGuard>
+                 <HandoverRouteGuard>
                   <OccurrenceDetailPage />
                 </HandoverRouteGuard>
               </ShiftFinishLockGuard>
@@ -116,8 +118,18 @@ export const AppRoutes = () => {
             path="new"
             element={
               <ShiftFinishLockGuard>
-                <HandoverRouteGuard>
+                 <HandoverRouteGuard>
                   <CircuitSwitchingPage />
+                </HandoverRouteGuard>
+              </ShiftFinishLockGuard>
+            }
+          />
+          <Route
+            path=":id"
+            element={
+              <ShiftFinishLockGuard>
+                <HandoverRouteGuard>
+                  <CircuitSwitchingDetailPage />
                 </HandoverRouteGuard>
               </ShiftFinishLockGuard>
             }
@@ -129,8 +141,18 @@ export const AppRoutes = () => {
             path="new"
             element={
               <ShiftFinishLockGuard>
-                <HandoverRouteGuard>
+                 <HandoverRouteGuard>
                   <UnavailableEquipmentPage />
+                </HandoverRouteGuard>
+              </ShiftFinishLockGuard>
+            }
+          />
+          <Route
+            path=":id"
+            element={
+              <ShiftFinishLockGuard>
+                <HandoverRouteGuard>
+                  <UnavailableEquipmentDetailPage />
                 </HandoverRouteGuard>
               </ShiftFinishLockGuard>
             }
@@ -142,16 +164,16 @@ export const AppRoutes = () => {
           <Route
             path="control"
             element={
-               <HandoverRouteGuard> 
+                 <HandoverRouteGuard>
                 <ShiftControlPage />
-               </HandoverRouteGuard> 
+              </HandoverRouteGuard> 
             }
           />
           <Route
             path="previous"
             element={
               <ShiftFinishLockGuard>
-                <HandoverRouteGuard>
+                 <HandoverRouteGuard>
                   <ShiftPreviousPage />
                 </HandoverRouteGuard>
               </ShiftFinishLockGuard>

@@ -27,7 +27,7 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     roles: ['operator'],
   },
   {
-    label: 'Historico de Ocorrencias',
+    label: 'Histórico de Eventos',
     path: '/occurrences/my-shift',
     icon: History,
     roles: ['operator'],

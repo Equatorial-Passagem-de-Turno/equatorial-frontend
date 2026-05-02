@@ -12,6 +12,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { showSuccessModal, showWarningModal } from '@/shared/ui/feedbackModal';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { FileAttachmentField } from './FileAttachmentField';
 import type { CircuitAttachment, CircuitDeadlineEntry, CircuitSwitchingRecord } from '../types';
 
@@ -61,6 +62,8 @@ const formatDateTime = (value: string) => {
 
 export const CircuitSwitchingForm = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const authorName = user?.name?.trim() || user?.email || 'Autor não informado';
   const [generatedId] = useState(generateCircuitId);
   const [feeder, setFeeder] = useState('');
   const [equipment, setEquipment] = useState('');
@@ -69,6 +72,7 @@ export const CircuitSwitchingForm = () => {
   const [currentDeadline, setCurrentDeadline] = useState('');
   const [deadlineReason, setDeadlineReason] = useState('');
   const [deadlineHistory, setDeadlineHistory] = useState<CircuitDeadlineEntry[]>([]);
+  const [description, setDescription] = useState('');
   const [observations, setObservations] = useState('');
   const [cause, setCause] = useState('');
   const [attachments, setAttachments] = useState<CircuitAttachment[]>([]);
@@ -80,7 +84,7 @@ export const CircuitSwitchingForm = () => {
     return 'Novo registro de circuito manobrado';
   }, [equipment, feeder]);
 
-  const inputClass = 'w-full rounded-xl px-5 py-4 transition-all outline-none border focus:ring-2 focus:ring-emerald-500/50 bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 dark:bg-slate-950/70 dark:border-slate-700 dark:text-white dark:placeholder:text-slate-500';
+  const inputClass = 'w-full rounded-xl px-5 py-4 transition-all outline-none border focus:ring-2 focus:ring-blue-500/50 bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 dark:bg-slate-950/70 dark:border-slate-700 dark:text-white dark:placeholder:text-slate-500';
   const labelClass = 'block text-sm font-semibold mb-2 text-slate-700 dark:text-slate-300';
   const compactLabelClass = 'block text-xs font-semibold mb-2 uppercase text-slate-500 dark:text-slate-400';
 
@@ -131,6 +135,7 @@ export const CircuitSwitchingForm = () => {
     setCurrentDeadline('');
     setDeadlineReason('');
     setDeadlineHistory([]);
+    setDescription('');
     setObservations('');
     setCause('');
     attachments.forEach((attachment) => URL.revokeObjectURL(attachment.url));
@@ -164,9 +169,12 @@ export const CircuitSwitchingForm = () => {
       responsibleSector,
       currentDeadline,
       deadlineHistory: history,
+      description,
       observations,
       cause,
       attachments,
+      createdBy: authorName,
+      authorId: user?.id,
       createdAt: new Date().toISOString(),
     };
 
@@ -181,7 +189,7 @@ export const CircuitSwitchingForm = () => {
   return (
     <form onSubmit={handleSubmit} className="space-y-7 animate-fade-in relative z-10 pb-10">
       <div className="flex items-center gap-5 mb-8 p-6 bg-white dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="p-4 rounded-2xl transition-all duration-500 border-2 bg-blue-50 border-blue-100 text-blue-600 dark:bg-emerald-950/30 dark:border-emerald-900/50 dark:text-emerald-400">
+        <div className="p-4 rounded-2xl transition-all duration-500 border-2 bg-blue-50 border-blue-100 text-blue-600 dark:bg-blue-950/30 dark:border-blue-900/50 dark:text-blue-400">
           <CircuitBoard className="w-10 h-10" />
         </div>
         <div className="flex-1 min-w-0">
@@ -305,6 +313,18 @@ export const CircuitSwitchingForm = () => {
       </div>
 
       <div>
+        <label className={labelClass}>Descrição detalhada *</label>
+        <textarea
+          required
+          rows={5}
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          className={`${inputClass} resize-none`}
+          placeholder="Descreva o circuito manobrado, a condição operacional e o motivo do registro..."
+        />
+      </div>
+
+      <div>
         <label className={labelClass}>Observações</label>
         <textarea rows={6} value={observations} onChange={(event) => setObservations(event.target.value)} className={`${inputClass} resize-none`} placeholder="Inclua detalhes da manobra, tratativas, equipes acionadas e pontos de atenção..." />
       </div>
@@ -321,7 +341,7 @@ export const CircuitSwitchingForm = () => {
             Limpar
           </span>
         </button>
-        <button type="submit" disabled={isSubmitting} className="flex-[2] py-4 font-bold rounded-xl text-white flex items-center justify-center gap-3 transition-all shadow-xl hover:-translate-y-0.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-emerald-500/25 hover:shadow-emerald-500/40">
+        <button type="submit" disabled={isSubmitting} className="flex-[2] py-4 font-bold rounded-xl text-white flex items-center justify-center gap-3 transition-all shadow-xl hover:-translate-y-0.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 shadow-blue-500/25 hover:shadow-blue-500/40">
           {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
           {isSubmitting ? 'Salvando...' : 'Registrar circuito manobrado'}
         </button>

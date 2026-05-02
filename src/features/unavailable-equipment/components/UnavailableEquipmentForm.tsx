@@ -13,6 +13,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import { showSuccessModal, showWarningModal } from '@/shared/ui/feedbackModal';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import { FileAttachmentField } from '@/features/circuit-switching/components/FileAttachmentField';
 import type { CircuitAttachment, CircuitDeadlineEntry } from '@/features/circuit-switching/types';
 import type { UnavailableEquipmentRecord } from '../types';
@@ -74,6 +75,8 @@ const formatDateTime = (value: string) => {
 
 export const UnavailableEquipmentForm = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const authorName = user?.name?.trim() || user?.email || 'Autor não informado';
   const [generatedId] = useState(generateEquipmentId);
   const [equipmentNumber, setEquipmentNumber] = useState('');
   const [equipmentType, setEquipmentType] = useState('');
@@ -84,6 +87,7 @@ export const UnavailableEquipmentForm = () => {
   const [currentDeadline, setCurrentDeadline] = useState('');
   const [deadlineReason, setDeadlineReason] = useState('');
   const [deadlineHistory, setDeadlineHistory] = useState<CircuitDeadlineEntry[]>([]);
+  const [description, setDescription] = useState('');
   const [observations, setObservations] = useState('');
   const [cause, setCause] = useState('');
   const [attachments, setAttachments] = useState<CircuitAttachment[]>([]);
@@ -95,7 +99,7 @@ export const UnavailableEquipmentForm = () => {
     return 'Novo registro de equipamento indisponível';
   }, [equipmentNumber, equipmentType]);
 
-  const inputClass = 'w-full rounded-xl px-5 py-4 transition-all outline-none border focus:ring-2 focus:ring-red-500/40 bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 dark:bg-slate-950/70 dark:border-slate-700 dark:text-white dark:placeholder:text-slate-500';
+  const inputClass = 'w-full rounded-xl px-5 py-4 transition-all outline-none border focus:ring-2 focus:ring-purple-500/40 bg-white border-slate-300 text-slate-900 placeholder:text-slate-400 dark:bg-slate-950/70 dark:border-slate-700 dark:text-white dark:placeholder:text-slate-500';
   const labelClass = 'block text-sm font-semibold mb-2 text-slate-700 dark:text-slate-300';
   const compactLabelClass = 'block text-xs font-semibold mb-2 uppercase text-slate-500 dark:text-slate-400';
 
@@ -148,6 +152,7 @@ export const UnavailableEquipmentForm = () => {
     setCurrentDeadline('');
     setDeadlineReason('');
     setDeadlineHistory([]);
+    setDescription('');
     setObservations('');
     setCause('');
     attachments.forEach((attachment) => URL.revokeObjectURL(attachment.url));
@@ -183,9 +188,12 @@ export const UnavailableEquipmentForm = () => {
       responsibleSector,
       currentDeadline,
       deadlineHistory: history,
+      description,
       observations,
       cause,
       attachments,
+      createdBy: authorName,
+      authorId: user?.id,
       createdAt: new Date().toISOString(),
     };
 
@@ -200,7 +208,7 @@ export const UnavailableEquipmentForm = () => {
   return (
     <form onSubmit={handleSubmit} className="space-y-7 animate-fade-in relative z-10 pb-10">
       <div className="flex items-center gap-5 mb-8 p-6 bg-white dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="p-4 rounded-2xl transition-all duration-500 border-2 bg-red-50 border-red-100 text-red-600 dark:bg-red-950/30 dark:border-red-900/50 dark:text-red-400">
+        <div className="p-4 rounded-2xl transition-all duration-500 border-2 bg-purple-50 border-purple-100 text-purple-600 dark:bg-purple-950/30 dark:border-purple-900/50 dark:text-purple-400">
           <AlertTriangle className="w-10 h-10" />
         </div>
         <div className="flex-1 min-w-0">
@@ -216,9 +224,9 @@ export const UnavailableEquipmentForm = () => {
         </div>
       </div>
 
-      <div className="p-8 rounded-2xl border bg-red-50/50 border-red-100 dark:bg-red-950/10 dark:border-red-900/30 space-y-6 shadow-inner">
-        <div className="flex items-center gap-3 mb-4 text-slate-600 dark:text-slate-300 border-b border-red-100 dark:border-red-900/40 pb-4">
-          <div className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg">
+      <div className="p-8 rounded-2xl border bg-purple-50/50 border-purple-100 dark:bg-purple-950/10 dark:border-purple-900/30 space-y-6 shadow-inner">
+        <div className="flex items-center gap-3 mb-4 text-slate-600 dark:text-slate-300 border-b border-purple-100 dark:border-purple-900/40 pb-4">
+          <div className="p-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-lg">
             <Hash className="w-5 h-5" />
           </div>
           <div>
@@ -270,10 +278,10 @@ export const UnavailableEquipmentForm = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div>
-            <label className={compactLabelClass}>Clientes afetados *</label>
+            <label className={compactLabelClass}>Clientes afetados</label>
             <div className="relative">
               <Users className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-              <input required type="number" min="0" value={affectedCustomers} onChange={(event) => setAffectedCustomers(event.target.value)} className={`${inputClass} pl-12`} placeholder="0" />
+              <input type="number" min="0" value={affectedCustomers} onChange={(event) => setAffectedCustomers(event.target.value)} className={`${inputClass} pl-12`} placeholder="0" />
             </div>
           </div>
           <div>
@@ -352,6 +360,18 @@ export const UnavailableEquipmentForm = () => {
       </div>
 
       <div>
+        <label className={labelClass}>Descrição detalhada *</label>
+        <textarea
+          required
+          rows={5}
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          className={`${inputClass} resize-none`}
+          placeholder="Descreva a indisponibilidade, a condição do equipamento e o impacto operacional..."
+        />
+      </div>
+
+      <div>
         <label className={labelClass}>Observações</label>
         <textarea rows={6} value={observations} onChange={(event) => setObservations(event.target.value)} className={`${inputClass} resize-none`} placeholder="Inclua detalhes da indisponibilidade, restrições operativas, equipes acionadas e pontos de atenção..." />
       </div>
@@ -368,7 +388,7 @@ export const UnavailableEquipmentForm = () => {
             Limpar
           </span>
         </button>
-        <button type="submit" disabled={isSubmitting} className="flex-[2] py-4 font-bold rounded-xl text-white flex items-center justify-center gap-3 transition-all shadow-xl hover:-translate-y-0.5 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 shadow-red-500/25 hover:shadow-red-500/40">
+        <button type="submit" disabled={isSubmitting} className="flex-[2] py-4 font-bold rounded-xl text-white flex items-center justify-center gap-3 transition-all shadow-xl hover:-translate-y-0.5 bg-gradient-to-r from-purple-600 to-fuchsia-600 hover:from-purple-500 hover:to-fuchsia-500 shadow-purple-500/25 hover:shadow-purple-500/40">
           {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
           {isSubmitting ? 'Salvando...' : 'Registrar equipamento indisponível'}
         </button>

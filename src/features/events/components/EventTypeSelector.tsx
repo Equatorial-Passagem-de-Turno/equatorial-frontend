@@ -38,8 +38,8 @@ const options: EventTypeOption[] = [
     label: 'Equipamento indisponível',
     description: 'Registro com foco em número, tipo e normalização do equipamento.',
     icon: Wrench,
-    tone: 'text-red-600 bg-red-50 dark:bg-red-950/30 dark:text-red-400',
-    activeTone: 'border-red-500 ring-2 ring-red-500/20',
+    tone: 'text-purple-600 bg-purple-50 dark:bg-purple-950/30 dark:text-purple-400',
+    activeTone: 'border-purple-500 ring-2 ring-purple-500/20',
   },
 ];
 

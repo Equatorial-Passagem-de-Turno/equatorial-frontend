@@ -20,8 +20,11 @@ export interface CircuitSwitchingRecord {
   responsibleSector: string;
   currentDeadline: string;
   deadlineHistory: CircuitDeadlineEntry[];
+  description?: string;
   observations: string;
   cause: string;
   attachments: CircuitAttachment[];
+  createdBy?: string;
+  authorId?: string | number;
   createdAt: string;
 }
