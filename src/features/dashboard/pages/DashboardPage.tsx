@@ -98,7 +98,7 @@ export const DashboardPage = () => {
   }, [filteredOccurrences, selectedInheritedIds, createdThisShiftIds, user?.id]);
 
   return (
-    <div className="w-full bg-transparent p-4 md:p-8 space-y-6 lg:space-y-8 animate-fade-in relative transition-colors duration-300">
+    <div className="eq-page-content w-full bg-transparent space-y-6 lg:space-y-8 relative transition-colors duration-300">
 
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -107,16 +107,16 @@ export const DashboardPage = () => {
             <div className={`p-2 rounded-lg bg-gradient-to-br ${currentRoleConfig?.gradient || 'from-slate-700 to-slate-900'} shadow-lg`}>
               <RoleIcon className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-[var(--text-main)] tracking-tight">
+            <h1 className="eq-page-title text-2xl lg:text-3xl">
               Dashboard {currentRoleConfig?.label || 'Operacional'}
             </h1>
           </div>
-          <p className="text-[var(--text-muted)] text-sm lg:text-base ml-1">
-            Olá, <span className="font-medium text-[var(--text-main)]">{user?.name}</span>.{' '}
+          <p className="eq-page-subtitle text-sm lg:text-base ml-1">
+            Olá, <span className="font-medium text-[var(--eq-text-primary)]">{user?.name}</span>.{' '}
             Mesa ativa:{' '}
             <span className="text-emerald-500 font-medium">{table?.code} - {table?.name}</span>{' '}
             • Total trabalhado:{' '}
-            <span className="text-slate-700 dark:text-slate-300 font-semibold">{currentShiftWorkedDuration}</span>
+            <span className="text-[var(--eq-text-secondary)] font-semibold">{currentShiftWorkedDuration}</span>
           </p>
         </div>
 
@@ -140,7 +140,7 @@ export const DashboardPage = () => {
         </div>
       )}
 
-      <div className="rounded-2xl overflow-hidden shadow-sm border border-[var(--border-color)]">
+      <div className="rounded-2xl overflow-hidden shadow-sm border border-[var(--eq-border)]">
         <ShiftTimer shiftStartTime={new Date()} shiftDurationHours={8} workedDurationLabel={currentShiftWorkedDuration} />
       </div>
 
@@ -185,13 +185,13 @@ export const DashboardPage = () => {
       {/* LISTA */}
       <div className="space-y-4">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-20 bg-[var(--bg-panel)] rounded-xl border border-[var(--border-color)]">
+          <div className="eq-empty-state py-20">
             <Loader2 className="w-10 h-10 text-emerald-500 animate-spin mb-4" />
-            <p className="text-[var(--text-muted)]">Sincronizando banco de dados...</p>
+            <p className="eq-page-subtitle">Sincronizando banco de dados...</p>
           </div>
         ) : myWorkload.length === 0 ? (
-          <div className="text-center py-12 bg-[var(--bg-panel)] border border-[var(--border-color)] border-dashed rounded-xl">
-            <p className="text-[var(--text-muted)]">Nenhuma ocorrência vinculada à sua mesa.</p>
+          <div className="eq-empty-state py-12 text-center">
+            <p className="eq-page-subtitle">Nenhuma ocorrência vinculada à sua mesa.</p>
           </div>
         ) : (
           myWorkload.map((occ) => <OccurrenceListItem key={occ.id} occurrence={occ} />)
@@ -210,3 +210,4 @@ export const DashboardPage = () => {
     </div>
   );
 };
+

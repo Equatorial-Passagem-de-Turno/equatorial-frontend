@@ -40,12 +40,7 @@ export const ShiftTimer = ({ shiftStartTime, shiftDurationHours = 8, workedDurat
   }, [shiftStartTime, shiftDurationHours]);
 
   return (
-    <div className="group relative overflow-hidden rounded-3xl transition-all duration-300
-      /* Light Mode Base */
-      bg-white border border-slate-200 shadow-lg shadow-slate-200/50
-      /* Dark Mode Base */
-      dark:bg-slate-900 dark:border-slate-800 dark:shadow-none
-    ">
+    <div className="eq-surface group relative overflow-hidden rounded-3xl transition-all duration-300">
       
       {/* Efeito de brilho de fundo (Gradient Glow) */}
       <div className="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -56,11 +51,11 @@ export const ShiftTimer = ({ shiftStartTime, shiftDurationHours = 8, workedDurat
         {/* Display Principal do Relógio */}
         <div className="flex items-baseline gap-1 sm:gap-2 font-mono select-none">
           {/* Horas : Minutos */}
-          <div className="flex items-baseline text-slate-900 dark:text-white transition-colors duration-300">
+          <div className="flex items-baseline text-[var(--eq-text-primary)] transition-colors duration-300">
             <span className="text-5xl sm:text-7xl font-bold tracking-tighter tabular-nums">
               {timeState.hours}
             </span>
-            <span className="text-5xl sm:text-7xl font-bold text-slate-300 dark:text-slate-700 animate-pulse pb-2">
+            <span className="text-5xl sm:text-7xl font-bold text-[var(--eq-border-strong)] animate-pulse pb-2">
               :
             </span>
             <span className="text-5xl sm:text-7xl font-bold tracking-tighter tabular-nums">
@@ -69,14 +64,14 @@ export const ShiftTimer = ({ shiftStartTime, shiftDurationHours = 8, workedDurat
           </div>
 
           {/* Segundos (Menor e mais suave) */}
-          <div className="text-2xl sm:text-3xl font-medium text-slate-400 dark:text-slate-500 tabular-nums self-end pb-1 sm:pb-2 pl-1">
+          <div className="text-2xl sm:text-3xl font-medium text-[var(--eq-text-muted)] tabular-nums self-end pb-1 sm:pb-2 pl-1">
              {timeState.seconds}
           </div>
         </div>
 
         {/* Rodapé: Data */}
-        <div className="w-full border-t border-slate-100 dark:border-slate-800/50 pt-4">
-          <div className="flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400">
+        <div className="w-full border-t border-[var(--eq-border-soft)] pt-4">
+          <div className="flex items-center justify-center gap-2 text-[var(--eq-text-muted)]">
             <Calendar className="w-4 h-4" />
             <span className="text-sm font-medium capitalize">
               {timeState.dateString}

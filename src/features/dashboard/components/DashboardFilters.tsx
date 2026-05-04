@@ -15,23 +15,22 @@ const SelectDropdown = ({
       onClick={(e) => onToggle(e, type)}
       className={`
         w-full flex items-center justify-between px-4 py-3 
-        bg-[var(--bg-panel)] border rounded-xl text-[var(--text-main)] 
-        transition-all duration-200 outline-none whitespace-nowrap shadow-sm
+        eq-control whitespace-nowrap
         ${isOpen 
           ? 'border-emerald-500 ring-2 ring-emerald-500/20 shadow-lg' 
-          : 'border-[var(--border-input)] hover:border-emerald-500/50'
+          : 'hover:border-emerald-500/50'
         }
       `}
     >
       <span className="font-medium truncate text-sm">
         {options.find((o) => o.value === value)?.label}
       </span>
-      <ChevronDown className={`w-4 h-4 ml-2 text-[var(--text-muted)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      <ChevronDown className={`w-4 h-4 ml-2 text-[var(--eq-text-muted)] transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
     </button>
 
     <div className={`
       absolute top-full left-0 right-0 mt-2 p-1.5
-      bg-[var(--bg-panel)] border border-[var(--border-color)] rounded-xl shadow-xl z-50
+      eq-dropdown-menu z-50
       transition-all duration-200 origin-top
       ${isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'}
     `}>
@@ -40,10 +39,10 @@ const SelectDropdown = ({
           key={opt.value}
           onClick={() => { onChange(opt.value); }}
           className={`
-            px-3 py-2.5 rounded-lg cursor-pointer transition-colors text-sm
+            eq-dropdown-option
             ${value === opt.value 
               ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 font-semibold' 
-              : 'text-[var(--text-main)] hover:bg-[var(--bg-background)]'
+              : ''
             }
           `}
         >
@@ -97,13 +96,13 @@ export const DashboardFilters = ({
   return (
     <div className="flex flex-col lg:flex-row gap-4 relative z-50">
       <div className="relative flex-1">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-muted)] pointer-events-none" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--eq-text-muted)] pointer-events-none" />
         <input
           type="text"
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Buscar por título ou ID..."
-          className="w-full bg-[var(--bg-panel)] border border-[var(--border-input)] rounded-xl pl-12 pr-4 py-3 text-[var(--text-main)] placeholder-[var(--text-muted)] focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all shadow-sm"
+          className="eq-control w-full pl-12 pr-4 py-3 focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
         />
       </div>
       <div className="flex flex-wrap gap-3 relative z-50">

@@ -7,7 +7,7 @@ interface EventTypeOption {
   label: string;
   description: string;
   icon: LucideIcon;
-  tone: string;
+  iconTone: string;
   activeTone: string;
 }
 
@@ -22,24 +22,24 @@ const options: EventTypeOption[] = [
     label: 'Ocorrência',
     description: 'Registro operacional comum, com categoria, prioridade e detalhes.',
     icon: FileText,
-    tone: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-400',
-    activeTone: 'border-emerald-500 ring-2 ring-emerald-500/20',
+    iconTone: 'eq-tone-occurrence',
+    activeTone: 'eq-card-occurrence-active',
   },
   {
     value: 'circuit-switching',
     label: 'Circuito manobrado',
     description: 'Registro de circuito, manobra, prazo e clientes afetados.',
     icon: CircuitBoard,
-    tone: 'text-blue-600 bg-blue-50 dark:bg-blue-950/30 dark:text-blue-400',
-    activeTone: 'border-blue-500 ring-2 ring-blue-500/20',
+    iconTone: 'eq-tone-circuit',
+    activeTone: 'eq-card-circuit-active',
   },
   {
     value: 'unavailable-equipment',
     label: 'Equipamento indisponível',
     description: 'Registro com foco em número, tipo e normalização do equipamento.',
     icon: Wrench,
-    tone: 'text-purple-600 bg-purple-50 dark:bg-purple-950/30 dark:text-purple-400',
-    activeTone: 'border-purple-500 ring-2 ring-purple-500/20',
+    iconTone: 'eq-tone-equipment',
+    activeTone: 'eq-card-equipment-active',
   },
 ];
 
@@ -47,12 +47,12 @@ export const EventTypeSelector = ({ value, onChange }: EventTypeSelectorProps) =
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-300">
+        <div className="eq-soft-icon p-2 rounded-lg">
           <AlertTriangle className="w-5 h-5" />
         </div>
         <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Cadastrar evento</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <h2 className="eq-card-title text-xl font-bold">Cadastrar evento</h2>
+          <p className="eq-page-subtitle">
             Selecione o tipo de evento antes de preencher o formulario.
           </p>
         </div>
@@ -68,19 +68,19 @@ export const EventTypeSelector = ({ value, onChange }: EventTypeSelectorProps) =
               key={option.value}
               type="button"
               onClick={() => onChange(option.value)}
-              className={`text-left rounded-xl border p-4 transition-all bg-white dark:bg-slate-950/70 hover:border-slate-400 dark:hover:border-slate-600 ${
-                isActive ? option.activeTone : 'border-slate-200 dark:border-slate-800'
+              className={`eq-surface-soft text-left p-4 transition-all hover:border-[var(--eq-border-strong)] ${
+                isActive ? option.activeTone : ''
               }`}
             >
               <div className="flex items-start gap-3">
-                <div className={`shrink-0 p-2.5 rounded-lg ${option.tone}`}>
+                <div className={`shrink-0 p-2.5 rounded-lg border ${option.iconTone}`}>
                   <Icon className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
-                  <div className="font-bold text-slate-800 dark:text-slate-100">
+                  <div className="eq-card-title font-bold">
                     {option.label}
                   </div>
-                  <div className="text-xs leading-relaxed text-slate-500 dark:text-slate-400 mt-1">
+                  <div className="eq-card-description mt-1 leading-relaxed">
                     {option.description}
                   </div>
                 </div>
