@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { User, Clock } from 'lucide-react';
+import { Clock, FileText, User } from 'lucide-react';
 import { PriorityBadge } from '@/components/ui/Badge'; 
 import type { Occurrence } from '@/features/occurrences/types';
 
@@ -51,6 +51,10 @@ export const ShiftOccurrenceItem = ({ occurrence, currentUser }: ShiftOccurrence
               <div className="flex flex-wrap items-center gap-2">
                   <span className="font-mono text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
                     {occurrence.id}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-xs border font-bold bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800">
+                    <FileText className="w-3 h-3" />
+                    Ocorrência
                   </span>
                   <PriorityBadge priority={occurrence.priority} />
                   
