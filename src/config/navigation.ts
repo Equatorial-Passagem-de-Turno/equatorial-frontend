@@ -14,21 +14,21 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     icon: Activity,
     roles: ['operator'],
   },
-  { 
-    label: 'Nova Ocorrência', 
-    path: '/occurrences/new', 
+  {
+    label: 'Novo Evento',
+    path: '/events/new',
     icon: Plus,
     roles: ['operator'],
   },
-  { 
-    label: 'Controle de Turnos', 
-    path: '/shifts/control', 
+  {
+    label: 'Controle de Turnos',
+    path: '/shifts/control',
     icon: UserCog,
     roles: ['operator'],
   },
-  { 
-    label: 'Historico de Ocorrências', 
-    path: '/occurrences/my-shift', 
+  {
+    label: 'Histórico de Eventos',
+    path: '/occurrences/my-shift',
     icon: History,
     roles: ['operator'],
   },
@@ -45,8 +45,8 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     roles: ['supervisor'],
   },
   {
-    label: 'Nova Ocorrência',
-    path: '/occurrences/new',
+    label: 'Novo Evento',
+    path: '/events/new',
     icon: Plus,
     roles: ['supervisor'],
   },
@@ -63,9 +63,9 @@ export const SIDEBAR_ITEMS: NavItem[] = [
     roles: ['supervisor'],
   },
   {
-    label: 'Gestão',
+    label: 'Gestao',
     path: '/supervisor/management',
     icon: Settings,
     roles: ['supervisor'],
-  }
+  },
 ];

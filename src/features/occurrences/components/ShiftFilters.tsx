@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, User, ChevronDown, Radio, Monitor, MapPin } from 'lucide-react';
+import { Search, User, ChevronDown, Radio, Monitor, MapPin, Layers } from 'lucide-react';
 
 interface FilterOption {
   label: string;
@@ -15,6 +15,7 @@ interface ShiftFiltersProps {
     // Novos filtros adicionados
     mesa: string; setMesa: (v: string) => void;
     base: string; setBase: (v: string) => void;
+    eventType: string; setEventType: (v: string) => void;
     
     onlyMine: boolean; setOnlyMine: (v: boolean) => void;
   }
@@ -22,7 +23,7 @@ interface ShiftFiltersProps {
 
 export const ShiftFilters = ({ filters }: ShiftFiltersProps) => {
   // Adicionado 'mesa' e 'base' ao estado de controle do dropdown
-  const [openFilter, setOpenFilter] = useState<'priority' | 'status' | 'mesa' | 'base' | null>(null);
+  const [openFilter, setOpenFilter] = useState<'priority' | 'status' | 'mesa' | 'base' | 'eventType' | null>(null);
 
   useEffect(() => {
     const handleClickOutside = () => setOpenFilter(null);
@@ -30,7 +31,7 @@ export const ShiftFilters = ({ filters }: ShiftFiltersProps) => {
     return () => window.removeEventListener('click', handleClickOutside);
   }, []);
 
-  const toggleFilter = (e: React.MouseEvent, filter: 'priority' | 'status' | 'mesa' | 'base') => {
+  const toggleFilter = (e: React.MouseEvent, filter: 'priority' | 'status' | 'mesa' | 'base' | 'eventType') => {
     e.stopPropagation();
     setOpenFilter(openFilter === filter ? null : filter);
   };
@@ -66,8 +67,15 @@ export const ShiftFilters = ({ filters }: ShiftFiltersProps) => {
     { label: 'Base Filial Sul', value: 'Sul' },
   ];
 
+  const eventTypeOptions: FilterOption[] = [
+    { label: 'Todos Eventos', value: 'todos' },
+    { label: 'Ocorrências', value: 'occurrence' },
+    { label: 'Circuitos Manobrados', value: 'circuit-switching' },
+    { label: 'Equipamentos Indisponíveis', value: 'unavailable-equipment' },
+  ];
+
   const renderDropdown = (
-    type: 'priority' | 'status' | 'mesa' | 'base', 
+    type: 'priority' | 'status' | 'mesa' | 'base' | 'eventType', 
     currentVal: string, 
     setVal: (v: string) => void, 
     options: FilterOption[],
@@ -125,6 +133,7 @@ export const ShiftFilters = ({ filters }: ShiftFiltersProps) => {
         </div>
 
         {/* Novos Dropdowns de MESA e BASE */}
+        {renderDropdown('eventType', filters.eventType, filters.setEventType, eventTypeOptions, <Layers className="w-4 h-4"/>)}
         {renderDropdown('mesa', filters.mesa, filters.setMesa, mesaOptions, <Monitor className="w-4 h-4"/>)}
         {renderDropdown('base', filters.base, filters.setBase, baseOptions, <MapPin className="w-4 h-4"/>)}
 

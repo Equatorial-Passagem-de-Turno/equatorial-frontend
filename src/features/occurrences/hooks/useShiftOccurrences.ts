@@ -21,12 +21,15 @@ export const useShiftOccurrences = () => {
   const [status, setStatus] = useState('todas');
   const [mesa, setMesa] = useState('todas');
   const [base, setBase] = useState('todas');
+  const [eventType, setEventType] = useState('todos');
   const [onlyMine, setOnlyMine] = useState(false);
 
   // Lógica de Filtragem Segura
   const filteredData = useMemo(() => {
     // Evita erros caso occurrences ainda não tenha carregado e seja undefined
     if (!Array.isArray(occurrences)) return [];
+
+    if (eventType !== 'todos' && eventType !== 'occurrence') return [];
 
     return occurrences.filter((item) => {
       // Usamos (item.campo || '') para evitar erro de .toLowerCase() em valores nulos do banco
@@ -46,7 +49,7 @@ export const useShiftOccurrences = () => {
 
       return matchesSearch && matchesAuthor && matchesPriority && matchesStatus && matchesMine;
     });
-  }, [occurrences, searchTerm, author, priority, status, onlyMine, user?.id]);
+  }, [occurrences, searchTerm, author, priority, status, onlyMine, user?.id, eventType]);
 
   // Estatísticas baseadas no filtro atual
   const stats = useMemo(() => ({
@@ -66,6 +69,7 @@ export const useShiftOccurrences = () => {
       status, setStatus,
       mesa, setMesa,
       base, setBase,
+      eventType, setEventType,
       onlyMine, setOnlyMine,
     }
   };

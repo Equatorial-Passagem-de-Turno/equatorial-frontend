@@ -1,70 +1,247 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from '@/features/auth/hooks/useAuth';
+import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
 // Layouts & Auth
-import { MainLayout } from '@/components/layout/MainLayout';
-import { AuthPage } from '@/features/auth/pages/AuthPage'; 
-import { RoleSelector } from '@/features/auth/components/RoleSelector';
+import { MainLayout } from "@/components/layout/MainLayout";
+import { AuthPage } from "@/features/auth/pages/AuthPage";
+import { RoleSelector } from "@/features/auth/components/RoleSelector";
 import { TableSelector } from "@/features/auth/components/TableSelector";
-import { HandoverRouteGuard } from '@/features/auth/components/HandoverRouteGuard';
-import { ShiftFinishLockGuard } from '@/features/auth/components/ShiftFinishLockGuard';
+import { HandoverRouteGuard } from "@/features/auth/components/HandoverRouteGuard";
+import { ShiftFinishLockGuard } from "@/features/auth/components/ShiftFinishLockGuard";
 
 // Pages
-import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
-import { NewOccurrencePage } from '@/features/occurrences/pages/NewOccurrencePage';
-import { MyShiftOccurrencesPage } from '@/features/occurrences/pages/MyShiftOccurrencesPage';
-import { OccurrenceDetailPage } from '@/features/occurrences/pages/OccurrenceDetailPage';
-import { ShiftControlPage } from '@/features/shifts/pages/ShiftControlPage';
-import { ShiftPreviousPage } from '@/features/shifts/pages/ShiftPreviousPage';
-import { DashboardSupervisorPage } from '@/features/supervisor/pages/DashboardSupervisorPage';
-import { TimelinePage } from '@/features/supervisor/pages/TimelinePage';
-import { AnalyticsPage } from '@/features/supervisor/pages/AnalyticsPage';
-import { ManegementPage } from '@/features/supervisor/pages/ManagementPage';
-import { SupervisorOccurenceDetailsPage } from '@/features/supervisor/components/SupervisorOccurrenceDetailPage';
+import { DashboardPage } from "@/features/dashboard/pages/DashboardPage";
+import { NewEventPage } from "@/features/events/pages/NewEventPage";
+import { CircuitSwitchingPage } from "@/features/circuit-switching/pages/CircuitSwitchingPage";
+import { CircuitSwitchingDetailPage } from "@/features/circuit-switching/pages/CircuitSwitchingDetailPage";
+import { UnavailableEquipmentPage } from "@/features/unavailable-equipment/pages/UnavailableEquipmentPage";
+import { UnavailableEquipmentDetailPage } from "@/features/unavailable-equipment/pages/UnavailableEquipmentDetailPage";
+import { NewOccurrencePage } from "@/features/occurrences/pages/NewOccurrencePage";
+import { MyShiftOccurrencesPage } from "@/features/occurrences/pages/MyShiftOccurrencesPage";
+import { OccurrenceDetailPage } from "@/features/occurrences/pages/OccurrenceDetailPage";
+import { ShiftControlPage } from "@/features/shifts/pages/ShiftControlPage";
+import { ShiftPreviousPage } from "@/features/shifts/pages/ShiftPreviousPage";
+import { DashboardSupervisorPage } from "@/features/supervisor/pages/DashboardSupervisorPage";
+import { TimelinePage } from "@/features/supervisor/pages/TimelinePage";
+import { AnalyticsPage } from "@/features/supervisor/pages/AnalyticsPage";
+import { ManegementPage } from "@/features/supervisor/pages/ManagementPage";
+import { SupervisorOccurenceDetailsPage } from "@/features/supervisor/components/SupervisorOccurrenceDetailPage";
 
 export const AppRoutes = () => {
   const { isAuthenticated, role, table, user } = useAuth();
-  const accountRole = String((user as { role?: string } | null)?.role || '').toLowerCase();
-  const isSupervisor = accountRole === 'supervisor' || accountRole === 'admin' || accountRole === 'adm';
+  const accountRole = String(
+    (user as { role?: string } | null)?.role || "",
+  ).toLowerCase();
+  const isSupervisor =
+    accountRole === "supervisor" ||
+    accountRole === "admin" ||
+    accountRole === "adm";
 
   if (!isAuthenticated) return <AuthPage />;
 
   if (!isSupervisor && !role) return <RoleSelector />;
   if (!isSupervisor && !table) return <TableSelector />;
 
-
   return (
     <Routes>
-      <Route path="/" element={<ShiftFinishLockGuard><MainLayout /></ShiftFinishLockGuard>}>
+      <Route
+        path="/"
+        element={
+          <ShiftFinishLockGuard>
+            <MainLayout />
+          </ShiftFinishLockGuard>
+        }
+      >
         {/* Dashboard Principal */}
         <Route
           index
           element={
-            isSupervisor
-              ? <ShiftFinishLockGuard><DashboardSupervisorPage /></ShiftFinishLockGuard>
-              : <ShiftFinishLockGuard><DashboardPage /></ShiftFinishLockGuard>
+            isSupervisor ? (
+              <ShiftFinishLockGuard>
+                <DashboardSupervisorPage />
+              </ShiftFinishLockGuard>
+            ) : (
+              <ShiftFinishLockGuard>
+                <DashboardPage />
+              </ShiftFinishLockGuard>
+            )
           }
         />
-        
+
         {/* Módulo de Ocorrências */}
+        <Route
+          path="events/new"
+          element={
+            <ShiftFinishLockGuard>
+               <HandoverRouteGuard>
+                <NewEventPage />
+              </HandoverRouteGuard>
+            </ShiftFinishLockGuard>
+          }
+        />
+
         <Route path="occurrences">
-          <Route path="new" element={<ShiftFinishLockGuard><HandoverRouteGuard><NewOccurrencePage /></HandoverRouteGuard></ShiftFinishLockGuard>} />
-          <Route path="my-shift" element={<ShiftFinishLockGuard><HandoverRouteGuard><MyShiftOccurrencesPage /></HandoverRouteGuard></ShiftFinishLockGuard>} />
-          <Route path=":id" element={<ShiftFinishLockGuard><HandoverRouteGuard><OccurrenceDetailPage /></HandoverRouteGuard></ShiftFinishLockGuard>} />
+          <Route
+            path="new"
+            element={
+              <ShiftFinishLockGuard>
+                 <HandoverRouteGuard>
+                  <NewOccurrencePage />
+                </HandoverRouteGuard>
+              </ShiftFinishLockGuard>
+            }
+          />
+          <Route
+            path="my-shift"
+            element={
+              <ShiftFinishLockGuard>
+                 <HandoverRouteGuard>
+                  <MyShiftOccurrencesPage />
+                </HandoverRouteGuard>
+              </ShiftFinishLockGuard>
+            }
+          />
+          <Route
+            path=":id"
+            element={
+              <ShiftFinishLockGuard>
+                 <HandoverRouteGuard>
+                  <OccurrenceDetailPage />
+                </HandoverRouteGuard>
+              </ShiftFinishLockGuard>
+            }
+          />
+        </Route>
+
+        <Route path="circuit-switching">
+          <Route
+            path="new"
+            element={
+              <ShiftFinishLockGuard>
+                 <HandoverRouteGuard>
+                  <CircuitSwitchingPage />
+                </HandoverRouteGuard>
+              </ShiftFinishLockGuard>
+            }
+          />
+          <Route
+            path=":id"
+            element={
+              <ShiftFinishLockGuard>
+                <HandoverRouteGuard>
+                  <CircuitSwitchingDetailPage />
+                </HandoverRouteGuard>
+              </ShiftFinishLockGuard>
+            }
+          />
+        </Route>
+
+        <Route path="unavailable-equipment">
+          <Route
+            path="new"
+            element={
+              <ShiftFinishLockGuard>
+                 <HandoverRouteGuard>
+                  <UnavailableEquipmentPage />
+                </HandoverRouteGuard>
+              </ShiftFinishLockGuard>
+            }
+          />
+          <Route
+            path=":id"
+            element={
+              <ShiftFinishLockGuard>
+                <HandoverRouteGuard>
+                  <UnavailableEquipmentDetailPage />
+                </HandoverRouteGuard>
+              </ShiftFinishLockGuard>
+            }
+          />
         </Route>
 
         {/* Módulo de Turnos */}
         <Route path="shifts">
-          <Route path="control" element={<HandoverRouteGuard><ShiftControlPage /></HandoverRouteGuard>} />
-          <Route path="previous" element={<ShiftFinishLockGuard><HandoverRouteGuard><ShiftPreviousPage /></HandoverRouteGuard></ShiftFinishLockGuard>} />
+          <Route
+            path="control"
+            element={
+                 <HandoverRouteGuard>
+                <ShiftControlPage />
+              </HandoverRouteGuard> 
+            }
+          />
+          <Route
+            path="previous"
+            element={
+              <ShiftFinishLockGuard>
+                 <HandoverRouteGuard>
+                  <ShiftPreviousPage />
+                </HandoverRouteGuard>
+              </ShiftFinishLockGuard>
+            }
+          />
         </Route>
 
         {/* Dashboard do Supervisor */}
-        <Route path="supervisor" element={isSupervisor ? <ShiftFinishLockGuard><DashboardSupervisorPage /></ShiftFinishLockGuard> : <Navigate to="/" replace />} />
-        <Route path="supervisor/timeline" element={isSupervisor ? <ShiftFinishLockGuard><TimelinePage /></ShiftFinishLockGuard> : <Navigate to="/" replace />} />
-        <Route path="supervisor/analytics" element={isSupervisor ? <ShiftFinishLockGuard><AnalyticsPage /></ShiftFinishLockGuard> : <Navigate to="/" replace />} />
-        <Route path="supervisor/management" element={isSupervisor ? <ShiftFinishLockGuard><ManegementPage /></ShiftFinishLockGuard> : <Navigate to="/" replace />} />
-        <Route path="supervisor/occurrences/:id" element={isSupervisor ? <ShiftFinishLockGuard><SupervisorOccurenceDetailsPage /></ShiftFinishLockGuard> : <Navigate to="/" replace />} />
+        <Route
+          path="supervisor"
+          element={
+            isSupervisor ? (
+              <ShiftFinishLockGuard>
+                <DashboardSupervisorPage />
+              </ShiftFinishLockGuard>
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
+          path="supervisor/timeline"
+          element={
+            isSupervisor ? (
+              <ShiftFinishLockGuard>
+                <TimelinePage />
+              </ShiftFinishLockGuard>
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
+          path="supervisor/analytics"
+          element={
+            isSupervisor ? (
+              <ShiftFinishLockGuard>
+                <AnalyticsPage />
+              </ShiftFinishLockGuard>
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
+          path="supervisor/management"
+          element={
+            isSupervisor ? (
+              <ShiftFinishLockGuard>
+                <ManegementPage />
+              </ShiftFinishLockGuard>
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route
+          path="supervisor/occurrences/:id"
+          element={
+            isSupervisor ? (
+              <ShiftFinishLockGuard>
+                <SupervisorOccurenceDetailsPage />
+              </ShiftFinishLockGuard>
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
       </Route>
 
       {/* Redireciona qualquer rota inválida para a home */}
