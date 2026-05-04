@@ -361,7 +361,7 @@ export function ManegementPage() {
 
           <button
             onClick={() => setShowAddTableModal(true)}
-            className="flex items-center gap-2 rounded-lg bg-theme-accent px-4 py-2 text-sm text-white transition-all hover:bg-emerald-400"
+            className="eq-primary-action text-sm"
           >
             <Plus className="w-4 h-4" />
             Cadastrar Mesa
@@ -470,7 +470,7 @@ export function ManegementPage() {
 
         <button
           onClick={() => setShowRegisterModal(true)}
-          className="flex items-center gap-2 rounded-lg bg-theme-accent px-4 py-2 text-sm text-white transition-all hover:bg-emerald-400"
+          className="eq-primary-action text-sm"
         >
           <Users className="w-4 h-4" />
           Cadastrar Operador
@@ -517,7 +517,7 @@ export function ManegementPage() {
 
         <button
           onClick={() => setShowShiftHistoryModal(true)}
-          className="flex items-center gap-2 rounded-lg bg-theme-accent px-4 py-2 text-sm text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-400"
+          className="eq-primary-action text-sm"
         >
           <Calendar className="w-4 h-4" />
           Ver Histórico Completo

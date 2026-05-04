@@ -115,7 +115,7 @@ export function AddTableModal({
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-3 bg-theme-accent hover:bg-emerald-400 rounded-lg text-white font-medium transition-all shadow-lg shadow-[#10b981]/20"
+              className="eq-primary-action flex-1 px-4 py-3"
             >
               Cadastrar Mesa
             </button>

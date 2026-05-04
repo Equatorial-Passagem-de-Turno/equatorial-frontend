@@ -178,7 +178,7 @@ export function RegisterOperatorModal({
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-3 bg-[#10b981] hover:bg-[#10b981]/90 rounded-lg text-white font-medium transition-all shadow-lg shadow-[#10b981]/20"
+              className="eq-primary-action flex-1 px-4 py-3"
             >
               Cadastrar Operador
             </button>

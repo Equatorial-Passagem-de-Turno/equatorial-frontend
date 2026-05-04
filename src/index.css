@@ -242,6 +242,14 @@ input, select, textarea {
     color: var(--eq-text-muted);
   }
 
+  .eq-primary-action {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-2 font-bold text-white shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:from-emerald-400 hover:to-teal-500 hover:shadow-emerald-500/40 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0;
+  }
+
+  .eq-primary-icon-action {
+    @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 p-2 text-white shadow-lg shadow-emerald-500/20 transition-all duration-200 hover:-translate-y-0.5 hover:from-emerald-400 hover:to-teal-500 hover:shadow-emerald-500/40;
+  }
+
   .eq-dropdown-menu {
     @apply border rounded-xl shadow-xl;
     background-color: var(--eq-bg-surface);
