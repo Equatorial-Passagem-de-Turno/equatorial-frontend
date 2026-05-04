@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowRight, Loader2, MapPin, Clock, Users, FileText } from 'lucide-react';
 
 // Hooks e Stores
 import { useOccurrenceStore } from '../stores/useOccurrenceStore';
 import { useAuth } from '../../auth/hooks/useAuth';
+import { api } from '@/services/api';
 
 // Componentes Refatorados
 import { StatusSelector } from '../components/StatusSelector';
@@ -18,13 +19,14 @@ import { MediaViewerModal } from '../components/MediaViewerModal'; // Assumindo 
 import { PriorityBadge } from '../../../components/ui/Badge';
 
 // Tipos
-import type { OccurrenceLocation, MediaViewerState, OccurrenceStatus } from '../types';
+import type { Occurrence, OccurrenceLocation, MediaViewerState, OccurrenceStatus } from '../types';
 
 export const OccurrenceDetailPage = () => {
   const params = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { occurrences, updateOccurrence, fetchOccurrences, isLoading } = useOccurrenceStore();
+  const { occurrences, updateOccurrence, fetchOccurrences, isLoading, upsertOccurrence } = useOccurrenceStore();
+  const lastUpdatedAtRef = useRef<string | null>(null);
   
   // Estado Global da Página (apenas o que afeta o layout inteiro, como Modais)
   const [viewerState, setViewerState] = useState<MediaViewerState>(null);
@@ -48,6 +50,40 @@ export const OccurrenceDetailPage = () => {
     return (id === paramNormalized || id === rawParam || idClean === paramClean || idClean === paramNormalized || id === decodeURIComponent(rawParam));
   });
 
+  useEffect(() => {
+    if (!occurrence?.id) return;
+
+    let isCancelled = false;
+
+    const pollOccurrence = async () => {
+      if (document.visibilityState === 'hidden') return;
+
+      try {
+        const response = await api.get<Occurrence>(`/occurrences/${occurrence.id}`);
+        if (isCancelled) return;
+
+        const fresh = response.data;
+        const nextUpdatedAt = fresh.updated_at ?? fresh.updatedAt ?? null;
+        const prevUpdatedAt = lastUpdatedAtRef.current;
+
+        if (!prevUpdatedAt || (nextUpdatedAt && nextUpdatedAt !== prevUpdatedAt)) {
+          lastUpdatedAtRef.current = nextUpdatedAt ?? prevUpdatedAt;
+          upsertOccurrence(fresh);
+        }
+      } catch {
+        // Mantem a UI como esta se o polling falhar pontualmente.
+      }
+    };
+
+    void pollOccurrence();
+    const intervalId = window.setInterval(pollOccurrence, 5000);
+
+    return () => {
+      isCancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [occurrence?.id, upsertOccurrence]);
+
   // --- HANDLERS (LÓGICA DE NEGÓCIO) ---
 
   // 1. Atualizar Status
@@ -58,16 +94,20 @@ export const OccurrenceDetailPage = () => {
 
   // 2. Postar Comentário
   const handlePostComment = async (text: string, type: string) => {
-    const newComment = { 
-        id: `C-${Date.now()}`, 
-        author: user?.name ?? 'ANÔNIMO', 
-        text: text, 
-        type: type, // <--- Salva o tipo recebido
-        createdAt: new Date().toISOString() 
-    };
-    await updateOccurrence(occurrence!.id, { 
-        comments: [newComment, ...(occurrence!.comments ?? [])] 
+    const response = await api.post(`/occurrences/${occurrence!.id}/comments`, {
+      text,
+      type,
     });
+
+    const updatedOccurrence =
+      (response.data?.success && response.data?.data) ||
+      response.data?.data ||
+      response.data;
+
+    if (updatedOccurrence?.id) {
+      lastUpdatedAtRef.current = updatedOccurrence.updated_at ?? updatedOccurrence.updatedAt ?? lastUpdatedAtRef.current;
+      upsertOccurrence(updatedOccurrence);
+    }
   };
 
   // 3. Agendar Timer

@@ -28,6 +28,7 @@ export interface Occurrence {
   assigned_operation_desk_id?: string | number;
   created_at?: string;
   updated_at?: string;
+  updatedAt?: string;
   is_inherited?: boolean;
   is_open?: boolean;
   origin?: 'Herdada' | 'Atual' | string;

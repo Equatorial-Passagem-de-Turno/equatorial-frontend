@@ -26,6 +26,7 @@ interface OccurrenceState {
   updateOccurrence: (id: string, patch: Partial<Occurrence>) => Promise<void>; // ATUALIZADO
   deleteOccurrence: (id: string) => Promise<void>; // NOVO
   addOccurrences: (newItems: Occurrence[]) => void;
+  upsertOccurrence: (item: Occurrence) => void;
   reset: () => void;
 }
 
@@ -172,6 +173,27 @@ export const useOccurrenceStore = create<OccurrenceState>((set) => ({
     });
   },
 
+  upsertOccurrence: (item) => {
+    set((state) => {
+      const index = state.occurrences.findIndex(o => o.id === item.id);
+      let next = state.occurrences;
+
+      if (index >= 0) {
+        next = [...state.occurrences];
+        next[index] = { ...state.occurrences[index], ...item };
+      } else {
+        next = [item, ...state.occurrences];
+      }
+
+      writeOccurrencesSnapshot(next);
+
+      return {
+        occurrences: next,
+        hydratedAt: Date.now(),
+      };
+    });
+  },
+
   // CRIAR (POST)
   createOccurrence: async (data) => {
     try {
@@ -213,15 +235,39 @@ export const useOccurrenceStore = create<OccurrenceState>((set) => ({
   updateOccurrence: async (id, patch) => {
     try {
       // 1. Atualiza no Banco
-      await api.put(`/occurrences/${id}`, patch);
-      
-      // 2. Atualiza visualmente na tela sem precisar recarregar tudo
-      set((state) => ({
-        occurrences: state.occurrences.map(o =>
-          o.id === id ? { ...o, ...patch } : o
-        )
-      }));
-      writeOccurrencesSnapshot(useOccurrenceStore.getState().occurrences);
+      const response = await api.put(`/occurrences/${id}`, patch);
+      const updatedOccurrence =
+        (response.data?.success && response.data?.data) ||
+        response.data?.data ||
+        response.data;
+
+      if (updatedOccurrence?.id) {
+        set((state) => {
+          const index = state.occurrences.findIndex(o => o.id === updatedOccurrence.id);
+          let next = state.occurrences;
+
+          if (index >= 0) {
+            next = [...state.occurrences];
+            next[index] = { ...state.occurrences[index], ...updatedOccurrence };
+          } else {
+            next = [updatedOccurrence, ...state.occurrences];
+          }
+
+          writeOccurrencesSnapshot(next);
+
+          return {
+            occurrences: next,
+            hydratedAt: Date.now(),
+          };
+        });
+      } else {
+        set((state) => ({
+          occurrences: state.occurrences.map(o =>
+            o.id === id ? { ...o, ...patch } : o
+          )
+        }));
+        writeOccurrencesSnapshot(useOccurrenceStore.getState().occurrences);
+      }
     } catch (err) {
       console.error('Erro ao atualizar:', err);
       throw err;
