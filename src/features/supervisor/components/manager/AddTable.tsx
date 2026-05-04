@@ -55,7 +55,7 @@ export function AddTableModal({
               </div>
               <div>
                 <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
-                  Add Table
+                  Cadastrar mesa
                 </h2>
                 <p className="text-sm text-zinc-600 dark:text-[#94a3b8]">
                   Cadastre uma nova mesa de trabalho
@@ -77,7 +77,7 @@ export function AddTableModal({
           <div className="space-y-2">
             <label className="text-sm font-medium text-zinc-900 dark:text-white flex items-center gap-2">
               <MapPin className="w-4 h-4 text-[#10b981]" />
-              Name da Table *
+              Nome da Mesa *
             </label>
             <input
               type="text"
@@ -117,7 +117,7 @@ export function AddTableModal({
               type="submit"
               className="flex-1 px-4 py-3 bg-theme-accent hover:bg-emerald-400 rounded-lg text-white font-medium transition-all shadow-lg shadow-[#10b981]/20"
             >
-              Adicionar mesa
+              Cadastrar Mesa
             </button>
           </div>
         </form>

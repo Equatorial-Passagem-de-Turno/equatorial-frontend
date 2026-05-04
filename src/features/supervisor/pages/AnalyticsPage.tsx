@@ -169,8 +169,8 @@ export function AnalyticsPage() {
 
   if (isLoading && !hydratedAt) {
     return (
-      <div className="p-6">
-        <div className="rounded-lg border border-slate-700 bg-slate-900 p-6 text-slate-300">
+      <div className="eq-page-content">
+        <div className="eq-surface p-6 eq-page-subtitle">
           Carregando analytics do supervisor...
         </div>
       </div>
@@ -179,7 +179,7 @@ export function AnalyticsPage() {
 
   if (loadError && !hydratedAt) {
     return (
-      <div className="p-6">
+      <div className="eq-page-content">
         <div className="rounded-lg border border-red-700/40 bg-red-900/10 p-6 text-red-300">
           {loadError}
         </div>
@@ -215,12 +215,12 @@ export function AnalyticsPage() {
   ];
 
   return (
-    <div className="p-6 space-y-6 pb-12 bg-slate-100 dark:bg-slate-950 min-h-screen transition-colors">
+    <div className="eq-page-content min-h-screen space-y-6 pb-12 transition-colors">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+        <h1 className="eq-page-title text-2xl">
           Analytics e Relatorios
         </h1>
-        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+        <p className="eq-page-subtitle mt-1 text-sm">
           Analise detalhada com dados reais do COI
         </p>
       </div>
@@ -231,18 +231,18 @@ export function AnalyticsPage() {
           return (
             <div
               key={kpi.label}
-              className="bg-white dark:bg-theme-panel border border-slate-200 dark:border-slate-800 rounded-lg p-5 transition-colors"
+              className="eq-surface p-5 transition-colors"
             >
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-lg bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--eq-bg-surface-soft)]">
                   <Icon className={`w-5 h-5 ${kpi.color}`} />
                 </div>
               </div>
 
-              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+              <div className="text-2xl font-bold text-[var(--eq-text-primary)]">
                 {kpi.value}
               </div>
-              <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              <div className="mt-1 text-sm text-[var(--eq-text-muted)]">
                 {kpi.label}
               </div>
             </div>
@@ -254,13 +254,13 @@ export function AnalyticsPage() {
       <OperatorsOverview />
 
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+        <h2 className="text-sm font-semibold text-[var(--eq-text-secondary)]">
           Filtros de visualizacao
         </h2>
         <select
           value={tempoFiltro}
           onChange={(event) => setTempoFiltro(event.target.value as "all" | "within" | "above")}
-          className="px-3 py-2 text-xs rounded-md bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-100 focus:outline-none"
+          className="eq-control rounded-md px-3 py-2 text-xs focus:outline-none"
         >
           <option value="all">Todos os turnos</option>
           <option value="within">Somente dentro da meta (&lt;= 60 min)</option>
@@ -269,16 +269,16 @@ export function AnalyticsPage() {
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-theme-panel border border-slate-200 dark:border-slate-800 rounded-lg p-6 transition-colors">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
+        <div className="eq-surface p-6 transition-colors">
+          <h3 className="eq-card-title mb-1 text-lg">
             Ocorrencias por Mesa
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+          <p className="eq-card-meta mb-4">
             Volume total e criticas por mesa
           </p>
 
           {ocorrenciasPorMesaChartData.length === 0 ? (
-            <div className="h-[300px] rounded-md border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-sm text-slate-500 dark:text-slate-400">
+            <div className="flex h-[300px] items-center justify-center rounded-md border border-dashed border-[var(--eq-border)] text-sm text-[var(--eq-text-muted)]">
               Sem ocorrencias para exibir no periodo.
             </div>
           ) : (
@@ -306,11 +306,11 @@ export function AnalyticsPage() {
           )}
         </div>
 
-        <div className="bg-white dark:bg-theme-panel border border-slate-200 dark:border-slate-800 rounded-lg p-6 transition-colors">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
+        <div className="eq-surface p-6 transition-colors">
+          <h3 className="eq-card-title mb-1 text-lg">
             Tempo Medio de Resolucao por Perfil
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+          <p className="eq-card-meta mb-4">
             Em minutos - Meta: 60 min
           </p>
 
@@ -333,11 +333,11 @@ export function AnalyticsPage() {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white dark:bg-theme-panel border border-slate-200 dark:border-slate-800 rounded-lg p-6 transition-colors">
-          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-1">
+        <div className="eq-surface p-6 transition-colors">
+          <h3 className="eq-card-title mb-1 text-lg">
             Distribuicao por Criticidade
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
+          <p className="eq-card-meta mb-4">
             Visao geral da carteira atual de ocorrencias
           </p>
 

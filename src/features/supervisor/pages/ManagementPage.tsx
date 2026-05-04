@@ -335,21 +335,21 @@ export function ManegementPage() {
   };
 
   return (
-    <div className="min-h-screen bg-theme-background text-theme-main p-6 space-y-6">
+    <div className="eq-page-content min-h-screen space-y-6">
       {/* HEADER */}
       <div>
-        <h1 className="text-2xl font-bold text-theme-main">Gestão do COI</h1>
-        <p className="text-sm text-slate-400 mt-1">
+        <h1 className="eq-page-title text-2xl">Gestão do COI</h1>
+        <p className="eq-page-subtitle mt-1 text-sm">
           Gerenciamento de operadores e mesas de trabalho
         </p>
       </div>
 
       {/* ===== SEÇÃO MESAS ===== */}
 
-      <div className="space-y-6 pt-6 border-t border-slate-700">
+      <div className="space-y-6 border-t border-[var(--eq-border)] pt-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-bold flex items-center gap-2">
+            <h2 className="eq-card-title flex items-center gap-2 text-lg">
               <MapPin className="w-5 h-5 text-theme-accent" />
               Mesas de Trabalho
             </h2>
@@ -361,22 +361,22 @@ export function ManegementPage() {
 
           <button
             onClick={() => setShowAddTableModal(true)}
-            className="px-4 py-2 bg-theme-accent hover:bg-emerald-400 rounded-lg text-sm text-white flex items-center gap-2"
+            className="flex items-center gap-2 rounded-lg bg-theme-accent px-4 py-2 text-sm text-white transition-all hover:bg-emerald-400"
           >
             <Plus className="w-4 h-4" />
-            Adicionar Mesa
+            Cadastrar Mesa
           </button>
         </div>
 
-        <div className="bg-slate-800 border border-slate-700 rounded-lg overflow-hidden">
+        <div className="eq-surface overflow-hidden">
           <table className="w-full">
             <thead>
-              <tr className="bg-theme-panel border-b border-theme-input">
-                <th className="px-6 py-3 text-left text-xs text-slate-400 uppercase">
+              <tr className="border-b border-[var(--eq-border)] bg-[var(--eq-bg-surface-soft)]">
+                <th className="px-6 py-3 text-left text-xs uppercase text-[var(--eq-text-muted)]">
                   Nome
                 </th>
 
-                <th className="px-6 py-3 text-left text-xs text-slate-400 uppercase">
+                <th className="px-6 py-3 text-left text-xs uppercase text-[var(--eq-text-muted)]">
                   Descrição
                 </th>
 
@@ -384,7 +384,7 @@ export function ManegementPage() {
                   Operadores
                 </th> */}
 
-                <th className="px-6 py-3 text-center text-xs text-slate-400 uppercase">
+                <th className="px-6 py-3 text-center text-xs uppercase text-[var(--eq-text-muted)]">
                   Ações
                 </th>
               </tr>
@@ -393,10 +393,10 @@ export function ManegementPage() {
             <tbody>
               {tablesData.map((table) => {
                 return (
-                  <tr key={table.name} className="hover:bg-theme-hover">
-                    <td className="px-6 py-4 font-medium">{table.name}</td>
+                  <tr key={table.name} className="transition-colors hover:bg-[var(--eq-bg-surface-soft)]">
+                    <td className="px-6 py-4 font-medium text-[var(--eq-text-primary)]">{table.name}</td>
 
-                    <td className="px-6 py-4 text-slate-400">
+                    <td className="px-6 py-4 text-[var(--eq-text-muted)]">
                       {table.description || "-"}
                     </td>
 
@@ -460,9 +460,9 @@ export function ManegementPage() {
         />
       )}
       {/* Seção operadores */}
-      <div className="flex items-center justify-between  border-t border-slate-700 pt-6">
+      <div className="flex items-center justify-between border-t border-[var(--eq-border)] pt-6">
         <div>
-          <h2 className="text-lg font-bold flex items-center gap-2">
+          <h2 className="eq-card-title flex items-center gap-2 text-lg">
             <Users className="w-5 h-5 text-theme-accent" />
             Operadores
           </h2>
@@ -470,16 +470,16 @@ export function ManegementPage() {
 
         <button
           onClick={() => setShowRegisterModal(true)}
-          className="px-4 py-2 bg-theme-accent hover:bg-emerald-400 rounded-lg text-sm text-white flex items-center gap-2"
+          className="flex items-center gap-2 rounded-lg bg-theme-accent px-4 py-2 text-sm text-white transition-all hover:bg-emerald-400"
         >
           <Users className="w-4 h-4" />
-          Adicionar Operator
+          Cadastrar Operador
         </button>
       </div>
 
       {/* STATS */}
       {isLoading && (
-        <div className="rounded-lg border border-slate-700 bg-slate-900 p-4 text-slate-300 text-sm">
+        <div className="eq-surface p-4 text-sm text-[var(--eq-text-secondary)]">
           Carregando operadores...
         </div>
       )}
@@ -496,7 +496,7 @@ export function ManegementPage() {
           label="Ativos"
         />
         <StatCard
-          icon={<UserX className="w-5 h-5 text-slate-400" />}
+          icon={<UserX className="w-5 h-5 text-[var(--eq-text-muted)]" />}
           value={inactiveOperators}
           label="Inativos"
         />
@@ -505,62 +505,62 @@ export function ManegementPage() {
       {/* SEARCH + ACTIONS */}
       <div className="flex gap-3">
         <div className="flex-1 relative">
-          <Search className="w-5 h-5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-[var(--eq-text-muted)]" />
           <input
             type="text"
             placeholder="Buscar operator..."
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40"
+            className="eq-control w-full py-2 pl-10 pr-4 placeholder:text-[var(--eq-text-muted)] focus:ring-2 focus:ring-blue-500/40"
           />
         </div>
 
         <button
           onClick={() => setShowShiftHistoryModal(true)}
-          className="px-4 py-2 bg-theme-accent hover:bg-emerald-400 rounded-lg text-sm text-white transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20"
+          className="flex items-center gap-2 rounded-lg bg-theme-accent px-4 py-2 text-sm text-white shadow-lg shadow-emerald-600/20 transition-all hover:bg-emerald-400"
         >
           <Calendar className="w-4 h-4" />
           Ver Histórico Completo
         </button>
 
-        <div className="px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-400 hover:bg-theme-hover transition-all flex items-center gap-2">
+        <div className="eq-control flex items-center gap-2 rounded-lg px-4 py-2 text-sm transition-all hover:bg-[var(--eq-bg-surface-soft)]">
           <Filter className="w-4 h-4" />
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value as "all" | "active" | "inactive")}
-            className="bg-transparent text-slate-300 focus:outline-none"
+            className="bg-transparent text-[var(--eq-text-secondary)] focus:outline-none"
           >
-            <option value="all" className="bg-slate-800 text-slate-100">Todos</option>
-            <option value="active" className="bg-slate-800 text-slate-100">Ativos</option>
-            <option value="inactive" className="bg-slate-800 text-slate-100">Inativos</option>
+            <option value="all" className="bg-[var(--eq-bg-surface)] text-[var(--eq-text-primary)]">Todos</option>
+            <option value="active" className="bg-[var(--eq-bg-surface)] text-[var(--eq-text-primary)]">Ativos</option>
+            <option value="inactive" className="bg-[var(--eq-bg-surface)] text-[var(--eq-text-primary)]">Inativos</option>
           </select>
         </div>
       </div>
 
       {/* TABLE */}
-      <div className="bg-slate-800 border border-slate-700 rounded-lg shadow-md overflow-hidden ">
+      <div className="eq-surface overflow-hidden shadow-md">
         <table className="w-full">
           <thead>
-            <tr className="bg-theme-panel border-b border-theme-input">
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase">
+            <tr className="border-b border-[var(--eq-border)] bg-[var(--eq-bg-surface-soft)]">
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-[var(--eq-text-muted)]">
                 ID
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase">
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-[var(--eq-text-muted)]">
                 Operator
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase">
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-[var(--eq-text-muted)]">
                 Perfil
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase">
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-[var(--eq-text-muted)]">
                 Mesa
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase">
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-[var(--eq-text-muted)]">
                 Contato
               </th>
-              <th className="px-6 py-3 text-center text-xs font-semibold text-slate-400 uppercase">
+              <th className="px-6 py-3 text-center text-xs font-semibold uppercase text-[var(--eq-text-muted)]">
                 Status
               </th>
-              <th className="px-6 py-3 text-center text-xs font-semibold text-slate-400 uppercase">
+              <th className="px-6 py-3 text-center text-xs font-semibold uppercase text-[var(--eq-text-muted)]">
                 Ações
               </th>
             </tr>
@@ -575,12 +575,12 @@ export function ManegementPage() {
                 <tr
                   key={op.id}
                   onClick={() => handleProfileClick(op)}
-                  className="hover:bg-theme-hover transition-colors cursor-pointer"
+                  className="cursor-pointer transition-colors hover:bg-[var(--eq-bg-surface-soft)]"
                 >
-                  <td className="px-6 py-4 font-medium text-theme-muted">
+                  <td className="px-6 py-4 font-medium text-[var(--eq-text-muted)]">
                     {op.id}
                   </td>
-                  <td className="px-6 py-4 font-medium text-theme-muted">
+                  <td className="px-6 py-4 font-medium text-[var(--eq-text-primary)]">
                     {op.name}
                   </td>
 
@@ -592,14 +592,14 @@ export function ManegementPage() {
                     </span>
                   </td>
 
-                  <td className="px-6 py-4 text-slate-300">{op.table}</td>
+                  <td className="px-6 py-4 text-[var(--eq-text-secondary)]">{op.table}</td>
 
-                  <td className="px-6 py-4 flex items-center gap-2 text-sm text-slate-400">
+                  <td className="flex items-center gap-2 px-6 py-4 text-sm text-[var(--eq-text-muted)]">
                     <Mail className="w-4 h-4" />
                     {op.email}
                   </td>
 
-                  <td className="px-6 py-4 text-center text-slate-300">
+                  <td className="px-6 py-4 text-center text-[var(--eq-text-secondary)]">
                     {visibleStatus}
                   </td>
                   <td className="px-6 py-4">
@@ -719,14 +719,14 @@ function StatCard({
   label: string;
 }) {
   return (
-    <div className="bg-theme-panel border border-theme rounded-lg shadow-md p-5 flex items-center gap-3">
-      <div className="w-10 h-10 rounded-lg bg-theme-background flex items-center justify-center">
+    <div className="eq-surface flex items-center gap-3 p-5 shadow-md">
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--eq-bg-surface-soft)]">
         {icon}
       </div>
 
       <div>
-        <div className="text-2xl font-bold text-theme-text">{value}</div>
-        <div className="text-xs text-theme-muted">{label}</div>
+        <div className="text-2xl font-bold text-[var(--eq-text-primary)]">{value}</div>
+        <div className="eq-card-meta">{label}</div>
       </div>
     </div>
   );

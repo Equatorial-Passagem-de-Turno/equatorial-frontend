@@ -3,73 +3,155 @@ import {
   Calendar,
   Filter,
   Clock,
+  CircuitBoard,
   User,
   Tag,
-  Activity,
   Image,
   Video,
   Paperclip,
   FileText,
   AlertCircle,
   CheckCircle2,
-  ArrowRight,
+  ArrowRightLeft,
+  PlayCircle,
   Search,
+  Wrench,
   X,
   ArrowUpDown,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { OccurrenceCriticality, OccurrenceStatus } from "../types/index.ts";
 import { useSupervisorStore } from "../stores/useSupervisorStore";
+import type { CircuitSwitchingRecord } from "@/features/circuit-switching/types";
+import type { UnavailableEquipmentRecord } from "@/features/unavailable-equipment/types";
 // import { OccurrenceDetailsModal } from "../components/OccurrenceDetailsModal";
+
+type TimelineEventType = "occurrence" | "circuit-switching" | "unavailable-equipment";
+type TimelineStatusFilter =
+  | "todos"
+  | OccurrenceStatus
+  | "pendente"
+  | "em_analise";
+type LocalEventRecord = (CircuitSwitchingRecord | UnavailableEquipmentRecord) & {
+  eventType: Exclude<TimelineEventType, "occurrence">;
+};
+
+const getLocalRecords = <T,>(key: string): T[] => {
+  try {
+    const raw = localStorage.getItem(key);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const formatDateTime = (value: string) => {
+  if (!value) return "--";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "--";
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
+};
 
 const criticalityConfig = {
   critica: {
     label: "CRÍTICA",
-    color:
-      "bg-red-500/10 border-red-500/30 dark:bg-red-500/20 dark:border-red-500/50",
-    badgeColor: "bg-red-500",
+    color: "eq-criticality-critical",
+    badgeColor: "eq-criticality-bar-critical",
   },
   alta: {
     label: "ALTA",
-    color:
-      "bg-orange-500/10 border-orange-500/30 dark:bg-orange-500/20 dark:border-orange-500/50",
-    badgeColor: "bg-orange-500",
+    color: "eq-criticality-high",
+    badgeColor: "eq-criticality-bar-high",
   },
   media: {
     label: "MÉDIA",
-    color:
-      "bg-yellow-500/10 border-yellow-500/30 dark:bg-yellow-500/20 dark:border-yellow-500/50",
-    badgeColor: "bg-yellow-500",
+    color: "eq-criticality-medium",
+    badgeColor: "eq-criticality-bar-medium",
   },
   baixa: {
     label: "BAIXA",
-    color:
-      "bg-blue-500/10 border-blue-500/30 dark:bg-blue-500/20 dark:border-blue-500/50",
-    badgeColor: "bg-blue-500",
+    color: "eq-criticality-low",
+    badgeColor: "eq-criticality-bar-low",
   },
 };
 const statusConfig = {
   aberta: {
     label: "ABERTA",
     icon: AlertCircle,
-    color: "text-red-500",
+    color: "text-slate-700 dark:text-slate-300",
+    badge: "eq-status-open border",
+  },
+  pendente: {
+    label: "PENDENTE",
+    icon: Clock,
+    color: "text-amber-700 dark:text-amber-400",
+    badge: "eq-status-warning border",
+  },
+  em_analise: {
+    label: "EM ANÁLISE",
+    icon: Search,
+    color: "text-violet-700 dark:text-violet-400",
+    badge: "eq-status-analysis border",
   },
   em_andamento: {
     label: "EM ANDAMENTO",
-    icon: Activity,
-    color: "text-yellow-500",
+    icon: PlayCircle,
+    color: "text-blue-700 dark:text-blue-400",
+    badge: "eq-status-progress border",
   },
   resolvida: {
     label: "RESOLVIDA",
     icon: CheckCircle2,
-    color: "text-green-500",
+    color: "text-emerald-700 dark:text-emerald-400",
+    badge: "eq-status-success border",
   },
   transferida: {
     label: "TRANSFERIDA",
-    icon: ArrowRight,
-    color: "text-blue-500",
+    icon: ArrowRightLeft,
+    color: "text-violet-700 dark:text-violet-400",
+    badge: "eq-status-transfer border",
   },
 };
+
+const eventTypeConfig = {
+  occurrence: {
+    label: "Ocorrência",
+    pluralLabel: "ocorrência",
+    tone: "eq-tone-occurrence",
+    card: "eq-card-occurrence",
+    bar: "eq-event-bar-occurrence",
+    icon: AlertCircle,
+  },
+  "circuit-switching": {
+    label: "Circuito manobrado",
+    pluralLabel: "evento",
+    tone: "eq-tone-circuit",
+    card: "eq-card-circuit",
+    bar: "eq-event-bar-circuit",
+    icon: CircuitBoard,
+  },
+  "unavailable-equipment": {
+    label: "Equipamento indisponível",
+    pluralLabel: "evento",
+    tone: "eq-tone-equipment",
+    card: "eq-card-equipment",
+    bar: "eq-event-bar-equipment",
+    icon: Wrench,
+  },
+} satisfies Record<TimelineEventType, {
+  label: string;
+  pluralLabel: string;
+  tone: string;
+  card: string;
+  bar: string;
+  icon: LucideIcon;
+}>;
 export function TimelinePage() {
   const loadData = useSupervisorStore((state) => state.loadData);
   const occurrencesState = useSupervisorStore((state) => state.occurrences);
@@ -77,15 +159,18 @@ export function TimelinePage() {
   const loadError = useSupervisorStore((state) => state.loadError);
   const hydratedAt = useSupervisorStore((state) => state.hydratedAt);
 
-  const [filtroStatus, setFiltroStatus] = useState<OccurrenceStatus | "todos">(
+  const [filtroStatus, setFiltroStatus] = useState<TimelineStatusFilter>(
     "todos",
   );
+  const [filtroTipoEvento, setFiltroTipoEvento] =
+    useState<TimelineEventType | "todos">("todos");
   const [filtroCriticidade, setFiltroCriticidade] = useState<
     OccurrenceCriticality | "todos"
   >("todos");
   const [filtroMesa, setFiltroMesa] = useState("todos");
   const [buscaTexto, setBuscaTexto] = useState("");
   const [ordenacao, setOrdenacao] = useState<"recente" | "antiga">("recente");
+  const [localEvents, setLocalEvents] = useState<LocalEventRecord[]>([]);
   // const [selectedOccurrence, setSelectedOccurrence] =
   // useState<Occurrence | null>(null);
 
@@ -95,37 +180,110 @@ export function TimelinePage() {
     }
   }, [hydratedAt, loadData]);
 
-  // Filtrar ocorrências
-  let occurrencesFiltradas = occurrencesState.filter((ocr) => {
-    const matchStatus = filtroStatus === "todos" || ocr.status === filtroStatus;
+  useEffect(() => {
+    const circuits = getLocalRecords<CircuitSwitchingRecord>("circuit_switching_records_v1")
+      .map((record) => ({
+        ...record,
+        eventType: "circuit-switching" as const,
+      }));
+    const equipments = getLocalRecords<UnavailableEquipmentRecord>("unavailable_equipment_records_v1")
+      .map((record) => ({
+        ...record,
+        eventType: "unavailable-equipment" as const,
+      }));
+
+    setLocalEvents([...circuits, ...equipments]);
+  }, []);
+
+  useEffect(() => {
+    if (filtroTipoEvento !== "occurrence" && filtroCriticidade !== "todos") {
+      setFiltroCriticidade("todos");
+    }
+  }, [filtroCriticidade, filtroTipoEvento]);
+
+  const occurrenceTimelineItems = occurrencesState.map((occurrence) => ({
+    eventType: "occurrence" as const,
+    status: occurrence.status,
+    timestamp: occurrence.timestamp,
+    dateTime: occurrence.dateTime,
+    searchableText: [
+      occurrence.id,
+      occurrence.title,
+      occurrence.description,
+      occurrence.operator,
+      occurrence.table,
+      occurrence.category,
+    ].join(" ").toLowerCase(),
+    occurrence,
+  }));
+
+  const localTimelineItems = localEvents.map((event) => {
+    const equipmentEvent = event as UnavailableEquipmentRecord;
+    const isEquipment = event.eventType === "unavailable-equipment";
+    const title = isEquipment
+      ? (event.description || `${equipmentEvent.equipmentType} ${equipmentEvent.equipmentNumber}`)
+      : (event.description || `${event.feeder} - ${event.equipment}`);
+
+    return {
+      eventType: event.eventType,
+      status: "pendente" as const,
+      timestamp: new Date(event.createdAt).getTime(),
+      dateTime: formatDateTime(event.createdAt),
+      title,
+      description: `${event.cause}${event.observations ? ` - ${event.observations}` : ""}`,
+      searchableText: [
+        event.id,
+        title,
+        event.feeder,
+        event.equipment,
+        event.responsibleSector,
+        event.cause,
+        event.observations,
+        event.createdBy,
+        equipmentEvent.equipmentNumber,
+        equipmentEvent.equipmentType,
+      ].filter(Boolean).join(" ").toLowerCase(),
+      event,
+    };
+  });
+
+  let eventosFiltrados = [...occurrenceTimelineItems, ...localTimelineItems].filter((item) => {
+    const matchTipo = filtroTipoEvento === "todos" || item.eventType === filtroTipoEvento;
+    const matchStatus = filtroStatus === "todos" || item.status === filtroStatus;
     const matchCriticidade =
-      filtroCriticidade === "todos" || ocr.criticality === filtroCriticidade;
-    const matchMesa = filtroMesa === "todos" || ocr.table === filtroMesa;
+      item.eventType !== "occurrence" ||
+      filtroCriticidade === "todos" ||
+      item.occurrence.criticality === filtroCriticidade;
+    const matchMesa =
+      filtroMesa === "todos" ||
+      (item.eventType === "occurrence"
+        ? item.occurrence.table === filtroMesa
+        : item.event.responsibleSector === filtroMesa);
     const matchBusca =
       buscaTexto === "" ||
-      ocr.title.toLowerCase().includes(buscaTexto.toLowerCase()) ||
-      ocr.description.toLowerCase().includes(buscaTexto.toLowerCase()) ||
-      ocr.id.toLowerCase().includes(buscaTexto.toLowerCase());
+      item.searchableText.includes(buscaTexto.toLowerCase());
 
-    return matchStatus && matchCriticidade && matchMesa && matchBusca;
+    return matchTipo && matchStatus && matchCriticidade && matchMesa && matchBusca;
   });
 
-  // Ordenar
-  occurrencesFiltradas = occurrencesFiltradas.sort((a, b) => {
+  eventosFiltrados = eventosFiltrados.sort((a, b) => {
     if (ordenacao === "recente") {
       return b.timestamp - a.timestamp;
-    } else {
-      return a.timestamp - b.timestamp;
     }
+
+    return a.timestamp - b.timestamp;
   });
 
-  // Extrair tables únicas
   const tablesUnicas = Array.from(
-    new Set(occurrencesState.map((o) => o.table)),
+    new Set([
+      ...occurrencesState.map((o) => o.table),
+      ...localEvents.map((event) => event.responsibleSector),
+    ]),
   ).sort();
 
   const limparFiltros = () => {
     setFiltroStatus("todos");
+    setFiltroTipoEvento("todos");
     setFiltroCriticidade("todos");
     setFiltroMesa("todos");
     setBuscaTexto("");
@@ -133,6 +291,7 @@ export function TimelinePage() {
 
   const temFiltrosAtivos =
     filtroStatus !== "todos" ||
+    filtroTipoEvento !== "todos" ||
     filtroCriticidade !== "todos" ||
     filtroMesa !== "todos" ||
     buscaTexto !== "";
@@ -141,8 +300,8 @@ export function TimelinePage() {
 
   if (isLoading && !hydratedAt) {
     return (
-      <div className="min-h-screen bg-bg-primary p-6">
-        <div className="rounded-lg border border-slate-700 bg-slate-900 p-6 text-slate-300">
+      <div className="eq-page-content min-h-screen">
+        <div className="eq-surface p-6 eq-page-subtitle">
           Carregando timeline do supervisor...
         </div>
       </div>
@@ -151,7 +310,7 @@ export function TimelinePage() {
 
   if (loadError && !hydratedAt) {
     return (
-      <div className="min-h-screen bg-bg-primary p-6">
+      <div className="eq-page-content min-h-screen">
         <div className="rounded-lg border border-red-700/40 bg-red-900/10 p-6 text-red-300">
           {loadError}
         </div>
@@ -160,25 +319,25 @@ export function TimelinePage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg-primary">
-      <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-[var(--eq-bg-page)]">
+      <div className="eq-page-content space-y-6">
         {/* Barra de Filtros */}
-        <div className="bg-theme-panel border border-border-primary rounded-lg p-4 space-y-4">
+        <div className="eq-surface space-y-4 p-4">
           {/* Busca */}
           <div className="flex items-center gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--eq-text-muted)]" />
               <input
                 type="text"
                 placeholder="Buscar por ID, título ou descrição..."
                 value={buscaTexto}
                 onChange={(e) => setBuscaTexto(e.target.value)}
-                className="w-full pl-10 pr-10 py-2 bg-bg-secondary border border-border-primary rounded-lg text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-accent-primary"
+                className="eq-control w-full py-2 pl-10 pr-10 placeholder:text-[var(--eq-text-muted)] focus:ring-2 focus:ring-emerald-500/40"
               />
               {buscaTexto && (
                 <button
                   onClick={() => setBuscaTexto("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--eq-text-muted)] hover:text-[var(--eq-text-primary)]"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -188,7 +347,7 @@ export function TimelinePage() {
               onClick={() =>
                 setOrdenacao(ordenacao === "recente" ? "antiga" : "recente")
               }
-              className="px-4 py-2 bg-bg-secondary border border-border-primary rounded-lg text-text-primary hover:bg-bg-secondary/80 transition-colors flex items-center gap-2"
+              className="eq-control flex items-center gap-2 rounded-lg px-4 py-2 transition-colors hover:bg-[var(--eq-bg-surface-soft)]"
             >
               <ArrowUpDown className="w-4 h-4" />
               {ordenacao === "recente" ? "Mais recente" : "Mais antiga"}
@@ -198,8 +357,8 @@ export function TimelinePage() {
           {/* Filtros */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-text-muted" />
-              <span className="text-sm font-medium text-text-primary">
+              <Filter className="h-4 w-4 text-[var(--eq-text-muted)]" />
+              <span className="text-sm font-medium text-[var(--eq-text-primary)]">
                 Filtros:
               </span>
             </div>
@@ -208,18 +367,35 @@ export function TimelinePage() {
             <select
               value={filtroStatus}
               onChange={(e) =>
-                setFiltroStatus(e.target.value as OccurrenceStatus | "todos")
+                setFiltroStatus(e.target.value as TimelineStatusFilter)
               }
-              className="px-3 py-1.5 bg-bg-secondary border border-border-primary rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary"
+              className="eq-control rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500/40"
             >
               <option value="todos">Todos status</option>
               <option value="aberta">Aberta</option>
+              <option value="pendente">Pendente</option>
+              <option value="em_analise">Em Análise</option>
               <option value="em_andamento">Em Andamento</option>
               <option value="resolvida">Resolvida</option>
               <option value="transferida">Transferida</option>
             </select>
 
+            {/* Tipo de evento */}
+            <select
+              value={filtroTipoEvento}
+              onChange={(e) =>
+                setFiltroTipoEvento(e.target.value as TimelineEventType | "todos")
+              }
+              className="eq-control rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500/40"
+            >
+              <option value="todos">Todos os eventos</option>
+              <option value="occurrence">Ocorrências</option>
+              <option value="circuit-switching">Circuitos manobrados</option>
+              <option value="unavailable-equipment">Equipamentos indisponíveis</option>
+            </select>
+
             {/* Criticidade */}
+            {filtroTipoEvento === "occurrence" && (
             <select
               value={filtroCriticidade}
               onChange={(e) =>
@@ -227,7 +403,7 @@ export function TimelinePage() {
                   e.target.value as OccurrenceCriticality | "todos",
                 )
               }
-              className="px-3 py-1.5 bg-bg-secondary border border-border-primary rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary"
+              className="eq-control rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500/40"
             >
               <option value="todos">Todas criticidades</option>
               <option value="critica">Crítica</option>
@@ -235,14 +411,15 @@ export function TimelinePage() {
               <option value="media">Média</option>
               <option value="baixa">Baixa</option>
             </select>
+            )}
 
             {/* Mesa */}
             <select
               value={filtroMesa}
               onChange={(e) => setFiltroMesa(e.target.value)}
-              className="px-3 py-1.5 bg-bg-secondary border border-border-primary rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent-primary"
+              className="eq-control rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-emerald-500/40"
             >
-              <option value="todos">Todas mesas</option>
+              <option value="todos">Todas mesas/setores</option>
               {tablesUnicas.map((table) => (
                 <option key={table} value={table}>
                   {table}
@@ -260,192 +437,191 @@ export function TimelinePage() {
               </button>
             )}
 
-            <div className="ml-auto text-sm text-text-muted">
-              {occurrencesFiltradas.length} ocorrência
-              {occurrencesFiltradas.length !== 1 ? "s" : ""}
+            <div className="ml-auto text-sm text-[var(--eq-text-muted)]">
+              {eventosFiltrados.length} evento
+              {eventosFiltrados.length !== 1 ? "s" : ""}
             </div>
           </div>
         </div>
 
         {/* Timeline */}
         <div className="space-y-4">
-          {occurrencesFiltradas.length > 0 ? (
-            occurrencesFiltradas.map((occurrence, index) => {
-              const criticality = criticalityConfig[occurrence.criticality];
-              const status = statusConfig[occurrence.status];
+          {eventosFiltrados.length > 0 ? (
+            eventosFiltrados.map((item, index) => {
+              const isOccurrence = item.eventType === "occurrence";
+              const eventType = eventTypeConfig[item.eventType];
+              const EventTypeIcon = eventType.icon;
+              const status = statusConfig[item.status];
               const StatusIcon = status.icon;
+              const id = isOccurrence ? item.occurrence.id : item.event.id;
+              const title = isOccurrence ? item.occurrence.title : item.title;
+              const description = isOccurrence
+                ? item.occurrence.description
+                : item.description;
+              const dateTime = item.dateTime;
+              const criticality = isOccurrence
+                ? criticalityConfig[item.occurrence.criticality]
+                : null;
+              const cardTone = isOccurrence
+                ? criticality?.color
+                : `${eventType.card} ${eventType.tone}`;
+              const dotTone = isOccurrence
+                ? criticality?.badgeColor
+                : eventType.bar;
+              const route = isOccurrence
+                ? `/occurrences/${item.occurrence.id}`
+                : `/${item.eventType}/${encodeURIComponent(item.event.id)}`;
+              const details = isOccurrence
+                ? [
+                    {
+                      label: "Operador",
+                      value: item.occurrence.operator,
+                      icon: User,
+                    },
+                    {
+                      label: "Perfil",
+                      value: item.occurrence.profile,
+                    },
+                    {
+                      label: "Mesa",
+                      value: item.occurrence.table,
+                    },
+                    {
+                      label: "Categoria",
+                      value: item.occurrence.category,
+                      icon: Tag,
+                    },
+                  ]
+                : [
+                    {
+                      label: "Autor",
+                      value: item.event.createdBy || "Autor não informado",
+                      icon: User,
+                    },
+                    {
+                      label: "Setor responsável",
+                      value: item.event.responsibleSector,
+                    },
+                    {
+                      label: "Alimentador",
+                      value: item.event.feeder,
+                    },
+                    {
+                      label: "Equipamento",
+                      value:
+                        item.eventType === "unavailable-equipment"
+                          ? `${item.event.equipmentType} ${item.event.equipmentNumber}`
+                          : item.event.equipment,
+                      icon:
+                        item.eventType === "unavailable-equipment"
+                          ? Wrench
+                          : CircuitBoard,
+                    },
+                  ];
 
               return (
-                <div key={occurrence.id} className="relative">
-                  {/* Linha conectora */}
-                  {index < occurrencesFiltradas.length - 1 && (
-                    <div className="absolute left-[29px] top-[60px] w-0.5 h-[calc(100%+16px)] bg-border-primary" />
+                <div key={`${item.eventType}-${id}`} className="relative pl-8">
+                  {index < eventosFiltrados.length - 1 && (
+                    <div className="absolute left-[11px] top-12 h-[calc(100%-0.5rem)] w-0.5 bg-[var(--eq-border)]" />
                   )}
 
-                  {/* Card */}
                   <div
-                    onClick={() => navigate(`/occurrences/${occurrence.id}`)}
-                    className={` 
-                    border-l-4
-                    ${criticality.color}
-                    cursor-pointer
-                    rounded-lg
-                    p-5
-                    `}
+                    onClick={() => navigate(route)}
+                    className={`cursor-pointer rounded-lg border-l-4 p-5 ${cardTone}`}
                   >
-                    {/* Timeline dot */}
                     <div
-                      className={`absolute -left-[13px] top-6 w-6 h-6 rounded-full ${criticality.badgeColor.split(" ")[0]} border-4 border-bg-primary`}
-                    />
+                      className={`group absolute left-0 top-6 z-10 h-6 w-6 rounded-full border-4 border-[var(--eq-bg-page)] ${dotTone}`}
+                      tabIndex={0}
+                      aria-label={`Data do evento: ${dateTime}`}
+                    >
+                      <span className="pointer-events-none absolute left-7 top-1/2 z-20 -translate-y-1/2 whitespace-nowrap rounded-md border border-[var(--eq-border)] bg-[var(--eq-bg-surface)] px-2 py-1 text-xs font-medium text-[var(--eq-text-primary)] opacity-0 shadow-lg transition-opacity group-hover:opacity-100 group-focus:opacity-100">
+                        {dateTime}
+                      </span>
+                    </div>
 
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-3">
+                    <div className="mb-3 flex items-start justify-between">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span
-                            className="
-    px-2 py-0.5 rounded
-    text-xs font-mono font-bold
-    bg-theme-panel
-    text-theme-muted
-    border border-theme-border
-  "
-                          >
-                            {occurrence.id}
+                        <div className="mb-2 flex flex-wrap items-center gap-2">
+                          <span className="eq-id-chip rounded px-2 py-0.5 font-mono text-xs font-bold">
+                            {id}
                           </span>
                           <span
-                            className={`px-2 py-0.5 rounded text-xs font-bold ${criticality.badgeColor}`}
+                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold ${eventType.tone}`}
                           >
-                            {criticality.label}
+                            <EventTypeIcon className="h-3 w-3" />
+                            {eventType.label}
                           </span>
+                          {criticality && (
+                            <span
+                              className={`rounded px-2 py-0.5 text-xs font-bold text-white ${criticality.badgeColor}`}
+                            >
+                              {criticality.label}
+                            </span>
+                          )}
                           <span
-                            className={`px-2 py-0.5 rounded text-xs font-medium bg-bg-secondary ${status.color} border border-current`}
+                            className={`rounded px-2 py-0.5 text-xs font-medium ${status.badge}`}
                           >
                             <StatusIcon className="w-3 h-3 inline mr-1" />
                             {status.label}
                           </span>
                         </div>
-                        <h3 className="text-base font-bold text-theme-main mb-1">
-                          {occurrence.title}
+                        <h3 className="mb-1 text-base font-bold text-[var(--eq-text-primary)]">
+                          {title}
                         </h3>
-                        <p className="text-sm text-theme-muted">
-                          {occurrence.description}
+                        <p className="text-sm text-[var(--eq-text-secondary)]">
+                          {description}
                         </p>
                       </div>
                       <div className="text-right">
-                        <div className="text-xs text-text-muted flex items-center gap-1">
+                        <div className="flex items-center gap-1 text-xs text-[var(--eq-text-muted)]">
                           <Clock className="w-3 h-3" />
-                          {occurrence.dateTime}
+                          {dateTime}
                         </div>
                       </div>
                     </div>
 
-                    {/* Detalhes */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3 text-sm">
-                      <div>
-                        <div className="text-theme-main text-sm font-medium mb-0.5">
-                          Operador
-                        </div>
-                        <div className="text-theme-muted text-xs flex items-center gap-1">
-                          <User className="w-3 h-3" />
-                          {occurrence.operator}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-theme-main text-sm font-medium mb-0.5">
-                          Perfil
-                        </div>
-                        <div className="text-theme-muted text-xs flex items-center gap-1">
-                          {occurrence.profile}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-theme-main text-sm font-medium mb-0.5">
-                          Mesa
-                        </div>
-                        <div className="text-theme-muted text-xs flex items-center gap-1">
-                          {occurrence.table}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-theme-main text-sm font-medium mb-0.5">
-                          Categoria
-                        </div>
-                        <div className="text-theme-muted text-xs flex items-center gap-1">
-                          <Tag className="w-3 h-3" />
-                          {occurrence.category}
-                        </div>
-                      </div>
+                    <div className="mb-3 grid grid-cols-2 gap-3 text-sm lg:grid-cols-4">
+                      {details.map((detail) => {
+                        const DetailIcon = detail.icon;
+
+                        return (
+                          <div key={detail.label}>
+                            <div className="mb-0.5 text-sm font-medium text-[var(--eq-text-primary)]">
+                              {detail.label}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-[var(--eq-text-muted)]">
+                              {DetailIcon && <DetailIcon className="w-3 h-3" />}
+                              {detail.value || "--"}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
 
-                    {/* Informações Técnicas */}
-                    {/* <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3 text-sm bg-bg-secondary rounded-lg p-3">
-                      <div>
-                        <div className="text-text-muted text-xs mb-0.5"> */}
-                    {/* Subestação */}
-                    {/* </div>
-                        <div className="text-text-muted text-xs mb-0.5">
-                          Categoria
-                        </div>
-                        <div className="text-text-primary font-mono text-xs">
-                          {occurrence.category}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-text-muted text-xs mb-0.5">
-                          Alimentador
-                        </div>
-                        <div className="text-text-primary font-mono text-xs">
-                          {occurrence.feeder}
-                        </div>
-                    </div> */}
-                    {/* {occurrence.resolutionTime && (
-                        <div>
-                          <div className="text-text-muted text-xs mb-0.5">
-                            Tempo Resolução
-                          </div>
-                          <div className="text-success font-medium">
-                            {occurrence.resolutionTime} min
-                          </div>
-                        </div>
-                      )} */}
-                    {/* {occurrence.affectedConsumers && (
-                        <div>
-                          <div className="text-text-muted text-xs mb-0.5">
-                            Consumidores
-                          </div>
-                          <div className="text-warning font-medium">
-                            {occurrence.affectedConsumers.toLocaleString()}
-                          </div>
-                        </div>
-                      )}
-                    </div> */}
-
-                    {/* Anexos */}
-                    {occurrence.attachments && (
+                    {isOccurrence && item.occurrence.attachments && (
                       <div className="flex items-center gap-3 text-xs">
-                        <span className="text-theme-main">Anexos:</span>
+                        <span className="text-[var(--eq-text-primary)]">Anexos:</span>
                         <div className="flex items-center gap-2">
-                          {occurrence.attachments.photo && (
-                            <span className="flex items-center gap-1 px-2 py-1 bg-bg-secondary rounded text-theme-muted">
+                          {item.occurrence.attachments.photo && (
+                            <span className="flex items-center gap-1 rounded bg-[var(--eq-bg-surface-soft)] px-2 py-1 text-[var(--eq-text-muted)]">
                               <Image className="w-3 h-3" />
                               Foto
                             </span>
                           )}
-                          {occurrence.attachments.video && (
-                            <span className="flex items-center gap-1 px-2 py-1 bg-bg-secondary rounded text-theme-muted">
+                          {item.occurrence.attachments.video && (
+                            <span className="flex items-center gap-1 rounded bg-[var(--eq-bg-surface-soft)] px-2 py-1 text-[var(--eq-text-muted)]">
                               <Video className="w-3 h-3" />
                               Vídeo
                             </span>
                           )}
-                          {occurrence.attachments.document && (
-                            <span className="flex items-center gap-1 px-2 py-1 bg-bg-secondary rounded text-theme-muted">
+                          {item.occurrence.attachments.document && (
+                            <span className="flex items-center gap-1 rounded bg-[var(--eq-bg-surface-soft)] px-2 py-1 text-[var(--eq-text-muted)]">
                               <FileText className="w-3 h-3" />
                               Documento
                             </span>
                           )}
-                          {occurrence.attachments.protocol && (
-                            <span className="flex items-center gap-1 px-2 py-1 bg-bg-secondary rounded text-theme-muted">
+                          {item.occurrence.attachments.protocol && (
+                            <span className="flex items-center gap-1 rounded bg-[var(--eq-bg-surface-soft)] px-2 py-1 text-[var(--eq-text-muted)]">
                               <Paperclip className="w-3 h-3" />
                               Protocolo
                             </span>
@@ -453,18 +629,31 @@ export function TimelinePage() {
                         </div>
                       </div>
                     )}
+
+                    {!isOccurrence && item.event.attachments?.length > 0 && (
+                      <div className="flex items-center gap-3 text-xs">
+                        <span className="text-[var(--eq-text-primary)]">
+                          Anexos:
+                        </span>
+                        <span className="flex items-center gap-1 rounded bg-[var(--eq-bg-surface-soft)] px-2 py-1 text-[var(--eq-text-muted)]">
+                          <Paperclip className="w-3 h-3" />
+                          {item.event.attachments.length} arquivo
+                          {item.event.attachments.length !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
             })
           ) : (
-            <div className="bg-bg-card border border-border-primary rounded-lg p-12 text-center">
-              <Calendar className="w-16 h-16 text-text-muted mx-auto mb-4 opacity-50" />
-              <p className="text-text-muted text-lg">
-                Nenhuma ocorrência encontrada
+            <div className="eq-empty-state p-12 text-center">
+              <Calendar className="mx-auto mb-4 h-16 w-16 text-[var(--eq-text-muted)] opacity-50" />
+              <p className="text-lg text-[var(--eq-text-muted)]">
+                Nenhum evento encontrado
               </p>
-              <p className="text-text-muted text-sm mt-2">
-                Ajuste os filtros para visualizar outras ocorrências
+              <p className="mt-2 text-sm text-[var(--eq-text-muted)]">
+                Ajuste os filtros para visualizar outros eventos
               </p>
             </div>
           )}

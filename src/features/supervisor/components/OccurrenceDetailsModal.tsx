@@ -62,13 +62,13 @@ export function OccurrenceDetailsModal({
   const getStatusStyles = (status: string) => {
     switch (status) {
       case "aberta":
-        return "bg-red-500/10 text-red-500 border-red-500/30";
+        return "eq-status-open border";
       case "em_andamento":
-        return "bg-yellow-500/10 text-yellow-500 border-yellow-500/30";
+        return "eq-status-progress border";
       case "resolvida":
-        return "bg-green-500/10 text-green-500 border-green-500/30";
+        return "eq-status-success border";
       case "transferida":
-        return "bg-blue-500/10 text-blue-400 border-blue-500/30";
+        return "eq-status-transfer border";
       default:
         return "bg-gray-500/10 text-gray-400 border-gray-500/30";
     }

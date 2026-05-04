@@ -124,24 +124,24 @@ export const OCCURRENCE_STATUS_COLORS: Record<
   }
 > = {
   aberta: {
-    bg: "bg-red-500/10 dark:bg-red-500/20",
-    text: "text-red-600 dark:text-red-400",
-    badge: "bg-red-500/20 text-red-400 border-red-500/50",
+    bg: "eq-status-open",
+    text: "text-slate-700 dark:text-slate-300",
+    badge: "eq-status-open border",
   },
   em_andamento: {
-    bg: "bg-yellow-500/10 dark:bg-yellow-500/20",
-    text: "text-yellow-600 dark:text-yellow-400",
-    badge: "bg-yellow-500/20 text-yellow-400 border-yellow-500/50",
+    bg: "eq-status-progress",
+    text: "text-blue-700 dark:text-blue-400",
+    badge: "eq-status-progress border",
   },
   resolvida: {
-    bg: "bg-green-500/10 dark:bg-green-500/20",
-    text: "text-green-600 dark:text-green-400",
-    badge: "bg-green-500/20 text-green-400 border-green-500/50",
+    bg: "eq-status-success",
+    text: "text-emerald-700 dark:text-emerald-400",
+    badge: "eq-status-success border",
   },
   transferida: {
-    bg: "bg-blue-500/10 dark:bg-blue-500/20",
-    text: "text-blue-600 dark:text-blue-400",
-    badge: "bg-blue-500/20 text-blue-400 border-blue-500/50",
+    bg: "eq-status-transfer",
+    text: "text-violet-700 dark:text-violet-400",
+    badge: "eq-status-transfer border",
   },
 };
 

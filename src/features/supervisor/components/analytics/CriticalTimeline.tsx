@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import {
-  AlertTriangle,
+  AlertCircle,
+  ArrowRightLeft,
   Clock,
   CheckCircle2,
-  Users,
   ChevronDown,
   ChevronUp,
-  Zap,
+  PlayCircle,
 } from "lucide-react";
 
 import { OCCURRENCES } from "../../mocks/mocks";
@@ -27,17 +27,17 @@ const criticalOccurrences: Occurrence[] = OCCURRENCES.filter(
 ========================= */
 
 const statusIcons = {
-  aberta: AlertTriangle,
-  em_andamento: Zap,
+  aberta: AlertCircle,
+  em_andamento: PlayCircle,
   resolvida: CheckCircle2,
-  transferida: Users,
+  transferida: ArrowRightLeft,
 };
 
 const statusColors = {
-  aberta: "text-red-500 bg-red-500/20 border-red-500/50",
-  em_andamento: "text-orange-500 bg-orange-500/20 border-orange-500/50",
-  resolvida: "text-green-500 bg-green-500/20 border-green-500/50",
-  transferida: "text-purple-500 bg-purple-500/20 border-purple-500/50",
+  aberta: "eq-status-open",
+  em_andamento: "eq-status-progress",
+  resolvida: "eq-status-success",
+  transferida: "eq-status-transfer",
 };
 
 export function CriticalTimeline() {

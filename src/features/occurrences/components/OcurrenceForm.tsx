@@ -4,6 +4,7 @@ import {
   AlertTriangle, 
   Plus, 
   CheckCircle, 
+  CheckCircle2,
   Loader2, 
   FileText, 
   AlertCircle, 
@@ -44,9 +45,9 @@ const priorityConfig: any = {
 };
 
 const statusConfig: any = {
-  'Aberta':       { icon: AlertCircle, color: 'text-slate-600', bg: 'bg-slate-100 dark:bg-slate-800' },
-  'Em Andamento': { icon: PlayCircle,  color: 'text-blue-600',  bg: 'bg-blue-50 dark:bg-blue-900/20' },
-  'Resolvida':    { icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/20' }
+  'Aberta':       { icon: AlertCircle, color: 'text-slate-700 dark:text-slate-300', bg: 'eq-status-open' },
+  'Em Andamento': { icon: PlayCircle,  color: 'text-blue-700 dark:text-blue-400',  bg: 'eq-status-progress' },
+  'Resolvida':    { icon: CheckCircle2, color: 'text-emerald-700 dark:text-emerald-400', bg: 'eq-status-success' }
 };
 
 const categorias = ['Atendimento ao Cliente', 'Manobra Programada', 'Incidente de Rede', 'Falta de Energia', 'Segurança do Trabalho'];

@@ -14,6 +14,8 @@ import {
   AlertCircle,
   CheckCircle2,
   ArrowRight,
+  ArrowRightLeft,
+  PlayCircle,
   Zap,
   GitBranch,
   // Users,
@@ -82,22 +84,26 @@ const statusConfig = {
   aberta: {
     label: "ABERTA",
     icon: AlertCircle,
-    color: "text-red-500",
+    color: "text-slate-700 dark:text-slate-300",
+    badge: "eq-status-open border",
   },
   em_andamento: {
     label: "EM ANDAMENTO",
-    icon: Activity,
-    color: "text-yellow-500",
+    icon: PlayCircle,
+    color: "text-blue-700 dark:text-blue-400",
+    badge: "eq-status-progress border",
   },
   resolvida: {
     label: "RESOLVIDA",
     icon: CheckCircle2,
-    color: "text-emerald-500",
+    color: "text-emerald-700 dark:text-emerald-400",
+    badge: "eq-status-success border",
   },
   transferida: {
     label: "TRANSFERIDA",
-    icon: ArrowRight,
-    color: "text-blue-500",
+    icon: ArrowRightLeft,
+    color: "text-violet-700 dark:text-violet-400",
+    badge: "eq-status-transfer border",
   },
 };
 
@@ -308,7 +314,7 @@ export function SupervisorOccurenceDetailsPage() {
                     </span>
 
                     <span
-                      className={`text-xs flex items-center gap-1 ${status.color}`}
+                      className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium ${status.badge}`}
                     >
                       <StatusIcon className="w-3 h-3" />
                       {status.label}

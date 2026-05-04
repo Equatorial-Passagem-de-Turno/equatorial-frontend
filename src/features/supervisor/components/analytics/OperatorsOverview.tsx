@@ -75,18 +75,18 @@ export function OperatorsOverview() {
     : "0";
 
   return (
-    <div className="bg-white dark:bg-theme-panel rounded-lg border border-zinc-200 dark:border-[#334155] overflow-hidden">
+    <div className="eq-surface overflow-hidden">
       
       {/* HEADER */}
-      <div className="p-6 border-b border-zinc-200 dark:border-[#334155]">
+      <div className="border-b border-[var(--eq-border)] p-6">
         <div className="flex items-center justify-between">
           
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[#10b981]/20 dark:bg-[#10b981]/30 flex items-center justify-center">
-              <Users className="w-5 h-5 text-[#10b981]" />
+            <div className="eq-status-success flex h-10 w-10 items-center justify-center rounded-lg">
+              <Users className="h-5 w-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-zinc-900 dark:text-white">
+              <h3 className="eq-card-title text-lg">
                 Desempenho dos Operadores
               </h3>
             </div>
@@ -95,16 +95,16 @@ export function OperatorsOverview() {
           {/* KPI SUMMARY */}
           <div className="flex items-center gap-6">
             <div className="text-right">
-              <div className="text-xs text-zinc-500 dark:text-[#64748b]">
+              <div className="eq-card-meta">
                 Total Assumidas
               </div>
-              <div className="text-xl font-bold text-zinc-900 dark:text-white">
+              <div className="text-xl font-bold text-[var(--eq-text-primary)]">
                 {totalAssigned}
               </div>
             </div>
 
             <div className="text-right">
-              <div className="text-xs text-zinc-500 dark:text-[#64748b]">
+              <div className="eq-card-meta">
                 Total Resolvidas
               </div>
               <div className="text-xl font-bold text-[#10b981]">
@@ -113,10 +113,10 @@ export function OperatorsOverview() {
             </div>
 
             <div className="text-right">
-              <div className="text-xs text-zinc-500 dark:text-[#64748b]">
+              <div className="eq-card-meta">
                 Tempo Médio
               </div>
-              <div className="text-xl font-bold text-zinc-900 dark:text-white">
+              <div className="text-xl font-bold text-[var(--eq-text-primary)]">
                 {averageResolutionTime}min
               </div>
             </div>
@@ -128,29 +128,29 @@ export function OperatorsOverview() {
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="bg-zinc-50 dark:bg-[#0f172a]/50 border-b border-zinc-200 dark:border-[#334155]">
-              <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-600 dark:text-[#94a3b8] uppercase tracking-wider">
+            <tr className="border-b border-[var(--eq-border)] bg-[var(--eq-bg-surface-soft)]">
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--eq-text-muted)]">
                 Operador
               </th>
-              <th className="px-6 py-3 text-left text-xs font-semibold text-zinc-600 dark:text-[#94a3b8] uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--eq-text-muted)]">
                 profile
               </th>
-              <th className="px-6 py-3 text-center text-xs font-semibold text-zinc-600 dark:text-[#94a3b8] uppercase tracking-wider">
+              <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[var(--eq-text-muted)]">
                 Assumidas
               </th>
-              <th className="px-6 py-3 text-center text-xs font-semibold text-zinc-600 dark:text-[#94a3b8] uppercase tracking-wider">
+              <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[var(--eq-text-muted)]">
                 Resolvidas
               </th>
-              <th className="px-6 py-3 text-center text-xs font-semibold text-zinc-600 dark:text-[#94a3b8] uppercase tracking-wider">
+              <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[var(--eq-text-muted)]">
                 Tempo Médio
               </th>
-              <th className="px-6 py-3 text-center text-xs font-semibold text-zinc-600 dark:text-[#94a3b8] uppercase tracking-wider">
+              <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-[var(--eq-text-muted)]">
                 Taxa Resolução
               </th>
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-zinc-200 dark:divide-[#334155]">
+          <tbody className="divide-y divide-[var(--eq-border)]">
             {activeOperators.map((operator) => {
               const profileStyle = profileStyleMap[operator.profile];
               const inProgress =
@@ -160,15 +160,15 @@ export function OperatorsOverview() {
               return (
                 <tr
                   key={operator.id}
-                  className="hover:bg-zinc-50 dark:hover:bg-[#1e293b]/30 transition-colors"
+                  className="transition-colors hover:bg-[var(--eq-bg-surface-soft)]"
                 >
                   {/* NAME */}
                   <td className="px-6 py-4">
                     <div>
-                      <div className="font-medium text-zinc-900 dark:text-white">
+                      <div className="font-medium text-[var(--eq-text-primary)]">
                         {operator.name}
                       </div>
-                      <div className="text-xs text-zinc-500 dark:text-[#64748b]">
+                      <div className="text-xs text-[var(--eq-text-muted)]">
                         {operator.table} • {operator.shift}
                       </div>
                     </div>
@@ -186,8 +186,8 @@ export function OperatorsOverview() {
                   {/* ASSIGNED */}
                   <td className="px-6 py-4 text-center">
                     <div className="flex items-center justify-center gap-2">
-                      <Activity className="w-4 h-4 text-zinc-400" />
-                      <span className="font-semibold text-zinc-900 dark:text-white">
+                      <Activity className="h-4 w-4 text-[var(--eq-text-muted)]" />
+                      <span className="font-semibold text-[var(--eq-text-primary)]">
                         {operator.assumedOccurrences}
                       </span>
                     </div>
@@ -215,9 +215,9 @@ export function OperatorsOverview() {
                   <td className="px-6 py-4 text-center">
                     <div className="flex items-center justify-center gap-2">
                       <Clock className="w-4 h-4 text-blue-500" />
-                      <span className="font-semibold text-zinc-900 dark:text-white">
+                      <span className="font-semibold text-[var(--eq-text-primary)]">
                         {operator.averageResolutionTime}
-                        <span className="text-xs text-zinc-500 dark:text-[#64748b] ml-1">
+                        <span className="ml-1 text-xs text-[var(--eq-text-muted)]">
                           min
                         </span>
                       </span>
@@ -227,11 +227,11 @@ export function OperatorsOverview() {
                   {/* RESOLUTION RATE */}
                   <td className="px-6 py-4 text-center">
                     <div className="flex flex-col items-center">
-                      <span className="font-bold text-zinc-900 dark:text-white">
+                      <span className="font-bold text-[var(--eq-text-primary)]">
                         {operator.resolutionRate.toFixed(1)}%
                       </span>
 
-                      <div className="w-24 h-1.5 bg-zinc-200 dark:bg-[#334155] rounded-full mt-1 overflow-hidden">
+                      <div className="mt-1 h-1.5 w-24 overflow-hidden rounded-full bg-[var(--eq-bg-muted)]">
                         <div
                           className="h-full bg-gradient-to-r from-[#10b981] to-[#14b8a6] rounded-full"
                           style={{
@@ -249,10 +249,10 @@ export function OperatorsOverview() {
       </div>
 
       {/* FOOTER */}
-      <div className="p-4 border-t border-zinc-200 dark:border-[#334155] bg-zinc-50 dark:bg-[#0f172a]/50">
+      <div className="border-t border-[var(--eq-border)] bg-[var(--eq-bg-surface-soft)] p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4 text-xs">
-            <span className="text-zinc-500 dark:text-[#64748b]">
+            <span className="text-[var(--eq-text-muted)]">
               Perfis:
             </span>
 
@@ -260,7 +260,7 @@ export function OperatorsOverview() {
               ([profile, style]) => (
                 <div key={profile} className="flex items-center gap-1.5">
                   <div className={`w-3 h-3 rounded ${style.bg}`} />
-                  <span className="text-zinc-600 dark:text-[#94a3b8]">
+                  <span className="text-[var(--eq-text-secondary)]">
                     {profile}
                   </span>
                 </div>
@@ -268,7 +268,7 @@ export function OperatorsOverview() {
             )}
           </div>
 
-          <span className="text-xs text-zinc-500 dark:text-[#64748b]">
+          <span className="text-xs text-[var(--eq-text-muted)]">
             {activeOperators.length} turnos ativos
           </span>
         </div>

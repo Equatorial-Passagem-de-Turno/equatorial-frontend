@@ -5,8 +5,10 @@ import {
   Zap,
   ArrowUp,
   ArrowDown,
-  CheckCircle,
-  RefreshCw,
+  ArrowRightLeft,
+  CheckCircle2,
+  PlayCircle,
+  AlertCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -73,27 +75,31 @@ const priorityConfig: Record<
 // ==========================
 const statusConfig: Record<
   OccurrenceStatus,
-  { label: string; color: string; icon: LucideIcon }
+  { label: string; color: string; badge: string; icon: LucideIcon }
 > = {
   aberta: {
     label: "Aberta",
-    color: "text-red-500",
-    icon: AlertTriangle,
+    color: "text-slate-700 dark:text-slate-300",
+    badge: "eq-status-open border",
+    icon: AlertCircle,
   },
   em_andamento: {
     label: "Em Andamento",
-    color: "text-yellow-500",
-    icon: RefreshCw,
+    color: "text-blue-700 dark:text-blue-400",
+    badge: "eq-status-progress border",
+    icon: PlayCircle,
   },
   resolvida: {
     label: "Resolvida",
-    color: "text-green-500",
-    icon: CheckCircle,
+    color: "text-emerald-700 dark:text-emerald-400",
+    badge: "eq-status-success border",
+    icon: CheckCircle2,
   },
   transferida: {
     label: "Transferida",
-    color: "text-blue-500",
-    icon: ArrowUp,
+    color: "text-violet-700 dark:text-violet-400",
+    badge: "eq-status-transfer border",
+    icon: ArrowRightLeft,
   },
 };
 
@@ -222,7 +228,7 @@ export function OccurrencesList() {
 
                       {/* 🔹 Status integrado sem quebrar layout */}
                       <div
-                        className={`ml-2 flex items-center gap-1 text-[10px] ${status.color}`}
+                        className={`ml-2 flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium ${status.badge}`}
                       >
                         <StatusIcon className="w-3 h-3" />
                         {status.label}
