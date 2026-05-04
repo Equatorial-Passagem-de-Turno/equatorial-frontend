@@ -160,8 +160,9 @@ export function ShiftHistoryModal({ isOpen, onClose }: ShiftHistoryModalProps) {
   return createPortal(
     <>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-        <div className="eq-surface flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden rounded-xl shadow-2xl">
-        <div className="flex items-center justify-between border-b border-[var(--eq-border)] p-6">
+        <div className="eq-modal-solid relative flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-600" />
+        <div className="eq-modal-header flex items-center justify-between p-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-emerald-600/10 flex items-center justify-center">
               <Calendar className="w-5 h-5 text-emerald-400" />
@@ -179,7 +180,7 @@ export function ShiftHistoryModal({ isOpen, onClose }: ShiftHistoryModalProps) {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="eq-modal-body flex-1 overflow-y-auto p-6">
           <div className="grid grid-cols-12 gap-6">
             <div className="col-span-4">
               <div className="eq-surface-soft p-4">

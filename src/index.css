@@ -163,6 +163,31 @@ input, select, textarea {
     color: var(--eq-text-primary);
   }
 
+  .eq-modal-solid {
+    @apply rounded-xl border bg-white shadow-2xl dark:bg-slate-900;
+    border-color: var(--eq-border);
+    color: var(--eq-text-primary);
+  }
+
+  .eq-modal-header {
+    @apply border-b bg-slate-50 dark:bg-slate-800;
+    border-color: var(--eq-border);
+  }
+
+  .eq-modal-section {
+    @apply border-b bg-white dark:bg-slate-900;
+    border-color: var(--eq-border);
+  }
+
+  .eq-modal-body {
+    @apply bg-slate-50 dark:bg-slate-950;
+  }
+
+  .eq-modal-footer {
+    @apply border-t bg-white dark:bg-slate-900;
+    border-color: var(--eq-border);
+  }
+
   .eq-section-divider {
     @apply border-t pt-8;
     border-color: var(--eq-border);

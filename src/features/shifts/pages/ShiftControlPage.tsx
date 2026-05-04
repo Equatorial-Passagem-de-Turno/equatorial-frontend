@@ -612,6 +612,7 @@ export const ShiftControlPage = () => {
                         onClick={() => setIsReopenModalOpen(false)}
                     />
                     <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-sm border border-slate-200 dark:border-slate-800 animate-fade-in-up overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-600" />
                         
                         {/* Header do Modal */}
                         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-amber-50 dark:bg-amber-900/10">
@@ -670,6 +671,7 @@ export const ShiftControlPage = () => {
                         onClick={() => !isCheckingLogout && setShowShiftOpenLogoutModal(false)}
                     />
                     <div className="relative w-full max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-600" />
                         <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-amber-50 dark:bg-amber-900/15">
                             <h3 className="text-lg font-bold text-amber-800 dark:text-amber-400 flex items-center gap-2">
                                 <AlertTriangle className="w-5 h-5" />
@@ -983,6 +985,7 @@ export const ShiftControlPage = () => {
                 onClick={() => !isFinishing && setIsFinishModalOpen(false)}
               />
               <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-md border border-slate-200 dark:border-slate-800 animate-fade-in-up overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-600" />
                 
                 {/* Header do Modal */}
                 <div className="p-6 pb-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-slate-900">

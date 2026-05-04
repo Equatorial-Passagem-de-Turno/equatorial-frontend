@@ -21,9 +21,12 @@ const dotStyles: Record<AtividadeRecente["type"], string> = {
 export function ActivityFeed() {
   const navigate = useNavigate();
   const activities = useSupervisorStore((state) => state.activities);
-
   const [selectedActivity, setSelectedActivity] =
     useState<AtividadeRecente | null>(null);
+
+  const MAX_RECENT_ACTIVITIES = 10;
+  const visibleActivities = activities.slice(0, MAX_RECENT_ACTIVITIES);
+  const hasMoreActivities = activities.length > MAX_RECENT_ACTIVITIES;
 
   return (
     <div className="eq-surface p-5">
@@ -40,8 +43,8 @@ export function ActivityFeed() {
       </div>
 
       {/* List */}
-      <div className="space-y-3">
-        {activities.map((activity) => {
+      <div className="space-y-3 max-h-[48rem] overflow-y-auto pr-1">
+        {visibleActivities.map((activity) => {
           return (
             <div
               key={activity.id}
@@ -86,6 +89,12 @@ export function ActivityFeed() {
         {activities.length === 0 && (
           <div className="eq-empty-state p-3 text-xs">
             Nenhuma atividade recente encontrada.
+          </div>
+        )}
+
+        {hasMoreActivities && (
+          <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 dark:bg-slate-900/50 p-3 text-xs text-slate-500">
+            Mostrando as 10 atividades mais recentes. Veja tudo na linha do tempo.
           </div>
         )}
       </div>

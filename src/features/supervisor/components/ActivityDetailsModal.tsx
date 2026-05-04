@@ -1,5 +1,6 @@
 import { X, Bell, Clock, User, AlertTriangle, CheckCircle, Info } from 'lucide-react';
 import type { AtividadeRecente } from '../types/index.ts';
+import { createPortal } from 'react-dom';
 
 interface ActivityDetailsModalProps {
   atividade: AtividadeRecente;
@@ -50,12 +51,12 @@ export function ActivityDetailsModal({ atividade, onClose }: ActivityDetailsModa
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-theme-panel border border-border-primary rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+      <div className="eq-modal-solid w-full max-w-2xl max-h-[90vh] overflow-y-auto">
 
         {/* Header */}
-        <div className="flex items-start justify-between p-6 border-b border-border-primary sticky top-0 bg-bg-card">
+        <div className="eq-modal-header sticky top-0 flex items-start justify-between p-6">
           <div className="flex items-start gap-3 flex-1">
             {getActivityTypeIcon()}
             <div className="flex-1">
@@ -64,29 +65,29 @@ export function ActivityDetailsModal({ atividade, onClose }: ActivityDetailsModa
                   {getActivityTypeLabel()}
                 </span>
               </div>
-              <h2 className="text-lg text-text-primary">{atividade.title}</h2>
+              <h2 className="text-lg text-[var(--eq-text-primary)]">{atividade.title}</h2>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="text-text-muted hover:text-text-primary transition-colors p-1 hover:bg-bg-secondary rounded"
+            className="eq-control flex h-8 w-8 items-center justify-center rounded-lg p-0 transition-colors hover:bg-[var(--eq-bg-surface-soft)]"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5 text-[var(--eq-text-secondary)]" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="eq-modal-body space-y-6 p-6">
 
           {/* Descrição */}
           <div>
-            <h3 className="text-sm font-medium text-text-primary mb-3 flex items-center gap-2">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-medium text-[var(--eq-text-primary)]">
               <Bell className="w-4 h-4 text-accent-primary" />
               Detalhes
             </h3>
-            <div className="bg-bg-secondary border border-border-primary rounded-lg p-4">
-              <p className="text-sm text-text-primary whitespace-pre-line leading-relaxed">
+            <div className="eq-surface-soft p-4">
+              <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--eq-text-primary)]">
                 {atividade.description}
               </p>
             </div>
@@ -96,48 +97,49 @@ export function ActivityDetailsModal({ atividade, onClose }: ActivityDetailsModa
           <div className="grid grid-cols-2 gap-4">
 
             {/* Data/Hora */}
-            <div className="bg-bg-secondary border border-border-primary rounded-lg p-4">
+            <div className="eq-surface-soft p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4 text-text-muted" />
-                <p className="text-xs text-text-muted uppercase tracking-wide">Data/Hora</p>
+                <Clock className="w-4 h-4 text-[var(--eq-text-muted)]" />
+                <p className="text-xs text-[var(--eq-text-muted)] uppercase tracking-wide">Data/Hora</p>
               </div>
-              <p className="text-sm text-text-primary font-mono">{atividade.timestamp}</p>
-              <p className="text-xs text-text-muted mt-1">{atividade.time}</p>
+              <p className="text-sm text-[var(--eq-text-primary)] font-mono">{atividade.timestamp}</p>
+              <p className="text-xs text-[var(--eq-text-muted)] mt-1">{atividade.time}</p>
             </div>
 
             {/* Autor */}
-            <div className="bg-bg-secondary border border-border-primary rounded-lg p-4">
+            <div className="eq-surface-soft p-4">
               <div className="flex items-center gap-2 mb-2">
-                <User className="w-4 h-4 text-text-muted" />
-                <p className="text-xs text-text-muted uppercase tracking-wide">Autor</p>
+                <User className="w-4 h-4 text-[var(--eq-text-muted)]" />
+                <p className="text-xs text-[var(--eq-text-muted)] uppercase tracking-wide">Autor</p>
               </div>
-              <p className="text-sm text-text-primary">{atividade.author}</p>
+              <p className="text-sm text-[var(--eq-text-primary)]">{atividade.author}</p>
             </div>
 
           </div>
 
           {/* ID da Atividade */}
-          <div className="bg-bg-secondary border border-border-primary rounded-lg p-4">
+          <div className="eq-surface-soft p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Info className="w-4 h-4 text-text-muted" />
-              <p className="text-xs text-text-muted uppercase tracking-wide">Identificador</p>
+              <Info className="w-4 h-4 text-[var(--eq-text-muted)]" />
+              <p className="text-xs text-[var(--eq-text-muted)] uppercase tracking-wide">Identificador</p>
             </div>
-            <p className="text-sm text-text-primary font-mono">{atividade.id}</p>
+            <p className="text-sm text-[var(--eq-text-primary)] font-mono">{atividade.id}</p>
           </div>
 
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-border-primary flex justify-end gap-3 bg-bg-secondary/50">
+        <div className="eq-modal-footer flex justify-end gap-3 p-6">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-bg-card border border-border-primary text-text-primary rounded hover:bg-bg-secondary transition-colors text-sm"
+            className="eq-control rounded-lg px-4 py-2 text-sm transition-colors hover:bg-[var(--eq-bg-surface-soft)]"
           >
             Fechar
           </button>
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
