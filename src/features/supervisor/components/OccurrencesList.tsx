@@ -36,37 +36,33 @@ const priorityConfig: Record<
 > = {
   critica: {
     label: "CRÍTICA",
-    color:
-      "bg-red-500/10 border-red-500/30 dark:bg-red-500/20 dark:border-red-500/50",
+    color: "eq-criticality-critical",
     textColor: "text-red-600 dark:text-red-400",
-    badgeColor: "bg-red-500",
+    badgeColor: "eq-criticality-bar-critical",
     icon: AlertTriangle,
     order: 4,
   },
   alta: {
     label: "ALTA",
-    color:
-      "bg-orange-500/10 border-orange-500/30 dark:bg-orange-500/20 dark:border-orange-500/50",
+    color: "eq-criticality-high",
     textColor: "text-orange-600 dark:text-orange-400",
-    badgeColor: "bg-orange-500",
+    badgeColor: "eq-criticality-bar-high",
     icon: Zap,
     order: 3,
   },
   media: {
     label: "MÉDIA",
-    color:
-      "bg-yellow-500/10 border-yellow-500/30 dark:bg-yellow-500/20 dark:border-yellow-500/50",
+    color: "eq-criticality-medium",
     textColor: "text-yellow-600 dark:text-yellow-400",
-    badgeColor: "bg-yellow-500",
+    badgeColor: "eq-criticality-bar-medium",
     icon: Clock,
     order: 2,
   },
   baixa: {
     label: "BAIXA",
-    color:
-      "bg-blue-500/10 border-blue-500/30 dark:bg-blue-500/20 dark:border-blue-500/50",
-    textColor: "text-blue-600 dark:text-blue-400",
-    badgeColor: "bg-blue-500",
+    color: "eq-criticality-low",
+    textColor: "text-green-600 dark:text-green-400",
+    badgeColor: "eq-criticality-bar-low",
     icon: Clock,
     order: 1,
   },
@@ -137,18 +133,18 @@ export function OccurrencesList() {
   const navigate = useNavigate();
 
   return (
-    <div className="bg-white dark:bg-[#1e293b]/50 rounded-lg border border-zinc-200 dark:border-[#334155] overflow-hidden">
+    <div className="eq-surface overflow-hidden">
       {/* HEADER ORIGINAL */}
-      <div className="p-4 border-b border-zinc-200 dark:border-[#334155] flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-[var(--eq-border)] p-4">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-orange-500/20 dark:bg-orange-500/30 flex items-center justify-center">
+          <div className="eq-criticality-high flex h-8 w-8 items-center justify-center rounded-lg">
             <AlertTriangle className="w-4 h-4 text-orange-600 dark:text-orange-400" />
           </div>
           <div>
-            <h3 className="font-semibold text-zinc-900 dark:text-white">
+            <h3 className="eq-card-title">
               Ocorrências Pendentes
             </h3>
-            <p className="text-xs text-zinc-500 dark:text-[#94a3b8]">
+            <p className="eq-page-subtitle text-xs">
               {ocorrenciasAbertas.length} ocorrências ativas
             </p>
           </div>
@@ -161,7 +157,7 @@ export function OccurrencesList() {
             className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${
               sortMode === "priority"
                 ? "bg-[#10b981] text-white"
-                : "bg-zinc-100 dark:bg-[#1e293b] text-zinc-600 dark:text-[#94a3b8] hover:bg-zinc-200 dark:hover:bg-[#334155]"
+                : "eq-control hover:bg-[var(--eq-bg-surface-soft)]"
             }`}
           >
             Prioridade
@@ -172,7 +168,7 @@ export function OccurrencesList() {
             className={`px-3 py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1 ${
               sortMode === "recent"
                 ? "bg-[#10b981] text-white"
-                : "bg-zinc-100 dark:bg-[#1e293b] text-zinc-600 dark:text-[#94a3b8] hover:bg-zinc-200 dark:hover:bg-[#334155]"
+                : "eq-control hover:bg-[var(--eq-bg-surface-soft)]"
             }`}
           >
             <ArrowDown className="w-3 h-3" />
@@ -184,7 +180,7 @@ export function OccurrencesList() {
             className={`px-3 py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1 ${
               sortMode === "oldest"
                 ? "bg-[#10b981] text-white"
-                : "bg-zinc-100 dark:bg-[#1e293b] text-zinc-600 dark:text-[#94a3b8] hover:bg-zinc-200 dark:hover:bg-[#334155]"
+                : "eq-control hover:bg-[var(--eq-bg-surface-soft)]"
             }`}
           >
             <ArrowUp className="w-3 h-3" />
@@ -205,7 +201,7 @@ export function OccurrencesList() {
             <div
               key={occurrence.id}
               onClick={() => navigate(`/occurrences/${occurrence.id}`)}
-              className={`p-4 rounded-lg border-l-4 ${config.color} transition-all hover:shadow-md cursor-pointer`}
+              className={`cursor-pointer rounded-lg border-l-4 p-4 transition-all hover:shadow-md ${config.color}`}
             >
               <div className="flex items-start justify-between mb-2">
                 <div className="flex items-start gap-3 flex-1">
@@ -215,7 +211,7 @@ export function OccurrencesList() {
 
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-semibold text-sm text-zinc-900 dark:text-white">
+                      <h4 className="text-sm font-semibold text-[var(--eq-text-primary)]">
                         {occurrence.title}
                       </h4>
                       <span
@@ -233,39 +229,39 @@ export function OccurrencesList() {
                       </div>
                     </div>
 
-                    <p className="text-xs text-zinc-600 dark:text-[#94a3b8] mb-2">
+                    <p className="mb-2 text-xs text-[var(--eq-text-secondary)]">
                       {occurrence.description}
                     </p>
 
                     <div className="flex flex-wrap items-center gap-3 text-[11px]">
-                      <div className="flex items-center gap-1.5 text-zinc-500 dark:text-[#64748b]">
+                      <div className="flex items-center gap-1.5 text-[var(--eq-text-muted)]">
                         <span className="font-medium">ID:</span>
                         <span className="font-mono">{occurrence.id}</span>
                       </div>
 
-                      <div className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-[#475569]" />
+                      <div className="h-1 w-1 rounded-full bg-[var(--eq-border-strong)]" />
 
-                      <div className="flex items-center gap-1.5 text-zinc-500 dark:text-[#64748b]">
+                      <div className="flex items-center gap-1.5 text-[var(--eq-text-muted)]">
                         <span className="font-medium">Local:</span>
                         <span>{occurrence.substation}</span>
                       </div>
 
-                      <div className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-[#475569]" />
+                      <div className="h-1 w-1 rounded-full bg-[var(--eq-border-strong)]" />
 
-                      <div className="flex items-center gap-1.5 text-zinc-500 dark:text-[#64748b]">
+                      <div className="flex items-center gap-1.5 text-[var(--eq-text-muted)]">
                         <Clock className="w-3 h-3" />
                         <span>{formatTimeAgo(occurrence.timestamp)}</span>
                       </div>
                     </div>
 
-                    <div className="mt-2 pt-2 border-t border-zinc-200 dark:border-[#334155]/50 flex items-center gap-2 text-[11px]">
-                      <span className="text-zinc-500 dark:text-[#64748b]">
+                    <div className="mt-2 flex items-center gap-2 border-t border-[var(--eq-border)] pt-2 text-[11px]">
+                      <span className="text-[var(--eq-text-muted)]">
                         Registrado por:
                       </span>
-                      <span className="font-medium text-zinc-700 dark:text-[#94a3b8]">
+                      <span className="font-medium text-[var(--eq-text-secondary)]">
                         {occurrence.operator}
                       </span>
-                      <span className="text-zinc-400 dark:text-[#64748b]">
+                      <span className="text-[var(--eq-text-muted)]">
                         •
                       </span>
                       <span className="text-[#10b981] font-medium">
@@ -281,12 +277,12 @@ export function OccurrencesList() {
       </div>
 
       {/* FOOTER ORIGINAL */}
-      <div className="p-3 border-t border-zinc-200 dark:border-[#334155] bg-zinc-50 dark:bg-[#0f172a]/50">
+      <div className="border-t border-[var(--eq-border)] bg-[var(--eq-bg-surface-soft)] p-3">
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-red-500"></div>
-              <span className="text-zinc-600 dark:text-[#94a3b8]">
+              <span className="text-[var(--eq-text-secondary)]">
                 {
                   ocorrenciasAbertas.filter((o) => o.criticality === "critica")
                     .length
@@ -296,7 +292,7 @@ export function OccurrencesList() {
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-              <span className="text-zinc-600 dark:text-[#94a3b8]">
+              <span className="text-[var(--eq-text-secondary)]">
                 {
                   ocorrenciasAbertas.filter((o) => o.criticality === "alta")
                     .length
@@ -306,7 +302,7 @@ export function OccurrencesList() {
             </div>
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-              <span className="text-zinc-600 dark:text-[#94a3b8]">
+              <span className="text-[var(--eq-text-secondary)]">
                 {
                   ocorrenciasAbertas.filter((o) => o.criticality === "media")
                     .length
@@ -316,7 +312,7 @@ export function OccurrencesList() {
             </div>
           </div>
 
-          <span className="text-zinc-500 dark:text-[#64748b]">
+          <span className="text-[var(--eq-text-muted)]">
             Atualizado agora
           </span>
         </div>

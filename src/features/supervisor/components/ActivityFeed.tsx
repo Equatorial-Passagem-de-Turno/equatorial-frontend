@@ -26,10 +26,10 @@ export function ActivityFeed() {
     useState<AtividadeRecente | null>(null);
 
   return (
-    <div className="bg-slate-900 border border-slate-700 rounded-lg p-5">
+    <div className="eq-surface p-5">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-white">Atividade Recente</h3>
+        <h3 className="eq-card-title">Atividade Recente</h3>
 
         <button
           onClick={() => navigate("/supervisor/timeline")}
@@ -61,21 +61,21 @@ export function ActivityFeed() {
 
                   {/* Content */}
                   <div>
-                    <p className="text-sm font-medium text-white">
+                    <p className="text-sm font-medium text-[var(--eq-text-primary)]">
                       {activity.title}
                     </p>
 
-                    <p className="text-xs mt-0.5 whitespace-pre-line text-slate-400">
+                    <p className="mt-0.5 whitespace-pre-line text-xs text-[var(--eq-text-secondary)]">
                       {activity.description}
                     </p>
 
-                    <p className="text-xs mt-1.5 italic text-slate-500">
+                    <p className="mt-1.5 text-xs italic text-[var(--eq-text-muted)]">
                       {activity.author}
                     </p>
                   </div>
                 </div>
 
-                <span className="text-xs text-slate-400 whitespace-nowrap">
+                <span className="whitespace-nowrap text-xs text-[var(--eq-text-muted)]">
                   {activity.time}
                 </span>
               </div>
@@ -84,7 +84,7 @@ export function ActivityFeed() {
         })}
 
         {activities.length === 0 && (
-          <div className="p-3 rounded-lg border border-slate-700 text-xs text-slate-400">
+          <div className="eq-empty-state p-3 text-xs">
             Nenhuma atividade recente encontrada.
           </div>
         )}
