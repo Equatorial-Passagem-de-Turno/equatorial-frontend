@@ -193,19 +193,19 @@ export function OperationsChart() {
   } · Últimas ${timeRangeLabels[timeRange]}`;
 
   return (
-    <div className="bg-theme-panel border border-border-primary rounded-lg p-5">
+    <div className="eq-surface p-5">
       {/* Header */}
       <div className="flex items-start justify-between mb-4 gap-4">
         <div>
-          <h3 className="font-semibold text-text-primary">
+          <h3 className="eq-card-title">
             Monitoramento de Ocorrências (COI) - Sem tendência
           </h3>
-          <p className="text-xs text-text-muted mt-0.5">
+          <p className="eq-card-meta mt-0.5">
             {subtitle}
           </p>
         </div>
 
-        <div className="flex items-center gap-1 bg-bg-secondary rounded-lg p-1">
+        <div className="flex items-center gap-1 rounded-lg bg-[var(--eq-bg-surface-soft)] p-1">
           {(["24h", "48h", "72h"] as TimeRange[]).map(
             (range) => (
               <button
@@ -213,8 +213,8 @@ export function OperationsChart() {
                 onClick={() => setTimeRange(range)}
                 className={
                   timeRange === range
-                    ? "px-3 py-1 text-xs font-medium rounded-md bg-accent-primary text-white"
-                    : "px-3 py-1 text-xs font-medium rounded-md text-text-muted hover:text-text-primary"
+                    ? "px-3 py-1 text-xs font-medium rounded-md bg-theme-accent text-white"
+                    : "px-3 py-1 text-xs font-medium rounded-md text-[var(--eq-text-muted)] hover:text-[var(--eq-text-primary)]"
                 }
               >
                 {range}
@@ -231,7 +231,7 @@ export function OperationsChart() {
           onChange={(e) =>
             setSelectedMesa(e.target.value || null)
           }
-          className="px-2 py-1.5 text-xs rounded-md bg-bg-secondary border border-border-primary text-text-primary focus:outline-none"
+          className="eq-control rounded-md px-2 py-1.5 text-xs focus:outline-none"
         >
           <option value="">Todas as mesas</option>
           {mesaOptions.map((m) => (
@@ -248,8 +248,8 @@ export function OperationsChart() {
               onClick={() => setChartType(t)}
               className={
                 chartType === t
-                  ? "px-3 py-1.5 text-xs font-medium rounded-md border bg-accent-primary/15 border-accent-primary text-accent-primary"
-                  : "px-3 py-1.5 text-xs font-medium rounded-md border border-border-primary text-text-muted hover:text-text-primary"
+                  ? "rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-500"
+                  : "eq-control rounded-md px-3 py-1.5 text-xs font-medium hover:text-[var(--eq-text-primary)]"
               }
             >
               {t === "bars" ? "Barras" : "Linha"}
@@ -265,8 +265,8 @@ export function OperationsChart() {
                 onClick={() => togglePriority(k)}
                 className={
                   visible[k]
-                    ? "px-3 py-1.5 text-xs font-medium rounded-md border border-accent-primary/40 bg-accent-primary/10 text-text-primary flex items-center gap-2"
-                    : "px-3 py-1.5 text-xs font-medium rounded-md border border-border-primary text-text-muted hover:text-text-primary flex items-center gap-2"
+                    ? "flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-[var(--eq-text-primary)]"
+                    : "eq-control flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium hover:text-[var(--eq-text-primary)]"
                 }
               >
                 <span
@@ -288,8 +288,8 @@ export function OperationsChart() {
             onClick={() => setShowTotalSeries((prev) => !prev)}
             className={
               showTotalSeries
-                ? "px-3 py-1.5 text-xs font-medium rounded-md border border-slate-500/40 bg-slate-500/10 text-text-primary"
-                : "px-3 py-1.5 text-xs font-medium rounded-md border border-border-primary text-text-muted hover:text-text-primary"
+                ? "rounded-md border border-[var(--eq-border-strong)] bg-[var(--eq-bg-surface-soft)] px-3 py-1.5 text-xs font-medium text-[var(--eq-text-primary)]"
+                : "eq-control rounded-md px-3 py-1.5 text-xs font-medium hover:text-[var(--eq-text-primary)]"
             }
           >
             Total
@@ -456,7 +456,7 @@ export function OperationsChart() {
         </ResponsiveContainer>
       </div>
 
-      <p className="text-xs text-text-muted text-center mt-3">
+      <p className="eq-card-meta mt-3 text-center">
         Dica: desligue prioridades para isolar padrões. O modo linha está sem tendência.
       </p>
     </div>

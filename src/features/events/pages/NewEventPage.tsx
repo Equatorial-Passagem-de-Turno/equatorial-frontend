@@ -8,17 +8,13 @@ export const NewEventPage = () => {
   const [eventType, setEventType] = useState<EventType>('occurrence');
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
-      <div className="p-6 lg:p-8 max-w-5xl mx-auto">
-        <div className="
-          rounded-2xl p-8 shadow-sm backdrop-blur-xl border transition-colors duration-300
-          bg-white border-slate-200
-          dark:bg-slate-900/70 dark:border-slate-800 dark:shadow-2xl
-        ">
+    <div className="eq-page">
+      <div className="eq-form-container">
+        <div className="eq-surface p-8 backdrop-blur-xl">
           <div className="space-y-8">
             <EventTypeSelector value={eventType} onChange={setEventType} />
 
-            <div className="border-t border-slate-200 dark:border-slate-800 pt-8">
+            <div className="eq-section-divider">
               {eventType === 'occurrence' && <OccurrenceForm />}
               {eventType === 'circuit-switching' && <CircuitSwitchingForm />}
               {eventType === 'unavailable-equipment' && <UnavailableEquipmentForm />}

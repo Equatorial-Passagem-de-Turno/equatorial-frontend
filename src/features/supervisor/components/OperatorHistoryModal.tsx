@@ -52,52 +52,53 @@ export function OperatorHistoryModal({
 
   return createPortal(
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-      <div className="bg-theme-panel border border-border-primary rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="eq-modal-solid relative flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-600" />
 
         {/* Header */}
-        <div className="p-6 border-b border-border-primary flex items-center justify-between">
+        <div className="eq-modal-header flex items-center justify-between p-6">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-theme-accent text-white flex items-center justify-center text-lg font-bold">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-lg font-bold text-white shadow-lg shadow-emerald-500/20">
               {operatorName
                 .split(" ")
                 .map((n) => n[0])
                 .join("")}
             </div>
             <div>
-              <h2 className="text-xl font-bold text-text-primary">
+              <h2 className="text-xl font-bold text-[var(--eq-text-primary)]">
                 Histórico de Turnos - {operatorName}
               </h2>
-              <p className="text-sm text-text-muted">
+              <p className="eq-page-subtitle text-sm">
                 {operatorEmail} • {operatorProfile}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-bg-secondary hover:bg-bg-secondary/80 flex items-center justify-center transition-colors"
+            className="eq-control flex h-8 w-8 items-center justify-center rounded-lg p-0 transition-colors hover:bg-[var(--eq-bg-surface-soft)]"
           >
-            <X className="w-5 h-5 text-text-muted" />
+            <X className="h-5 w-5 text-[var(--eq-text-secondary)]" />
           </button>
         </div>
 
         {/* Conteúdo */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="bg-bg-secondary border border-border-primary rounded-lg overflow-hidden">
+        <div className="eq-modal-body flex-1 overflow-y-auto p-6">
+          <div className="eq-surface-soft overflow-hidden">
 
-            <div className="p-4 border-b border-border-primary flex items-center justify-between">
-              <h3 className="font-semibold text-text-primary flex items-center gap-2">
+            <div className="flex items-center justify-between border-b border-[var(--eq-border)] p-4">
+              <h3 className="flex items-center gap-2 font-semibold text-[var(--eq-text-primary)]">
                 <Calendar className="w-4 h-4 text-theme-accent" />
                 Turnos Realizados
               </h3>
-              <span className="text-xs text-theme-muted bg-bg-card px-3 py-1 rounded">
+              <span className="eq-id-chip px-3 py-1">
                 {shifts.length} shifts
               </span>
             </div>
 
             {isLoading ? (
               <div className="p-12 text-center">
-                <Clock className="w-12 h-12 text-text-muted mx-auto mb-3 opacity-50" />
-                <p className="text-text-muted">
+                <Clock className="mx-auto mb-3 h-12 w-12 text-[var(--eq-text-muted)] opacity-50" />
+                <p className="text-[var(--eq-text-muted)]">
                   Carregando histórico...
                 </p>
               </div>
@@ -105,30 +106,30 @@ export function OperatorHistoryModal({
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-border-primary bg-bg-card">
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-text-muted uppercase">
+                    <tr className="border-b border-[var(--eq-border)] bg-[var(--eq-bg-surface-soft)]">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--eq-text-muted)] uppercase">
                         Shift / ID
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-text-muted uppercase">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--eq-text-muted)] uppercase">
                         Data
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-text-muted uppercase">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-[var(--eq-text-muted)] uppercase">
                         Horário
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-text-muted uppercase">
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-[var(--eq-text-muted)] uppercase">
                         Status
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border-primary">
+                  <tbody className="divide-y divide-[var(--eq-border)]">
                     {shifts.map((shift) => (
-                      <tr key={shift.id} className="hover:bg-bg-card">
+                      <tr key={shift.id} className="hover:bg-[var(--eq-bg-surface-soft)]">
                         <td className="px-4 py-3 flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-theme-muted" />
+                          <FileText className="w-4 h-4 text-[var(--eq-text-muted)]" />
                           {shift.id}
                         </td>
-                        <td className="px-4 py-3 text-text-muted">{shift.date}</td>
-                        <td className="px-4 py-3 text-text-primary">{shift.time}</td>
+                        <td className="px-4 py-3 text-[var(--eq-text-muted)]">{shift.date}</td>
+                        <td className="px-4 py-3 text-[var(--eq-text-primary)]">{shift.time}</td>
                         <td className="px-4 py-3 text-center">
                           {shift.status}
                         </td>
@@ -139,8 +140,8 @@ export function OperatorHistoryModal({
               </div>
             ) : (
               <div className="p-12 text-center">
-                <Clock className="w-12 h-12 text-text-muted mx-auto mb-3 opacity-50" />
-                <p className="text-text-muted">
+                <Clock className="mx-auto mb-3 h-12 w-12 text-[var(--eq-text-muted)] opacity-50" />
+                <p className="text-[var(--eq-text-muted)]">
                   Nenhum turno encontrado
                 </p>
               </div>

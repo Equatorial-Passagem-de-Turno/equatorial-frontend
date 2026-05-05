@@ -160,44 +160,45 @@ export function ShiftHistoryModal({ isOpen, onClose }: ShiftHistoryModalProps) {
   return createPortal(
     <>
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-        <div className="bg-theme-panel border border-slate-700 rounded-xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-        <div className="p-6 border-b border-slate-700 flex items-center justify-between">
+        <div className="eq-modal-solid relative flex max-h-[90vh] w-full max-w-6xl flex-col overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-600" />
+        <div className="eq-modal-header flex items-center justify-between p-6">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-emerald-600/10 flex items-center justify-center">
               <Calendar className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-100">Historico de Shifts</h2>
-              <p className="text-sm text-slate-400">Consulte turnos anteriores e status</p>
+              <h2 className="text-xl font-bold text-[var(--eq-text-primary)]">Historico de Shifts</h2>
+              <p className="eq-page-subtitle text-sm">Consulte turnos anteriores e status</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-colors"
+            className="eq-control flex h-8 w-8 items-center justify-center rounded-lg p-0 transition-colors hover:bg-[var(--eq-bg-surface-soft)]"
           >
-            <X className="w-5 h-5 text-slate-300" />
+            <X className="h-5 w-5 text-[var(--eq-text-secondary)]" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="eq-modal-body flex-1 overflow-y-auto p-6">
           <div className="grid grid-cols-12 gap-6">
             <div className="col-span-4">
-              <div className="bg-slate-700/40 border border-slate-700 rounded-lg p-4">
+              <div className="eq-surface-soft p-4">
                 <div className="flex items-center justify-between mb-4">
-                  <button onClick={previousMonth} className="w-8 h-8 rounded hover:bg-slate-700 flex items-center justify-center">
-                    <ChevronLeft className="w-5 h-5 text-slate-400" />
+                  <button onClick={previousMonth} className="flex h-8 w-8 items-center justify-center rounded hover:bg-[var(--eq-bg-surface)]">
+                    <ChevronLeft className="h-5 w-5 text-[var(--eq-text-muted)]" />
                   </button>
-                  <span className="text-sm font-semibold text-slate-200">
+                  <span className="text-sm font-semibold text-[var(--eq-text-primary)]">
                     {mesesPt[currentDate.getMonth()]} {currentDate.getFullYear()}
                   </span>
-                  <button onClick={nextMonth} className="w-8 h-8 rounded hover:bg-slate-700 flex items-center justify-center">
-                    <ChevronRight className="w-5 h-5 text-slate-400" />
+                  <button onClick={nextMonth} className="flex h-8 w-8 items-center justify-center rounded hover:bg-[var(--eq-bg-surface)]">
+                    <ChevronRight className="h-5 w-5 text-[var(--eq-text-muted)]" />
                   </button>
                 </div>
 
                 <div className="grid grid-cols-7 gap-1">
                   {diasSemana.map((dia, idx) => (
-                    <div key={idx} className="h-8 flex items-center justify-center text-xs text-slate-400">
+                    <div key={idx} className="flex h-8 items-center justify-center text-xs text-[var(--eq-text-muted)]">
                       {dia}
                     </div>
                   ))}
@@ -214,7 +215,7 @@ export function ShiftHistoryModal({ isOpen, onClose }: ShiftHistoryModalProps) {
                             ? "bg-emerald-600 text-white font-bold"
                             : isToday(day)
                               ? "bg-emerald-600/20 text-emerald-400 font-semibold"
-                              : "text-slate-300 hover:bg-slate-700"
+                              : "text-[var(--eq-text-secondary)] hover:bg-[var(--eq-bg-surface)]"
                         }`}
                       >
                         {day}
@@ -226,23 +227,23 @@ export function ShiftHistoryModal({ isOpen, onClose }: ShiftHistoryModalProps) {
             </div>
 
             <div className="col-span-8">
-              <div className="bg-slate-700/40 border border-slate-700 rounded-lg overflow-hidden">
-                <div className="p-4 border-b border-slate-700 flex items-center justify-between">
-                  <h3 className="font-semibold text-slate-200">
+              <div className="eq-surface-soft overflow-hidden">
+                <div className="flex items-center justify-between border-b border-[var(--eq-border)] p-4">
+                  <h3 className="font-semibold text-[var(--eq-text-primary)]">
                     {selectedDate ? `Historico de turnos de todos os operadores em ${formatDateDisplay(selectedDate)}` : "Selecione uma data"}
                   </h3>
-                  <span className="text-xs text-slate-400 bg-slate-700 px-3 py-1 rounded">{visibleTurnos.length} registros</span>
+                  <span className="eq-id-chip px-3 py-1">{visibleTurnos.length} registros</span>
                 </div>
 
-                <div className="p-4 border-b border-slate-700 bg-slate-800/40">
+                <div className="border-b border-[var(--eq-border)] bg-[var(--eq-bg-surface-soft)] p-4">
                   <div className="relative">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--eq-text-muted)]" />
                     <input
                       type="text"
                       value={operatorSearchTerm}
                       onChange={(event) => setOperatorSearchTerm(event.target.value)}
                       placeholder="Filtrar por operador, turno ou perfil"
-                      className="w-full pl-9 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                      className="eq-control w-full py-2 pl-9 pr-3 text-sm placeholder:text-[var(--eq-text-muted)] focus:ring-2 focus:ring-emerald-500/40"
                     />
                   </div>
                 </div>
@@ -250,35 +251,35 @@ export function ShiftHistoryModal({ isOpen, onClose }: ShiftHistoryModalProps) {
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-slate-700 bg-slate-700/50">
-                        <th className="px-4 py-3 text-left text-xs text-slate-400 uppercase">Shift / ID</th>
-                        <th className="px-4 py-3 text-left text-xs text-slate-400 uppercase">Operador</th>
-                        <th className="px-4 py-3 text-left text-xs text-slate-400 uppercase">Perfil</th>
-                        <th className="px-4 py-3 text-left text-xs text-slate-400 uppercase">Horario</th>
-                        <th className="px-4 py-3 text-left text-xs text-slate-400 uppercase">Total Trabalhado</th>
-                        <th className="px-4 py-3 text-left text-xs text-slate-400 uppercase">Status</th>
-                        <th className="px-4 py-3 text-right text-xs text-slate-400 uppercase">Acao</th>
+                      <tr className="border-b border-[var(--eq-border)] bg-[var(--eq-bg-surface-soft)]">
+                        <th className="px-4 py-3 text-left text-xs uppercase text-[var(--eq-text-muted)]">Shift / ID</th>
+                        <th className="px-4 py-3 text-left text-xs uppercase text-[var(--eq-text-muted)]">Operador</th>
+                        <th className="px-4 py-3 text-left text-xs uppercase text-[var(--eq-text-muted)]">Perfil</th>
+                        <th className="px-4 py-3 text-left text-xs uppercase text-[var(--eq-text-muted)]">Horario</th>
+                        <th className="px-4 py-3 text-left text-xs uppercase text-[var(--eq-text-muted)]">Total Trabalhado</th>
+                        <th className="px-4 py-3 text-left text-xs uppercase text-[var(--eq-text-muted)]">Status</th>
+                        <th className="px-4 py-3 text-right text-xs uppercase text-[var(--eq-text-muted)]">Acao</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-700">
+                    <tbody className="divide-y divide-[var(--eq-border)]">
                       {isLoading && (
                         <tr>
-                          <td className="px-4 py-3 text-slate-400" colSpan={7}>Carregando...</td>
+                          <td className="px-4 py-3 text-[var(--eq-text-muted)]" colSpan={7}>Carregando...</td>
                         </tr>
                       )}
 
                       {!isLoading && visibleTurnos.map((turno) => (
-                        <tr key={turno.id} className="hover:bg-slate-700/40">
-                          <td className="px-4 py-3 text-slate-200 flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-slate-400" />
+                        <tr key={turno.id} className="hover:bg-[var(--eq-bg-surface)]">
+                          <td className="flex items-center gap-2 px-4 py-3 text-[var(--eq-text-primary)]">
+                            <FileText className="h-4 w-4 text-[var(--eq-text-muted)]" />
                             {turno.id}
                           </td>
-                          <td className="px-4 py-3 text-slate-400">{turno.operador}</td>
-                          <td className="px-4 py-3 text-slate-300">{turno.tipo || "--"}</td>
-                          <td className="px-4 py-3 text-slate-200">{turno.horario}</td>
-                          <td className="px-4 py-3 text-slate-300">{turno.workedDuration || "--"}</td>
+                          <td className="px-4 py-3 text-[var(--eq-text-muted)]">{turno.operador}</td>
+                          <td className="px-4 py-3 text-[var(--eq-text-secondary)]">{turno.tipo || "--"}</td>
+                          <td className="px-4 py-3 text-[var(--eq-text-primary)]">{turno.horario}</td>
+                          <td className="px-4 py-3 text-[var(--eq-text-secondary)]">{turno.workedDuration || "--"}</td>
                           <td className="px-4 py-3">
-                            <span className={`inline-flex px-2 py-1 rounded text-xs font-semibold ${turno.status === 'ativo' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' : 'bg-slate-600/30 text-slate-200 border border-slate-500/30'}`}>
+                            <span className={`inline-flex rounded border px-2 py-1 text-xs font-semibold ${turno.status === 'ativo' ? 'eq-status-success' : 'eq-status-open'}`}>
                               {turno.status === 'ativo' ? 'Aberto' : 'Fechado'}
                             </span>
                           </td>
@@ -296,7 +297,7 @@ export function ShiftHistoryModal({ isOpen, onClose }: ShiftHistoryModalProps) {
 
                       {!isLoading && visibleTurnos.length === 0 && (
                         <tr>
-                          <td className="px-4 py-4 text-slate-400" colSpan={7}>
+                          <td className="px-4 py-4 text-[var(--eq-text-muted)]" colSpan={7}>
                             Nenhum turno encontrado para o filtro informado.
                           </td>
                         </tr>

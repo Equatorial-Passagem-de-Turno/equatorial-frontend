@@ -22,32 +22,33 @@ export function ConfirmRemovalModal({
   return createPortal(
     
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-      <div className="bg-white dark:bg-[#1e293b] border border-zinc-200 dark:border-[#334155] rounded-lg w-full max-w-md overflow-hidden shadow-xl">
+      <div className="eq-modal-solid relative w-full max-w-md overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-rose-500 to-pink-500" />
         {/* Header */}
-        <div className="p-6 border-b border-zinc-200 dark:border-[#334155]">
+        <div className="eq-modal-header p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-red-500/10 dark:bg-red-500/20 flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5 text-red-500" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
+                <h2 className="text-xl font-bold text-[var(--eq-text-primary)]">
                   {titulo}
                 </h2>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-[#0f172a] hover:bg-zinc-200 dark:hover:bg-[#0f172a]/80 flex items-center justify-center transition-colors"
+              className="eq-control flex h-8 w-8 items-center justify-center rounded-lg p-0 transition-colors hover:bg-[var(--eq-bg-surface-soft)]"
             >
-              <X className="w-5 h-5 text-zinc-600 dark:text-[#94a3b8]" />
+              <X className="h-5 w-5 text-[var(--eq-text-secondary)]" />
             </button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-4">
-          <p className="text-sm text-zinc-600 dark:text-[#94a3b8]">
+        <div className="eq-modal-body space-y-4 p-6">
+          <p className="eq-page-subtitle text-sm">
             {descricao}
           </p>
           
@@ -65,10 +66,10 @@ export function ConfirmRemovalModal({
         </div>
 
         {/* Actions */}
-        <div className="p-6 border-t border-zinc-200 dark:border-[#334155] flex items-center gap-3">
+        <div className="eq-modal-footer flex items-center gap-3 p-6">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-3 bg-white dark:bg-[#0f172a] hover:bg-zinc-50 dark:hover:bg-[#0f172a]/80 border border-zinc-200 dark:border-[#334155] rounded-lg text-zinc-900 dark:text-white font-medium transition-all"
+            className="flex-1 px-4 py-3 eq-control rounded-lg font-medium transition-all hover:bg-[var(--eq-bg-surface-soft)]"
           >
             Cancelar
           </button>

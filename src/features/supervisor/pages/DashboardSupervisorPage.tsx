@@ -26,8 +26,8 @@ export function DashboardSupervisorPage() {
 
   if (isLoading) {
     return (
-      <div className="p-6">
-        <div className="rounded-lg border border-slate-700 bg-slate-900 p-6 text-slate-300">
+      <div className="eq-page-content">
+        <div className="eq-surface p-6 eq-page-subtitle">
           Carregando dados do supervisor...
         </div>
       </div>
@@ -36,7 +36,7 @@ export function DashboardSupervisorPage() {
 
   if (loadError) {
     return (
-      <div className="p-6">
+      <div className="eq-page-content">
         <div className="rounded-lg border border-red-700/40 bg-red-900/10 p-6 text-red-300">
           {loadError}
         </div>
@@ -46,7 +46,7 @@ export function DashboardSupervisorPage() {
 
   return (
     <div>
-      <div className="p-6 space-y-6">
+      <div className="eq-page-content space-y-6">
         {isUsingCachedData && (
           <div className="rounded-lg border border-amber-500/40 bg-amber-900/10 px-4 py-3 text-amber-300 text-sm flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
@@ -57,7 +57,7 @@ export function DashboardSupervisorPage() {
         <div className="flex items-center justify-end">
           <button
             onClick={() => setShowShiftHistoryModal(true)}
-            className="px-4 py-2 bg-theme-accent hover:bg-emerald-400 rounded-lg text-sm text-white transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20"
+            className="eq-primary-action text-sm"
           >
             <Calendar className="w-4 h-4" />
             Ver Historico de Turnos

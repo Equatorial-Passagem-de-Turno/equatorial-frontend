@@ -122,16 +122,16 @@ export function TablesSummary() {
   // RENDER
   // =========================
   return (
-    <section className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg px-6 py-4">
+    <section className="eq-surface px-6 py-4">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Clock className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-          <h2 className="font-semibold text-gray-900 dark:text-white">
+          <Clock className="w-5 h-5 text-[var(--eq-text-muted)]" />
+          <h2 className="eq-card-title">
             Status COI
           </h2>
         </div>
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+        <span className="eq-page-subtitle text-xs">
           Atualizado agora
         </span>
       </div>
@@ -161,7 +161,7 @@ export function TablesSummary() {
 
       {/* Prioridade */}
       <div>
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
+        <p className="eq-card-meta mb-3 text-xs font-medium uppercase tracking-wide">
           Prioridade de atenção
         </p>
 
@@ -173,27 +173,27 @@ export function TablesSummary() {
             return (
               <div
                 key={table.table}
-                className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700/40"
+                className="eq-surface-soft flex items-center gap-3 p-3"
               >
-                <div className="w-7 h-7 rounded-full border border-gray-300 dark:border-slate-600 flex items-center justify-center text-xs font-bold text-gray-900 dark:text-white">
+                <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--eq-border)] text-xs font-bold text-[var(--eq-text-primary)]">
                   {index + 1}
                 </div>
 
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  <p className="text-sm font-medium text-[var(--eq-text-primary)]">
                     Mesa {table.table}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-[var(--eq-text-muted)]">
                     {table.message}
                   </p>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                    <p className="text-sm font-semibold text-[var(--eq-text-primary)]">
                       {table.pending}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="text-xs text-[var(--eq-text-muted)]">
                       pend.
                     </p>
                   </div>
@@ -203,7 +203,7 @@ export function TablesSummary() {
                       <p className={`text-sm font-semibold ${config.text}`}>
                         {table.critical}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-[var(--eq-text-muted)]">
                         crít.
                       </p>
                     </div>
@@ -233,15 +233,15 @@ function SummaryItem({
   color?: string;
 }) {
   return (
-    <div className="bg-gray-100 dark:bg-slate-800 rounded-lg p-4 text-center">
+    <div className="eq-surface-soft p-4 text-center">
       <p
         className={`text-2xl font-bold ${
-          color ? color : "text-slate-200"
+          color ? color : "text-[var(--eq-text-primary)]"
         }`}
       >
         {value}
       </p>
-      <p className="text-xs text-slate-400 mt-1">
+      <p className="eq-card-meta mt-1 text-xs">
         {label}
       </p>
     </div>

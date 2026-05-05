@@ -159,17 +159,18 @@ export const ShiftDetailModal: React.FC<Props> = ({ isOpen, onClose, shiftData }
 
   return (
     <div className="fixed inset-0 z-[10020] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
 
-      <div className="relative w-full max-w-3xl bg-slate-100 dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-300 dark:border-slate-700 overflow-hidden animate-slide-up flex flex-col max-h-[90vh]">
-        <div className="bg-slate-800 text-white p-4 flex items-center justify-between border-b border-slate-700">
+      <div className="eq-modal-solid relative flex max-h-[90vh] w-full max-w-3xl animate-slide-up flex-col overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-600" />
+        <div className="eq-modal-header flex items-center justify-between p-4">
           <div className="flex items-center gap-3">
-             <div className="p-2 bg-slate-700 rounded-lg border border-slate-600">
+             <div className="eq-soft-icon border border-[var(--eq-border)] p-2">
                 <FileText className="w-6 h-6 text-emerald-400" />
              </div>
              <div>
-                                <h2 className="text-lg font-bold leading-tight">Detalhes do Turno</h2>
-                                <p className="text-xs text-slate-400 font-mono mt-0.5">{selectedShiftId}</p>
+                                <h2 className="text-lg font-bold leading-tight text-[var(--eq-text-primary)]">Detalhes do Turno</h2>
+                                <p className="eq-card-meta mt-0.5 font-mono">{selectedShiftId}</p>
              </div>
           </div>
           
@@ -182,37 +183,37 @@ export const ShiftDetailModal: React.FC<Props> = ({ isOpen, onClose, shiftData }
                 {isGeneratingPdf ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
                 {isGeneratingPdf ? 'GERANDO...' : 'VER PDF'}
             </button>
-            <button onClick={onClose} className="p-1.5 hover:bg-slate-700 rounded-full transition-colors">
-                <X className="w-5 h-5 text-slate-400 hover:text-white" />
+            <button onClick={onClose} className="eq-control flex h-8 w-8 items-center justify-center rounded-lg p-0 transition-colors hover:bg-[var(--eq-bg-surface-soft)]">
+                <X className="w-5 h-5 text-[var(--eq-text-secondary)]" />
             </button>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <div className="eq-modal-section flex flex-col items-center justify-between gap-4 p-4 sm:flex-row">
             <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-600 dark:text-slate-300">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 font-bold text-white shadow-lg shadow-emerald-500/20">
                     {selectedOperator.substring(0, 2).toUpperCase()}
                 </div>
                 <div>
-                    <p className="text-xs text-slate-500 uppercase font-bold">Operador Responsável</p>
-                    <p className="font-bold text-slate-800 dark:text-white">{selectedOperator}</p>
+                    <p className="text-xs font-bold uppercase text-[var(--eq-text-muted)]">Operador Responsável</p>
+                    <p className="font-bold text-[var(--eq-text-primary)]">{selectedOperator}</p>
                 </div>
             </div>
             <div className="grid grid-cols-2 gap-4 text-right">
                  <div>
-                    <p className="text-xs text-slate-500 uppercase font-bold">Data do Turno</p>
-                    <p className="font-bold text-slate-800 dark:text-white text-base">{shiftDate}</p>
+                    <p className="text-xs font-bold uppercase text-[var(--eq-text-muted)]">Data do Turno</p>
+                    <p className="text-base font-bold text-[var(--eq-text-primary)]">{shiftDate}</p>
                  </div>
                  <div>
-                    <p className="text-xs text-slate-500 uppercase font-bold">Horário</p>
-                    <p className="font-bold text-slate-800 dark:text-white text-base">{shiftTime}</p>
+                    <p className="text-xs font-bold uppercase text-[var(--eq-text-muted)]">Horário</p>
+                    <p className="text-base font-bold text-[var(--eq-text-primary)]">{shiftTime}</p>
                  </div>
             </div>
         </div>
 
-        <div className="flex-1 overflow-auto p-4 space-y-4">
+        <div className="eq-modal-body flex-1 space-y-4 overflow-auto p-4">
             {loading && (
-                <div className="flex items-center justify-center py-16 text-slate-500 dark:text-slate-400 gap-2">
+                <div className="flex items-center justify-center gap-2 py-16 text-[var(--eq-text-muted)]">
                     <Loader2 className="w-5 h-5 animate-spin text-emerald-500" />
                     Carregando detalhes do turno...
                 </div>
@@ -227,54 +228,54 @@ export const ShiftDetailModal: React.FC<Props> = ({ isOpen, onClose, shiftData }
             {!loading && !error && details && (
                 <>
                     <section className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                        <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
-                            <p className="text-[10px] uppercase text-slate-400 font-bold">Função</p>
-                            <p className="text-sm font-semibold text-slate-800 dark:text-white mt-1">{selectedFunction}</p>
+                        <div className="eq-surface-soft p-4">
+                            <p className="text-[10px] font-bold uppercase text-[var(--eq-text-muted)]">Função</p>
+                            <p className="mt-1 text-sm font-semibold text-[var(--eq-text-primary)]">{selectedFunction}</p>
                         </div>
-                        <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
-                            <p className="text-[10px] uppercase text-slate-400 font-bold">Mesa</p>
-                            <p className="text-sm font-semibold text-slate-800 dark:text-white mt-1">{details.mesa}</p>
+                        <div className="eq-surface-soft p-4">
+                            <p className="text-[10px] font-bold uppercase text-[var(--eq-text-muted)]">Mesa</p>
+                            <p className="mt-1 text-sm font-semibold text-[var(--eq-text-primary)]">{details.mesa}</p>
                         </div>
-                        <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
-                            <p className="text-[10px] uppercase text-slate-400 font-bold">Status</p>
+                        <div className="eq-surface-soft p-4">
+                            <p className="text-[10px] font-bold uppercase text-[var(--eq-text-muted)]">Status</p>
                             <p className={`inline-flex items-center gap-1 mt-1 text-sm font-semibold ${selectedStatus === 'Aberto' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-300'}`}>
                                 <span className={`w-2 h-2 rounded-full ${selectedStatus === 'Aberto' ? 'bg-emerald-500' : 'bg-slate-400'}`} />
                                 {selectedStatus}
                             </p>
                         </div>
-                        <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
-                            <p className="text-[10px] uppercase text-slate-400 font-bold">Ocorrências</p>
-                            <p className="text-sm font-semibold text-slate-800 dark:text-white mt-1">{details.totalOccurrences}</p>
+                        <div className="eq-surface-soft p-4">
+                            <p className="text-[10px] font-bold uppercase text-[var(--eq-text-muted)]">Ocorrências</p>
+                            <p className="mt-1 text-sm font-semibold text-[var(--eq-text-primary)]">{details.totalOccurrences}</p>
                         </div>
-                        <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 md:col-span-2">
-                            <p className="text-[10px] uppercase text-slate-400 font-bold">Total Trabalhado</p>
-                            <p className="text-sm font-semibold text-slate-800 dark:text-white mt-1">{selectedWorkedDuration}</p>
+                        <div className="eq-surface-soft p-4 md:col-span-2">
+                            <p className="text-[10px] font-bold uppercase text-[var(--eq-text-muted)]">Total Trabalhado</p>
+                            <p className="mt-1 text-sm font-semibold text-[var(--eq-text-primary)]">{selectedWorkedDuration}</p>
                         </div>
                     </section>
 
-                    <section className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 space-y-3">
-                        <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200 font-semibold">
+                    <section className="eq-surface-soft space-y-3 p-4">
+                        <div className="flex items-center gap-2 font-semibold text-[var(--eq-text-primary)]">
                             <ClipboardList className="w-4 h-4 text-emerald-500" />
                             Briefing final
                         </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+                        <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--eq-text-secondary)]">
                             {details.briefing || 'Nenhum briefing foi registrado para este turno.'}
                         </p>
                     </section>
 
                     <section className="space-y-3">
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-slate-700 dark:text-white font-semibold">
+                            <div className="flex items-center gap-2 font-semibold text-[var(--eq-text-primary)]">
                                 <MessageSquare className="w-4 h-4 text-emerald-500" />
                                 Ocorrências do turno
                             </div>
-                            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                            <span className="text-xs font-semibold text-[var(--eq-text-muted)]">
                                 {details.openOccurrences} em aberto • {details.resolvedOccurrences} resolvidas
                             </span>
                         </div>
 
                         {shiftOccurrences.length === 0 ? (
-                            <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                            <div className="eq-empty-state p-6 text-center text-sm text-[var(--eq-text-muted)]">
                                 Nenhuma ocorrência vinculada a este turno.
                             </div>
                         ) : (
@@ -284,25 +285,25 @@ export const ShiftDetailModal: React.FC<Props> = ({ isOpen, onClose, shiftData }
                                 const isCommentsExpanded = !!expandedCommentsByOccurrence[event.id];
 
                                 return (
-                                <div key={event.id} className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-                                    <div className="grid grid-cols-12 border-b border-slate-100 dark:border-slate-700">
-                                        <div className="col-span-4 bg-slate-50 dark:bg-slate-900/50 p-2 border-r border-slate-100 dark:border-slate-700 flex flex-col justify-center">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase">Categoria</span>
-                                            <div className="flex items-center gap-1 font-bold text-slate-700 dark:text-slate-200 text-sm">
+                                <div key={event.id} className="eq-surface overflow-hidden rounded-lg shadow-sm">
+                                    <div className="grid grid-cols-12 border-b border-[var(--eq-border)]">
+                                        <div className="col-span-4 flex flex-col justify-center border-r border-[var(--eq-border)] bg-[var(--eq-bg-surface-soft)] p-2">
+                                            <span className="text-[10px] font-bold uppercase text-[var(--eq-text-muted)]">Categoria</span>
+                                            <div className="flex items-center gap-1 text-sm font-bold text-[var(--eq-text-primary)]">
                                                 <MapPin className="w-3 h-3 text-emerald-500" />
                                                 {event.category}
                                             </div>
                                         </div>
-                                        <div className="col-span-4 p-2 border-r border-slate-100 dark:border-slate-700 flex flex-col justify-center text-center">
-                                             <span className="text-[10px] font-bold text-slate-400 uppercase">Data/Hora</span>
-                                             <span className="text-xs font-mono text-slate-600 dark:text-slate-300">{event.createdAt ?? '--'}</span>
+                                        <div className="col-span-4 flex flex-col justify-center border-r border-[var(--eq-border)] p-2 text-center">
+                                             <span className="text-[10px] font-bold uppercase text-[var(--eq-text-muted)]">Data/Hora</span>
+                                             <span className="font-mono text-xs text-[var(--eq-text-secondary)]">{event.createdAt ?? '--'}</span>
                                         </div>
-                                        <div className="col-span-4 p-2 flex flex-col justify-center items-center bg-slate-50 dark:bg-slate-900/50">
-                                             <span className="text-[10px] font-bold text-slate-400 uppercase mb-1">Status</span>
+                                        <div className="col-span-4 flex flex-col items-center justify-center bg-[var(--eq-bg-surface-soft)] p-2">
+                                             <span className="text-[10px] font-bold uppercase text-[var(--eq-text-muted)] mb-1">Status</span>
                                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase border flex items-center gap-1 ${
                                                 event.isOpen 
-                                                ? 'bg-orange-50 text-orange-700 border-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800' 
-                                                : 'bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800'
+                                                ? 'eq-status-warning' 
+                                                : 'eq-status-success'
                                              }`}>
                                                 {event.isOpen ? <AlertCircle className="w-3 h-3"/> : <CheckCircle className="w-3 h-3"/>}
                                                 {event.status}
@@ -313,37 +314,37 @@ export const ShiftDetailModal: React.FC<Props> = ({ isOpen, onClose, shiftData }
                                     <div className="p-3 grid grid-cols-1 md:grid-cols-4 gap-4">
                                         <div className="md:col-span-3 space-y-3">
                                             <div>
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Atividade</span>
-                                                <p className="text-sm font-medium text-slate-800 dark:text-white leading-snug">
+                                                <span className="text-[10px] font-bold uppercase text-[var(--eq-text-muted)] block mb-1">Atividade</span>
+                                                <p className="text-sm font-medium leading-snug text-[var(--eq-text-primary)]">
                                                     {event.title}
                                                 </p>
                                             </div>
-                                            <div className="bg-slate-50 dark:bg-slate-950 p-2 rounded border border-slate-100 dark:border-slate-800">
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Observação</span>
-                                                <p className="text-xs text-slate-600 dark:text-slate-400 italic whitespace-pre-line">
+                                            <div className="rounded border border-[var(--eq-border)] bg-[var(--eq-bg-surface-soft)] p-2">
+                                                <span className="text-[10px] font-bold uppercase text-[var(--eq-text-muted)] block mb-1">Observação</span>
+                                                <p className="whitespace-pre-line text-xs italic text-[var(--eq-text-secondary)]">
                                                     {event.description || 'Sem observação adicional.'}
                                                 </p>
                                             </div>
-                                            <div className="flex flex-wrap gap-2 text-[10px] font-bold uppercase text-slate-500">
-                                                <span className="rounded-full border border-slate-200 dark:border-slate-700 px-2 py-1">{event.origin}</span>
-                                                <span className="rounded-full border border-slate-200 dark:border-slate-700 px-2 py-1">{event.priority}</span>
-                                                {event.linkType && <span className="rounded-full border border-slate-200 dark:border-slate-700 px-2 py-1">{event.linkType}</span>}
+                                            <div className="flex flex-wrap gap-2 text-[10px] font-bold uppercase text-[var(--eq-text-muted)]">
+                                                <span className="rounded-full border border-[var(--eq-border)] px-2 py-1">{event.origin}</span>
+                                                <span className="rounded-full border border-[var(--eq-border)] px-2 py-1">{event.priority}</span>
+                                                {event.linkType && <span className="rounded-full border border-[var(--eq-border)] px-2 py-1">{event.linkType}</span>}
                                             </div>
                                         </div>
 
-                                        <div className="md:col-span-1 flex flex-col justify-center items-center gap-2 border-l border-slate-100 dark:border-slate-700 pl-4">
+                                        <div className="md:col-span-1 flex flex-col items-center justify-center gap-2 border-l border-[var(--eq-border)] pl-4">
                                             <div className="text-center w-full">
                                                 <button
                                                     onClick={() => toggleOccurrenceComments(event.id)}
-                                                    className="w-full flex flex-col items-center justify-center p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors group"
+                                                    className="group flex w-full flex-col items-center justify-center rounded p-2 transition-colors hover:bg-[var(--eq-bg-surface-soft)]"
                                                 >
-                                                    <MessageSquare className="w-5 h-5 text-slate-400 group-hover:text-blue-500 mb-1" />
-                                                    <span className="text-[10px] font-bold text-slate-500 flex items-center gap-1">
+                                                    <MessageSquare className="mb-1 h-5 w-5 text-[var(--eq-text-muted)] group-hover:text-emerald-500" />
+                                                    <span className="flex items-center gap-1 text-[10px] font-bold text-[var(--eq-text-muted)]">
                                                         Notas/Coment.
                                                         {isCommentsExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                                                     </span>
                                                 </button>
-                                                <div className="mt-1 bg-slate-800 text-white text-xs font-bold py-1 px-3 rounded shadow-sm">
+                                                <div className="eq-id-chip mt-1 px-3 py-1 text-xs">
                                                     {commentsCount}
                                                 </div>
                                             </div>
@@ -351,25 +352,25 @@ export const ShiftDetailModal: React.FC<Props> = ({ isOpen, onClose, shiftData }
                                     </div>
 
                                     {isCommentsExpanded && (
-                                        <div className="border-t border-slate-100 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40 p-3 space-y-2">
+                                        <div className="space-y-2 border-t border-[var(--eq-border)] bg-[var(--eq-bg-surface-soft)] p-3">
                                             {eventComments.length > 0 ? (
                                                 eventComments.map((comment) => (
-                                                    <div key={comment.id} className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3">
+                                                    <div key={comment.id} className="eq-surface-soft p-3">
                                                         <div className="flex items-center justify-between gap-2 mb-1">
-                                                            <div className="text-xs font-bold text-slate-700 dark:text-slate-200">
+                                                            <div className="text-xs font-bold text-[var(--eq-text-primary)]">
                                                                 {comment.author}
                                                             </div>
-                                                            <div className="text-[10px] text-slate-400 uppercase tracking-wide">
+                                                            <div className="text-[10px] uppercase tracking-wide text-[var(--eq-text-muted)]">
                                                                 {comment.type} • {comment.createdAt}
                                                             </div>
                                                         </div>
-                                                        <p className="text-xs text-slate-600 dark:text-slate-300 whitespace-pre-wrap">
+                                                        <p className="whitespace-pre-wrap text-xs text-[var(--eq-text-secondary)]">
                                                             {comment.text}
                                                         </p>
                                                     </div>
                                                 ))
                                             ) : (
-                                                <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-white/60 dark:bg-slate-900/40 p-3 text-xs text-slate-500 dark:text-slate-400 text-center">
+                                                <div className="eq-empty-state p-3 text-center text-xs text-[var(--eq-text-muted)]">
                                                     Nenhuma nota/comentário registrado para esta ocorrência.
                                                 </div>
                                             )}
@@ -384,18 +385,18 @@ export const ShiftDetailModal: React.FC<Props> = ({ isOpen, onClose, shiftData }
             )}
 
             {!loading && !error && !details && (
-                <div className="rounded-lg border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                <div className="eq-empty-state p-6 text-center text-sm text-[var(--eq-text-muted)]">
                     Nenhum detalhe disponível para este turno.
                 </div>
             )}
 
             <div className="text-center py-4">
-                <p className="text-xs text-slate-400 uppercase tracking-widest">Fim dos registros</p>
+                <p className="text-xs uppercase tracking-widest text-[var(--eq-text-muted)]">Fim dos registros</p>
             </div>
         </div>
 
-        <div className="bg-slate-50 dark:bg-slate-900 p-3 border-t border-slate-200 dark:border-slate-700 flex justify-end">
-            <button onClick={onClose} className="px-5 py-2 bg-white border border-slate-300 text-slate-700 text-sm font-bold rounded hover:bg-slate-50 transition-colors shadow-sm">
+        <div className="eq-modal-footer flex justify-end p-3">
+            <button onClick={onClose} className="eq-control rounded-lg px-5 py-2 text-sm font-bold transition-colors hover:bg-[var(--eq-bg-surface)]">
                 Fechar Detalhes
             </button>
         </div>

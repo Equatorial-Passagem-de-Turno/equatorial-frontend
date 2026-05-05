@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, User, Mail} from "lucide-react";
 import type { OperatorProfile } from "../../types/index";
 import { showWarningModal } from "@/shared/ui/feedbackModal";
+import { createPortal } from "react-dom";
 
 interface RegisterOperatorModalProps {
   isOpen: boolean;
@@ -60,42 +61,43 @@ export function RegisterOperatorModal({
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-      <div className="bg-white dark:bg-[#1e293b] border border-zinc-200 dark:border-[#334155] rounded-lg w-full max-w-2xl overflow-hidden flex flex-col shadow-xl">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+      <div className="eq-modal-solid relative flex w-full max-w-2xl flex-col overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-emerald-600" />
         
         {/* Header */}
-        <div className="p-6 border-b border-zinc-200 dark:border-[#334155]">
+        <div className="eq-modal-header p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-[#10b981]/10 dark:bg-[#10b981]/20 flex items-center justify-center">
-                <User className="w-5 h-5 text-[#10b981]" />
+              <div className="eq-soft-icon flex h-10 w-10 items-center justify-center rounded-lg">
+                <User className="w-5 h-5 text-theme-accent" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
+                <h2 className="text-xl font-bold text-[var(--eq-text-primary)]">
                   Cadastrar Operador
                 </h2>
-                <p className="text-sm text-zinc-600 dark:text-[#94a3b8]">
+                <p className="eq-page-subtitle text-sm">
                   Adicione um novo operador ao sistema
                 </p>
               </div>
             </div>
             <button
               onClick={handleCancel}
-              className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-[#0f172a] hover:bg-zinc-200 dark:hover:bg-[#0f172a]/80 flex items-center justify-center transition-colors"
+              className="eq-control flex h-8 w-8 items-center justify-center rounded-lg p-0 transition-colors hover:bg-[var(--eq-bg-surface-soft)]"
             >
-              <X className="w-5 h-5 text-zinc-600 dark:text-[#94a3b8]" />
+              <X className="h-5 w-5 text-[var(--eq-text-secondary)]" />
             </button>
           </div>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="eq-modal-body space-y-6 p-6">
 
           {/* Nome */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-900 dark:text-white flex items-center gap-2">
-              <User className="w-4 h-4 text-[#10b981]" />
+            <label className="flex items-center gap-2 text-sm font-medium text-[var(--eq-text-primary)]">
+              <User className="w-4 h-4 text-theme-accent" />
               Nome Completo *
             </label>
             <input
@@ -103,15 +105,15 @@ export function RegisterOperatorModal({
               value={name}
               onChange={(event) => setName(event.target.value)}
               placeholder="Ex: João da Silva"
-              className="w-full px-4 py-3 bg-white dark:bg-[#0f172a] border border-zinc-200 dark:border-[#334155] rounded-lg text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-[#64748b] focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-[#10b981] transition-all"
+              className="eq-control w-full px-4 py-3 placeholder:text-[var(--eq-text-muted)] focus:ring-2 focus:ring-emerald-500/40"
               required
             />
           </div>
 
           {/* Email */}
           <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-900 dark:text-white flex items-center gap-2">
-              <Mail className="w-4 h-4 text-[#10b981]" />
+            <label className="flex items-center gap-2 text-sm font-medium text-[var(--eq-text-primary)]">
+              <Mail className="w-4 h-4 text-theme-accent" />
               Email Corporativo *
             </label>
             <input
@@ -119,15 +121,15 @@ export function RegisterOperatorModal({
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="Ex: joao.silva@coi.com.br"
-              className="w-full px-4 py-3 bg-white dark:bg-[#0f172a] border border-zinc-200 dark:border-[#334155] rounded-lg text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-[#64748b] focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-[#10b981] transition-all"
+              className="eq-control w-full px-4 py-3 placeholder:text-[var(--eq-text-muted)] focus:ring-2 focus:ring-emerald-500/40"
               required
             />
           </div>
 
           {/* Perfil */}
           {/* <div className="space-y-2">
-            <label className="text-sm font-medium text-zinc-900 dark:text-white flex items-center gap-2">
-              <Briefcase className="w-4 h-4 text-[#10b981]" />
+            <label className="flex items-center gap-2 text-sm font-medium text-[var(--eq-text-primary)]">
+              <Briefcase className="w-4 h-4 text-theme-accent" />
               Perfil Operacional
             </label>
 
@@ -140,7 +142,7 @@ export function RegisterOperatorModal({
                   className={`px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
                     profile === p
                       ? PROFILE_COLORS[p] + " border-2"
-                      : "bg-white dark:bg-[#0f172a] border-zinc-200 dark:border-[#334155] text-zinc-600 dark:text-[#94a3b8] hover:bg-zinc-50 dark:hover:bg-[#1e293b]/50"
+                      : "eq-control text-[var(--eq-text-secondary)] hover:bg-[var(--eq-bg-surface-soft)]"
                   }`}
                 >
                   {p}
@@ -151,16 +153,16 @@ export function RegisterOperatorModal({
 
           {/* Mesa */}
           <div className="space-y-2">
-              <label className="text-sm font-medium text-zinc-900 dark:text-white">
+              <label className="text-sm font-medium text-[var(--eq-text-primary)]">
                 Mesa
               </label>
               <select
                 value={table}
                 onChange={(event) => setDesk(event.target.value)}
-                className="w-full px-4 py-3 bg-white dark:bg-[#0f172a] border border-zinc-200 dark:border-[#334155] rounded-lg text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-[#10b981] transition-all"
+                className="eq-control w-full px-4 py-3 focus:ring-2 focus:ring-emerald-500/40"
               >
                 {availableTables.map((m) => (
-                  <option key={m} value={m} className="bg-white dark:bg-[#0f172a]">
+                  <option key={m} value={m} className="bg-[var(--eq-bg-surface)] text-[var(--eq-text-primary)]">
                     {m}
                   </option>
                 ))}
@@ -168,23 +170,24 @@ export function RegisterOperatorModal({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3 pt-4 border-t border-zinc-200 dark:border-[#334155]">
+          <div className="flex items-center gap-3 border-t border-[var(--eq-border)] pt-4">
             <button
               type="button"
               onClick={handleCancel}
-              className="flex-1 px-4 py-3 bg-white dark:bg-[#0f172a] hover:bg-zinc-50 dark:hover:bg-[#0f172a]/80 border border-zinc-200 dark:border-[#334155] rounded-lg text-zinc-900 dark:text-white font-medium transition-all"
+              className="flex-1 px-4 py-3 eq-control rounded-lg font-medium transition-all hover:bg-[var(--eq-bg-surface-soft)]"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-3 bg-[#10b981] hover:bg-[#10b981]/90 rounded-lg text-white font-medium transition-all shadow-lg shadow-[#10b981]/20"
+              className="eq-primary-action flex-1 px-4 py-3"
             >
               Cadastrar Operador
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
