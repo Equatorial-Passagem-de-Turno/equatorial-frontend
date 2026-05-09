@@ -1,7 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { toast } from 'sonner';
-import { Loader2, Lock, Mail, Eye, EyeOff, Sun, Moon, ShieldCheck, Clock3, Sparkles } from 'lucide-react';
+import { Loader2, Lock, Mail, Eye, EyeOff, Sun, Moon, ShieldCheck, Clock3, Sparkles, FileText } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface LoginFormProps {
@@ -22,6 +23,7 @@ export const LoginForm = ({ onForgotPassword }: LoginFormProps) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(initialRememberedEmail.length > 0);
+  const navigate = useNavigate();
   const { login, isLoading } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
@@ -223,6 +225,27 @@ export const LoginForm = ({ onForgotPassword }: LoginFormProps) => {
                   )}
                 </span>
               </button>
+
+              <div className="rounded-2xl border border-emerald-200/70 bg-emerald-50/70 p-4 text-xs text-emerald-900 shadow-sm dark:border-emerald-900/40 dark:bg-emerald-900/20 dark:text-emerald-100">
+                <div className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600/15 text-emerald-600 dark:text-emerald-300">
+                    <FileText className="h-4 w-4" />
+                  </span>
+                  <div className="flex-1">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em]">Ocorrência externa</p>
+                    <p className="mt-1 text-xs text-emerald-800/80 dark:text-emerald-200/80">
+                      Não tem acesso? Registre a ocorrência para a supervisão direcionar a mesa responsável.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/public-occurrence')}
+                      className="mt-3 inline-flex items-center gap-2 rounded-lg border border-emerald-300/60 bg-white px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-400 hover:text-emerald-800 dark:border-emerald-800/60 dark:bg-slate-900/60 dark:text-emerald-200"
+                    >
+                      Registrar ocorrência
+                    </button>
+                  </div>
+                </div>
+              </div>
 
               <p className="pt-1 text-center text-xs text-slate-300 dark:text-slate-400">
                 Ambiente operacional.
