@@ -8,7 +8,12 @@ import { showWarningModal } from "@/shared/ui/feedbackModal";
 interface TransferOccurrenceModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onTransfer: (updatedOccurrence: Occurrence) => void;
+  onTransfer: (payload: {
+    operatorId: string;
+    operatorName: string;
+    operatorTable?: string;
+    reason: string;
+  }) => void;
   occurrence: Occurrence;
 }
 
@@ -46,10 +51,10 @@ export function TransferOccurrenceModal({
     if (!operador) return;
 
     onTransfer({
-      ...occurrence,
-      operator: operador.name,
       operatorId: operador.id,
-      status: "transferida",
+      operatorName: operador.name,
+      operatorTable: operador.table,
+      reason,
     });
   };
 
@@ -104,7 +109,7 @@ export function TransferOccurrenceModal({
 
                 {operators.map((op) => (
                   <option key={op.id} value={op.id}>
-                    {op.name} — {op.profile}
+                    {op.name} — {op.profile} {op.table ? `• ${op.table}` : ''}
                   </option>
                 ))}
               </select>

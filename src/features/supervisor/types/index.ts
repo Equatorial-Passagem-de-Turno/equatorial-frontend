@@ -82,6 +82,7 @@ export interface Occurrence {
   serviceOrder?: string; // Nº OS
 
   location: {
+    sector?: string;
     city: string;
     district: string; // bairro
     zone?: string;
@@ -207,6 +208,7 @@ export interface Occurrence {
   serviceOrder?: string; // Nº OS
 
   location: {
+    sector?: string;
     city: string;
     district: string; // bairro
     zone?: string;

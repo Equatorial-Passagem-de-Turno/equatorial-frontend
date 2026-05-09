@@ -250,6 +250,15 @@ export function OccurrencesList() {
                         <span>{occurrence.substation}</span>
                       </div>
 
+                      {occurrence.location?.sector && (
+                        <>
+                          <div className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-[#475569]" />
+                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-900/20 dark:text-emerald-200">
+                            Setor: {occurrence.location.sector}
+                          </span>
+                        </>
+                      )}
+
                       <div className="w-1 h-1 rounded-full bg-zinc-300 dark:bg-[#475569]" />
 
                       <div className="flex items-center gap-1.5 text-zinc-500 dark:text-[#64748b]">

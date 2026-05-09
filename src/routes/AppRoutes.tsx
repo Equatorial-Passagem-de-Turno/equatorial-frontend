@@ -19,6 +19,7 @@ import { UnavailableEquipmentDetailPage } from "@/features/unavailable-equipment
 import { NewOccurrencePage } from "@/features/occurrences/pages/NewOccurrencePage";
 import { MyShiftOccurrencesPage } from "@/features/occurrences/pages/MyShiftOccurrencesPage";
 import { OccurrenceDetailPage } from "@/features/occurrences/pages/OccurrenceDetailPage";
+import { PublicOccurrencePage } from "@/features/occurrences/pages/PublicOccurrencePage";
 import { ShiftControlPage } from "@/features/shifts/pages/ShiftControlPage";
 import { ShiftPreviousPage } from "@/features/shifts/pages/ShiftPreviousPage";
 import { DashboardSupervisorPage } from "@/features/supervisor/pages/DashboardSupervisorPage";
@@ -37,13 +38,21 @@ export const AppRoutes = () => {
     accountRole === "admin" ||
     accountRole === "adm";
 
-  if (!isAuthenticated) return <AuthPage />;
+  if (!isAuthenticated) {
+    return (
+      <Routes>
+        <Route path="/public-occurrence" element={<PublicOccurrencePage />} />
+        <Route path="*" element={<AuthPage />} />
+      </Routes>
+    );
+  }
 
   if (!isSupervisor && !role) return <RoleSelector />;
   if (!isSupervisor && !table) return <TableSelector />;
 
   return (
     <Routes>
+      <Route path="/public-occurrence" element={<Navigate to="/" replace />} />
       <Route
         path="/"
         element={

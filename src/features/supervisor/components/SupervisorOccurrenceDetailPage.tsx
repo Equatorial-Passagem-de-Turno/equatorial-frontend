@@ -29,6 +29,7 @@ import { ConfirmRemovalModal } from "./manager/ConfirmRemovalOperator";
 import type { Occurrence } from "../types/index.ts";
 import { useSupervisorStore } from "../stores/useSupervisorStore";
 import { api } from "@/services/api";
+import { showErrorModal } from "@/shared/ui/feedbackModal";
 
 const criticalityConfig = {
   critica: {
@@ -524,21 +525,27 @@ export function SupervisorOccurenceDetailsPage() {
         isOpen={transferOpen}
         onClose={() => setTransferOpen(false)}
         occurrence={occurrence}
-        onTransfer={(updatedOccurrence: Occurrence) => {
-          const evento = {
-            title: "Ocorrência transferida",
-            description: `
-                        Operador: ${occurrence.operator} → ${updatedOccurrence.operator}
-                        Motivo: Transferência realizada pelo supervisor
-                        `,
-            timestamp: Date.now(),
-            dateTime: new Date().toLocaleString("pt-BR"),
-            author: "Supervisor",
-          };
+        onTransfer={async ({ operatorId, operatorName, operatorTable, reason }) => {
+          try {
+            await api.post(`/occurrences/${occurrence.id}/assign`, {
+              assigned_operator_id: Number(operatorId),
+              reason,
+            });
 
-          setHistoricoEventos((prev) => [...prev, evento]);
-          setOccurrence(updatedOccurrence);
-          setTransferOpen(false);
+            const evento = {
+              title: "Ocorrência transferida",
+              description: `Operador: ${occurrence.operator} → ${operatorName}${operatorTable ? ` (${operatorTable})` : ''}. Motivo: ${reason}`,
+              timestamp: Date.now(),
+              dateTime: new Date().toLocaleString("pt-BR"),
+              author: "Supervisor",
+            };
+
+            setHistoricoEventos((prev) => [...prev, evento]);
+            await loadData({ force: true });
+            setTransferOpen(false);
+          } catch {
+            void showErrorModal('Nao foi possivel transferir a ocorrencia.');
+          }
         }}
       />
       <ConfirmRemovalModal
