@@ -13,6 +13,8 @@ type PublicOccurrenceFormState = {
   reporterName: string;
   reporterContact: string;
   sector: string;
+  contractAccount: string;
+  noteNumber: string;
   city: string;
   neighborhood: string;
   address: string;
@@ -25,6 +27,8 @@ const INITIAL_STATE: PublicOccurrenceFormState = {
   reporterName: '',
   reporterContact: '',
   sector: '',
+  contractAccount: '',
+  noteNumber: '',
   city: '',
   neighborhood: '',
   address: '',
@@ -84,6 +88,23 @@ export const PublicOccurrenceForm = ({ onSuccess }: PublicOccurrenceFormProps) =
     };
   }, [formData.reporterName, formData.reporterContact]);
 
+  const serviceIdentifierComment = useMemo(() => {
+    const parts = [
+      formData.contractAccount.trim() ? `Conta contrato: ${formData.contractAccount.trim()}` : null,
+      formData.noteNumber.trim() ? `Número da nota: ${formData.noteNumber.trim()}` : null,
+    ].filter(Boolean);
+
+    if (parts.length === 0) return null;
+
+    return {
+      id: `ext-id-${Date.now()}`,
+      author: 'Externo',
+      type: 'Identificação',
+      text: parts.join(' | '),
+      createdAt: new Date().toISOString(),
+    };
+  }, [formData.contractAccount, formData.noteNumber]);
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
@@ -97,6 +118,13 @@ export const PublicOccurrenceForm = ({ onSuccess }: PublicOccurrenceFormProps) =
     if (!formData.title.trim() || !formData.description.trim()) {
       toast.warning('Campos obrigatórios', {
         description: 'Informe o assunto e a descrição da ocorrência.',
+      });
+      return;
+    }
+
+    if (!formData.contractAccount.trim() && !formData.noteNumber.trim()) {
+      toast.warning('Campos obrigatórios', {
+        description: 'Informe a conta contrato ou o número da nota.',
       });
       return;
     }
@@ -127,7 +155,7 @@ export const PublicOccurrenceForm = ({ onSuccess }: PublicOccurrenceFormProps) =
         location: hasLocation ? location : undefined,
         linkType: 'External',
         attachments: processedAttachments.length > 0 ? processedAttachments : undefined,
-        comments: contactComment ? [contactComment] : undefined,
+        comments: [contactComment, serviceIdentifierComment].filter(Boolean),
       };
 
       await api.post('/occurrences/public', payload);
@@ -212,6 +240,31 @@ export const PublicOccurrenceForm = ({ onSuccess }: PublicOccurrenceFormProps) =
             placeholder="Ex: Setor Norte"
           />
         </div>
+        <div>
+          <label className={labelClass}>Conta contrato</label>
+          <input
+            type="text"
+            value={formData.contractAccount}
+            onChange={(e) => handleChange('contractAccount', e.target.value)}
+            className={inputClass}
+            placeholder="Ex: 123456789"
+            aria-required={!formData.noteNumber.trim()}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Número da nota</label>
+          <input
+            type="text"
+            value={formData.noteNumber}
+            onChange={(e) => handleChange('noteNumber', e.target.value)}
+            className={inputClass}
+            placeholder="Ex: 987654321"
+            aria-required={!formData.contractAccount.trim()}
+          />
+        </div>
+        <p className="text-xs text-slate-500 dark:text-slate-400 md:col-span-2">
+          Informe pelo menos uma das opções: conta contrato ou número da nota.
+        </p>
         <div>
           <label className={labelClass}>Cidade</label>
           <input

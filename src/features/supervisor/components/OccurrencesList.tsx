@@ -166,7 +166,7 @@ export function OccurrencesList() {
                 : "eq-control hover:bg-[var(--eq-bg-surface-soft)]"
             }`}
           >
-            Prioridade
+            Criticidade
           </button>
 
           <button
