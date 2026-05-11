@@ -80,7 +80,7 @@ type EventTypeOption = {
 const eventTypeOptions: EventTypeOption[] = [
   {
     value: 'occurrence',
-    label: 'Ocorrência',
+    label: 'Ocorrências internas',
     description: 'Registros operacionais da sua mesa.',
     icon: FileText,
     iconTone: 'eq-tone-occurrence',
@@ -88,7 +88,7 @@ const eventTypeOptions: EventTypeOption[] = [
   },
   {
     value: 'circuit-switching',
-    label: 'Circuito manobrado',
+    label: 'Circuitos manobrados',
     description: 'Manobras registradas com prazo ativo.',
     icon: CircuitBoard,
     iconTone: 'eq-tone-circuit',
@@ -96,7 +96,7 @@ const eventTypeOptions: EventTypeOption[] = [
   },
   {
     value: 'unavailable-equipment',
-    label: 'Equipamento indisponível',
+    label: 'Equipamentos indisponíveis',
     description: 'Equipamentos aguardando normalização.',
     icon: Wrench,
     iconTone: 'eq-tone-equipment',
@@ -104,7 +104,7 @@ const eventTypeOptions: EventTypeOption[] = [
   },
   {
     value: 'external-occurrence',
-    label: 'Ocorrência externa',
+    label: 'Ocorrências externas',
     description: 'Registros enviados pelo formulário público.',
     icon: Globe2,
     iconTone: 'eq-tone-occurrence',
