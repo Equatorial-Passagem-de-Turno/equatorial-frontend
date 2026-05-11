@@ -55,7 +55,7 @@ export const ShiftOccurrenceItem = ({ occurrence, currentUser }: ShiftOccurrence
                   )}
                   <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] sm:text-xs border font-bold eq-tone-occurrence">
                     <FileText className="w-3 h-3" />
-                    Ocorrência
+                    OcorrÃªncia
                   </span>
               </div>
               <span className={`px-2 py-0.5 rounded-full text-[10px] sm:text-xs border font-medium ${getStatusStyle(occurrence.status)}`}>

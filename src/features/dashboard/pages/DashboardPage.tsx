@@ -10,6 +10,7 @@ import {
   Wrench,
   CalendarClock,
   Users,
+  Globe2,
   type LucideIcon,
 } from 'lucide-react';
 import { ShiftTimer } from '../components/ShiftTimer';
@@ -22,6 +23,9 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { ROLES_CONFIG } from '@/config/roles';
 import { api } from '@/services/api';
 import type { EventType } from '@/features/events/components/EventTypeSelector';
+import type { Occurrence } from '@/features/occurrences/types';
+
+type DashboardEventType = EventType | 'external-occurrence';
 
 type DashboardOperationalEvent = {
   id: string | number;
@@ -65,7 +69,7 @@ type ApiUnavailableEquipment = {
 };
 
 type EventTypeOption = {
-  value: EventType;
+  value: DashboardEventType;
   label: string;
   description: string;
   icon: LucideIcon;
@@ -98,6 +102,14 @@ const eventTypeOptions: EventTypeOption[] = [
     iconTone: 'eq-tone-equipment',
     activeTone: 'eq-card-equipment-active',
   },
+  {
+    value: 'external-occurrence',
+    label: 'Ocorrência externa',
+    description: 'Registros enviados pelo formulário público.',
+    icon: Globe2,
+    iconTone: 'eq-tone-occurrence',
+    activeTone: 'eq-card-occurrence-active',
+  },
 ];
 
 const formatDateTime = (value?: string) => {
@@ -111,14 +123,37 @@ const formatDateTime = (value?: string) => {
   }).format(date);
 };
 
+const normalizeText = (value: string) =>
+  value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+
+const isExternalOccurrence = (occurrence: Occurrence) => {
+  const linkType = normalizeText(String(
+    occurrence.linkType ?? (occurrence as { link_type?: string }).link_type ?? ''
+  ));
+  const origin = normalizeText(String(occurrence.origin ?? ''));
+  const category = normalizeText(String(occurrence.category ?? ''));
+  const createdBy = normalizeText(String(occurrence.createdBy ?? ''));
+
+  return (
+    linkType === 'external' ||
+    origin.includes('extern') ||
+    category.includes('extern') ||
+    createdBy === 'externo'
+  );
+};
+
 const EventTypeFilter = ({
   value,
   onChange,
 }: {
-  value: EventType;
-  onChange: (value: EventType) => void;
+  value: DashboardEventType;
+  onChange: (value: DashboardEventType) => void;
 }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
     {eventTypeOptions.map((option) => {
       const Icon = option.icon;
       const isActive = value === option.value;
@@ -128,19 +163,16 @@ const EventTypeFilter = ({
           key={option.value}
           type="button"
           onClick={() => onChange(option.value)}
-          className={`eq-surface-soft text-left p-4 transition-all hover:border-[var(--eq-border-strong)] ${
+          className={`eq-surface-soft text-left px-4 py-3 transition-all hover:border-[var(--eq-border-strong)] ${
             isActive ? option.activeTone : ''
           }`}
         >
-          <div className="flex items-start gap-3">
-            <div className={`shrink-0 p-2.5 rounded-lg border ${option.iconTone}`}>
-              <Icon className="w-5 h-5" />
+          <div className="flex items-center gap-3">
+            <div className={`shrink-0 p-2 rounded-lg border ${option.iconTone}`}>
+              <Icon className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <div className="eq-card-title font-bold">{option.label}</div>
-              <div className="eq-card-description mt-1 leading-relaxed">
-                {option.description}
-              </div>
+              <div className="eq-card-title font-bold truncate">{option.label}</div>
             </div>
           </div>
         </button>
@@ -208,7 +240,7 @@ export const DashboardPage = () => {
   const { user, role, table } = useAuth();
   const currentRoleConfig = ROLES_CONFIG.find(r => r.id === role);
   const RoleIcon = currentRoleConfig?.icon || FileText;
-  const [selectedEventType, setSelectedEventType] = useState<EventType>('occurrence');
+  const [selectedEventType, setSelectedEventType] = useState<DashboardEventType>('occurrence');
   const [operationalEvents, setOperationalEvents] = useState<DashboardOperationalEvent[]>([]);
   const [isLoadingOperationalEvents, setIsLoadingOperationalEvents] = useState(false);
 
@@ -353,6 +385,34 @@ export const DashboardPage = () => {
     });
   }, [filteredOccurrences, selectedInheritedIds, createdThisShiftIds, user?.id]);
 
+  const regularOccurrences = useMemo(() => {
+    return myWorkload.filter((occ) => !isExternalOccurrence(occ));
+  }, [myWorkload]);
+
+  const externalOccurrences = useMemo(() => {
+    const closedStatuses = new Set(['resolvida', 'finalizada', 'cancelada', 'fechada', 'encerrada']);
+
+    return filteredOccurrences
+      .filter((occ) => {
+        const normalizedStatus = normalizeText(String(occ.status || ''));
+        const apiIsOpen = (occ as { is_open?: boolean }).is_open;
+        const isOpen = typeof apiIsOpen === 'boolean'
+          ? apiIsOpen
+          : normalizedStatus.length === 0 || !closedStatuses.has(normalizedStatus);
+
+        return isOpen && isExternalOccurrence(occ);
+      })
+      .sort((a, b) => {
+        const dateA = new Date(
+          (a as { created_at?: string }).created_at ?? a.createdAt ?? 0
+        ).getTime();
+        const dateB = new Date(
+          (b as { created_at?: string }).created_at ?? b.createdAt ?? 0
+        ).getTime();
+        return dateB - dateA;
+      });
+  }, [filteredOccurrences]);
+
   const myOperationalEvents = useMemo(() => {
     const currentUserId = user?.id ? String(user.id) : '';
     const normalizedSearch = filters.searchTerm.toLowerCase().trim();
@@ -382,6 +442,8 @@ export const DashboardPage = () => {
   }, [filters.searchTerm, operationalEvents, selectedEventType, user?.id]);
 
   const isOccurrenceFilterActive = selectedEventType === 'occurrence';
+  const isExternalOccurrenceFilterActive = selectedEventType === 'external-occurrence';
+  const isOperationalEventFilterActive = !isOccurrenceFilterActive && !isExternalOccurrenceFilterActive;
 
   return (
     <div className="eq-page-content w-full bg-transparent space-y-6 lg:space-y-8 relative transition-colors duration-300">
@@ -431,6 +493,8 @@ export const DashboardPage = () => {
       </div>
 
       {/* STATS — sempre mostram o total real, independente dos filtros ativos */}
+      <EventTypeFilter value={selectedEventType} onChange={setSelectedEventType} />
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           icon={FileText}
@@ -462,8 +526,6 @@ export const DashboardPage = () => {
         />
       </div>
 
-      <EventTypeFilter value={selectedEventType} onChange={setSelectedEventType} />
-
       <DashboardFilters
         searchTerm={filters.searchTerm} onSearchChange={filters.setSearchTerm}
         priority={filters.priority} onPriorityChange={filters.setPriority}
@@ -477,21 +539,27 @@ export const DashboardPage = () => {
             <Loader2 className="w-10 h-10 text-emerald-500 animate-spin mb-4" />
             <p className="eq-page-subtitle">Sincronizando banco de dados...</p>
           </div>
-        ) : isLoadingOperationalEvents && !isOccurrenceFilterActive ? (
+        ) : isLoadingOperationalEvents && isOperationalEventFilterActive ? (
           <div className="eq-empty-state py-20">
             <Loader2 className="w-10 h-10 text-emerald-500 animate-spin mb-4" />
             <p className="eq-page-subtitle">Carregando eventos operacionais...</p>
           </div>
-        ) : isOccurrenceFilterActive && myWorkload.length === 0 ? (
+        ) : isOccurrenceFilterActive && regularOccurrences.length === 0 ? (
           <div className="eq-empty-state py-12 text-center">
             <p className="eq-page-subtitle">Nenhuma ocorrência vinculada à sua mesa.</p>
           </div>
-        ) : !isOccurrenceFilterActive && myOperationalEvents.length === 0 ? (
+        ) : isExternalOccurrenceFilterActive && externalOccurrences.length === 0 ? (
+          <div className="eq-empty-state py-12 text-center">
+            <p className="eq-page-subtitle">Nenhuma ocorrência externa encontrada.</p>
+          </div>
+        ) : isOperationalEventFilterActive && myOperationalEvents.length === 0 ? (
           <div className="eq-empty-state py-12 text-center">
             <p className="eq-page-subtitle">Nenhum evento desse tipo vinculado ao seu usuário.</p>
           </div>
         ) : isOccurrenceFilterActive ? (
-          myWorkload.map((occ) => <OccurrenceListItem key={occ.id} occurrence={occ} />)
+          regularOccurrences.map((occ) => <OccurrenceListItem key={occ.id} occurrence={occ} />)
+        ) : isExternalOccurrenceFilterActive ? (
+          externalOccurrences.map((occ) => <OccurrenceListItem key={occ.id} occurrence={occ} />)
         ) : (
           myOperationalEvents.map((event) => (
             <OperationalEventListItem key={`${event.eventType}-${event.id}`} event={event} />
