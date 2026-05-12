@@ -183,6 +183,15 @@ export const useDashboard = () => {
           return;
         }
 
+        const normalizeLocation = (value: Occurrence['location']) => {
+          if (!value) return null;
+          if (typeof value === 'string') {
+            const trimmed = value.trim();
+            return trimmed.length > 0 ? { reference: trimmed } : null;
+          }
+          return value;
+        };
+
         const mapped = handoverData.occurrences
           .filter(inherited => normalizedSelectedIds.includes(String(inherited.id)))
           .map(inherited => {
@@ -196,7 +205,9 @@ export const useDashboard = () => {
               user_id: user.id,
               authorId: user.id,
               createdBy: inherited.reportedBy || handoverData.previousOperator || 'Sistema',
-              description: inherited.description,
+              title: inherited.title || 'Sem Titulo',
+              description: inherited.description || '',
+              location: normalizeLocation(inherited.location),
               createdAt: new Date().toLocaleString('pt-BR'),
               linkType: validLinkType,
               comments: observation
