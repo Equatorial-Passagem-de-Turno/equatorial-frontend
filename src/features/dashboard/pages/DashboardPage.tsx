@@ -469,7 +469,7 @@ export const DashboardPage = () => {
         </div>
 
         <button
-          onClick={() => navigate('/occurrences/new')}
+          onClick={() => navigate('/events/new')}
           disabled={isFlowLocked}
           className={`flex items-center justify-center gap-2 px-5 py-3 text-white font-semibold rounded-xl transition-all active:scale-95 ${
             isFlowLocked
@@ -478,7 +478,7 @@ export const DashboardPage = () => {
           }`}
         >
           <Plus className="w-5 h-5" />
-          <span>Nova Ocorrência</span>
+          <span>Novo Evento</span>
         </button>
       </div>
 
