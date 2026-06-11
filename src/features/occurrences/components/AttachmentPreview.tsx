@@ -59,7 +59,7 @@ export const AttachmentPreview = ({ url, idx, onPreview }: { url: string; idx: n
     );
   }
 
-  // --- NOVA LÓGICA PARA PDF (Botão de Preview) ---
+  // Preview de PDF
   if (isPdf) {
     return (
       <button 

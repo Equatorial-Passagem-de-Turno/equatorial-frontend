@@ -7,7 +7,7 @@ import { TableSelector } from './TableSelector';
 
 export const SessionSetup = () => {
   const navigate = useNavigate();
-  // Puxando os nomes corretos da sua store
+  // Dados da store de autenticação
   const { user, role, table } = useAuth();
 
   useEffect(() => {

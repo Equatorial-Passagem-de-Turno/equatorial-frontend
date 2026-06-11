@@ -4,7 +4,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { getRolesApi } from '../../occurrences/services/shiftService'; // Ajuste o import se necessário
 import { showConfirmModal } from '@/shared/ui/feedbackModal';
 
-// 1. Dicionário Visual (Mapeado pelo NOME exato que está no banco de dados)
+// Dicionário visual
 const VISUAL_MAPPING: Record<string, any> = {
   'Baixa Tensão (BT)': {
     icon: Zap,
@@ -56,7 +56,7 @@ export const RoleSelector = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // 2. Busca os perfis no banco assim que a tela abre
+  // Busca os perfis ao abrir a tela
   useEffect(() => {
     const fetchRoles = async () => {
       try {
@@ -76,7 +76,7 @@ export const RoleSelector = () => {
     fetchRoles();
   }, []);
 
-  // 3. Função para juntar os dados do Banco com o Visual do React
+  // Junta dados do banco com a configuração visual
   const getVisualConfig = (roleName: string) => {
     // Procura no dicionário pelo nome exato. Se não achar, usa um genérico.
     return VISUAL_MAPPING[roleName] || {

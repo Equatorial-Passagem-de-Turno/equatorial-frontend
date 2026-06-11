@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { MiniCalendar } from './MiniCalendar';
 import { HistoryTable, type HistoryItem } from './HistoryTable';
-import { ShiftDetailModal } from './ShiftDetailModal'; // <--- IMPORTAR
+import { ShiftDetailModal } from './ShiftDetailModal';
 import { api } from '@/services/api';
 
 interface Props {
@@ -18,8 +18,8 @@ export const ShiftHistoryModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false);
   
   // Estados para controlar a visualização de detalhes
-  const [selectedShift, setSelectedShift] = useState<HistoryItem | null>(null); // <--- SELEÇÃO
-  const [isDetailOpen, setIsDetailOpen] = useState(false); // <--- CONTROLE MODAL
+  const [selectedShift, setSelectedShift] = useState<HistoryItem | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   const markedDates = [
     new Date(), 
@@ -106,7 +106,6 @@ export const ShiftHistoryModal: React.FC<Props> = ({ isOpen, onClose }) => {
                             </span>
                         </div>
                         
-                        {/* Passando o handler para a tabela */}
                         <HistoryTable 
                             data={historyData} 
                             isLoading={isLoading} 
@@ -124,7 +123,7 @@ export const ShiftHistoryModal: React.FC<Props> = ({ isOpen, onClose }) => {
         </div>
         </div>
 
-        {/* 4. RENDERIZAR A MODAL DE DETALHES SOBREPOSTA */}
+        {/* MODAL DE DETALHES */}
         <ShiftDetailModal 
             isOpen={isDetailOpen}
             onClose={() => setIsDetailOpen(false)}

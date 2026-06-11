@@ -110,7 +110,7 @@
 
 /* ========== BASE GLOBAL ========== */
 html, body {
-  background-color: var(--bg-background); /* Agora usa a variável correta */
+  background-color: var(--bg-background);
   color: var(--text-main);
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
@@ -407,8 +407,8 @@ input, select, textarea {
   }
 }
 
-/* ========== OVERRIDES (MANTIDOS MAS COM CUIDADO) ========== */
-/* Isso ajuda a forçar componentes antigos a obedecerem o tema */
+/* ========== OVERRIDES DE TEMA ========== */
+/* Componentes antigos */
 
 /* --- TEMA CLARO: Força componentes hardcoded com slate-900 a ficarem brancos --- */
 .light .bg-slate-800,

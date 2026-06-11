@@ -38,7 +38,7 @@ export interface Occurrence {
   linkType?: 'OS' | 'External';
   linkValue?: string;
   attachments?: string[];
-  comments?: Comment[]; // <-- novo campo opcional para comentários
+  comments?: Comment[];
   reminders?: Reminder[];
 }
 

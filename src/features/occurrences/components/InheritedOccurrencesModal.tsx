@@ -9,7 +9,7 @@ import { type ShiftHandoverData } from '../services/occurrenceService';
 interface Props {
   isOpen: boolean;
   data: ShiftHandoverData | null;
-  isSubmitting?: boolean; // ADICIONADO
+  isSubmitting?: boolean;
   onAcknowledge: (observation: string, selectedIds: string[]) => void;
 }
 

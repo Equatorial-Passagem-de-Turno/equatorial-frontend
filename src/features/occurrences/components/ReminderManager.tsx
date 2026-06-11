@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useOccurrenceStore } from '../stores/useOccurrenceStore';
-// Importando os ícones da UI nova
 import { BellRing, Eye, X } from 'lucide-react';
 
 export default function ReminderManager() {
@@ -13,7 +12,7 @@ export default function ReminderManager() {
   const [active, setActive] = useState<{ occId: string; reminderId: string } | null>(null);
   const [modalData, setModalData] = useState<{ title?: string; id?: string } | null>(null);
 
-  // --- LÓGICA DE AGENDAMENTO (Mantida igual) ---
+  // Agendamento dos lembretes
   const schedule = (occId: string, r: any) => {
     const now = Date.now();
     const remindAt = new Date(r.remindAt).getTime();
@@ -35,7 +34,7 @@ export default function ReminderManager() {
           });
         }
       } catch (e) {
-        // ignore errors
+        // Ignora falhas da notificação nativa.
       }
 
       // Marca como "reconhecido" na store para não disparar de novo ao recarregar
@@ -96,7 +95,7 @@ export default function ReminderManager() {
 
   if (!modalData) return null;
 
-  // --- UI PREMIUM ---
+  // UI
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       {/* Backdrop com Blur e Fade-in */}

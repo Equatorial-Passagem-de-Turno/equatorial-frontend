@@ -1,7 +1,6 @@
 import { Page, Text, View, Document, StyleSheet } from '@react-pdf/renderer';
 import { format } from 'date-fns';
 
-// 1. Atualizei a interface para incluir as listas de pendências
 export interface ShiftReportData {
   id: string;
   operador: string;
@@ -10,7 +9,6 @@ export interface ShiftReportData {
   briefing: string;
   totalOcorrencias: number;
   criticas: number;
-  // Adicionados para a segunda página:
   pendenciasHerdadas: Array<{ id: string; descricao: string; status: string }>;
   pendenciasDeixadas: Array<{ id: string; descricao: string; status: string }>;
 }
@@ -180,9 +178,7 @@ export const ShiftReportDocument = ({ data }: { data: ShiftReportData }) => (
       </View>
 
       {/* ================================================================
-          AQUI É O SEGREDO: <View break>
-          Isso força tudo o que estiver DENTRO ou APÓS esta view 
-          a ir para a Página 2.
+          <View break> inicia a segunda página.
           ================================================================
       */}
       <View break>

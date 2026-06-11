@@ -14,7 +14,7 @@ export interface HistoryItem {
 interface Props {
   data: HistoryItem[];
   isLoading?: boolean;
-  onViewClick: (item: HistoryItem) => void; // <--- NOVA PROP
+  onViewClick: (item: HistoryItem) => void;
 }
 
 export const HistoryTable: React.FC<Props> = ({ data, isLoading, onViewClick }) => {
@@ -54,7 +54,7 @@ export const HistoryTable: React.FC<Props> = ({ data, isLoading, onViewClick }) 
               <td className="p-3 text-right">
                 {/* Botão Atualizado com onClick */}
                 <button 
-                  onClick={() => onViewClick(item)} // <--- AÇÃO AQUI
+                  onClick={() => onViewClick(item)}
                   className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium text-xs border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors"
                 >
                   Visualizar

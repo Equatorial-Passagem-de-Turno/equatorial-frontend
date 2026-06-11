@@ -12,13 +12,13 @@ export const api = axios.create({
 });
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  // O Zustand salva tudo dentro de um JSON chamado 'auth-storage'
+  // Dados salvos pelo Zustand em 'auth-storage'
   const authStorageString = localStorage.getItem('auth-storage');
   
   if (authStorageString) {
     try {
       const authStorage = JSON.parse(authStorageString);
-      // O Zustand coloca os seus dados dentro da propriedade 'state'
+      // Dados persistidos dentro de 'state'
       const token = authStorage?.state?.token; 
       
       if (token) {

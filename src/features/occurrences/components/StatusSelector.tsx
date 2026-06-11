@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Check, Loader2 } from 'lucide-react';
-import { statusConfig } from '../config/statusConfig'; // Importando a config centralizada
+import { statusConfig } from '../config/statusConfig';
 import type { OccurrenceStatus } from '../types';
 
 interface StatusSelectorProps {
@@ -9,19 +9,19 @@ interface StatusSelectorProps {
 }
 
 export const StatusSelector = ({ currentStatus, onStatusChange }: StatusSelectorProps) => {
-  // 1. Estados Locais
+  // Estado local
   const [isOpen, setIsOpen] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<OccurrenceStatus>(currentStatus);
   const [isUpdating, setIsUpdating] = useState(false);
   
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // 2. Sincroniza o estado local se a prop mudar externamente (ex: atualização em tempo real)
+  // Sincroniza mudanças externas
   useEffect(() => {
     setSelectedStatus(currentStatus);
   }, [currentStatus]);
 
-  // 3. Click Outside (Sua lógica original isolada aqui)
+  // Fecha ao clicar fora
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -32,7 +32,7 @@ export const StatusSelector = ({ currentStatus, onStatusChange }: StatusSelector
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 4. Handler para confirmar a mudança
+  // Confirma a mudança
   const handleConfirmUpdate = async () => {
     if (selectedStatus === currentStatus) return;
     
@@ -47,7 +47,7 @@ export const StatusSelector = ({ currentStatus, onStatusChange }: StatusSelector
     }
   };
 
-  // 5. Configuração Visual baseada na seleção atual (Previsão)
+  // Configuração visual da seleção atual
   const currentConfig = statusConfig[selectedStatus] || statusConfig["Aberta"];
   const CurrentIcon = currentConfig.icon;
 

@@ -8,12 +8,12 @@ interface OccurrenceTimerProps {
 }
 
 export const OccurrenceTimer = ({ reminders = [], onSchedule }: OccurrenceTimerProps) => {
-  // 1. Estados Locais (A página pai não precisa saber disso enquanto o usuário digita)
+  // Estado local
   const [minutes, setMinutes] = useState<number>(15);
   const [seconds, setSeconds] = useState<number>(0);
   const [isScheduling, setIsScheduling] = useState(false);
 
-  // 2. Handler para disparar a ação
+  // Dispara o lembrete
   const handleStartTimer = async () => {
     const totalTime = (Number(minutes) || 0) + (Number(seconds) || 0);
     if (totalTime === 0) return;
@@ -21,7 +21,6 @@ export const OccurrenceTimer = ({ reminders = [], onSchedule }: OccurrenceTimerP
     setIsScheduling(true);
     try {
       await onSchedule(minutes, seconds);
-      // Opcional: Resetar o timer ou manter o último valor usado?
       // Manter o valor costuma ser útil para repetição.
     } catch (error) {
       console.error("Erro ao agendar timer", error);

@@ -5,7 +5,7 @@ import { useAuth } from '../../auth/hooks/useAuth';
 export const useShiftOccurrences = () => {
   const { user } = useAuth();
   
-  // PEGANDO OS DADOS REAIS DO BANCO DA STORE
+  // Dados da store
   const { occurrences, fetchOccurrences } = useOccurrenceStore();
 
   // Garante que os dados sejam buscados ao abrir a tela
@@ -24,7 +24,7 @@ export const useShiftOccurrences = () => {
   const [eventType, setEventType] = useState('todos');
   const [onlyMine, setOnlyMine] = useState(false);
 
-  // Lógica de Filtragem Segura
+  // Filtragem
   const filteredData = useMemo(() => {
     // Evita erros caso occurrences ainda não tenha carregado e seja undefined
     if (!Array.isArray(occurrences)) return [];

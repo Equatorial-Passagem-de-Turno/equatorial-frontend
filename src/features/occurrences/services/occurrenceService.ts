@@ -42,10 +42,10 @@ export interface ShiftHandoverData {
 
 export const getShiftHandoverData = async (): Promise<ShiftHandoverData> => {
   try {
-    // A mágica acontece aqui: o Axios já coloca a URL base, os cabeçalhos JSON e o Token do Zustand!
+    // Requisição autenticada pela configuração global da API.
     const response = await api.get<ShiftHandoverData>('/shifts/handover/previous');
     
-    // O Axios coloca a resposta dentro da propriedade '.data'
+    // Payload da resposta
     return response.data;
     
   } catch (error) {

@@ -86,13 +86,13 @@ export const OccurrenceDetailPage = () => {
 
   // --- HANDLERS (LÓGICA DE NEGÓCIO) ---
 
-  // 1. Atualizar Status
+  // Atualizar status
   const handleStatusChange = async (newStatus: OccurrenceStatus) => {
     await updateOccurrence(occurrence!.id, { status: newStatus });
     await handlePostComment(`Status alterado para "${newStatus}".`, 'Geral'); 
   };
 
-  // 2. Postar Comentário
+  // Postar comentário
   const handlePostComment = async (text: string, type: string) => {
     const response = await api.post(`/occurrences/${occurrence!.id}/comments`, {
       text,
@@ -110,7 +110,7 @@ export const OccurrenceDetailPage = () => {
     }
   };
 
-  // 3. Agendar Timer
+  // Agendar timer
   const handleScheduleReminder = async (m: number, s: number) => {
     const totalSeconds = (Number(m) || 0) * 60 + (Number(s) || 0);
     const remindAt = new Date(Date.now() + totalSeconds * 1000).toISOString();
@@ -127,17 +127,17 @@ export const OccurrenceDetailPage = () => {
     });
   };
 
-  // 4. Vincular OS
+  // Vincular OS
   const handleLinkOs = async (osNumber: string) => {
     await updateOccurrence(occurrence!.id, { linkType: 'OS', linkValue: osNumber });
   };
 
-  // 5. Desvincular OS
+  // Desvincular OS
   const handleUnlinkOs = async () => {
     await updateOccurrence(occurrence!.id, { linkType: undefined, linkValue: undefined });
   };
 
-  // 6. Notificar (Email)
+  // Notificar por e-mail
   const handleSendNotification = () => {
     if (!occurrence) return;
     const to = 'supervisor@demo.com';

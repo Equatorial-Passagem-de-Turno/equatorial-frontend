@@ -12,7 +12,7 @@ import {
   Users,
   Wrench,
 } from 'lucide-react';
-import { api } from '@/services/api'; // <-- IMPORT DA API ADICIONADO AQUI
+import { api } from '@/services/api';
 import { showSuccessModal, showWarningModal } from '@/shared/ui/feedbackModal';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { FileAttachmentField } from '@/features/circuit-switching/components/FileAttachmentField';

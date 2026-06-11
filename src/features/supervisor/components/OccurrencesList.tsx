@@ -109,7 +109,7 @@ export function OccurrencesList() {
     useState<Occurrence | null>(null);
   const occurrencesState = useSupervisorStore((state) => state.occurrences);
 
-  // 🔹 Mantendo filtro do código novo
+  // Filtro de status
   const ocorrenciasAbertas = occurrencesState.filter(
     (o) => o.status === "aberta" || o.status === "em_andamento",
   );
@@ -140,7 +140,7 @@ export function OccurrencesList() {
 
   return (
     <div className="eq-surface overflow-hidden">
-      {/* HEADER ORIGINAL */}
+      {/* HEADER */}
       <div className="flex items-center justify-between border-b border-[var(--eq-border)] p-4">
         <div className="flex items-center gap-3">
           <div className="eq-criticality-high flex h-8 w-8 items-center justify-center rounded-lg">
@@ -156,7 +156,7 @@ export function OccurrencesList() {
           </div>
         </div>
 
-        {/* SORT ORIGINAL */}
+        {/* SORT */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => setSortMode("priority")}
@@ -195,7 +195,7 @@ export function OccurrencesList() {
         </div>
       </div>
 
-      {/* LISTA ORIGINAL */}
+      {/* LISTA */}
       <div className="p-4 space-y-3 max-h-[600px] overflow-y-auto">
         {sortedOccurrences.map((occurrence) => {
           const config = priorityConfig[occurrence.criticality];
@@ -226,7 +226,7 @@ export function OccurrencesList() {
                         {config.label}
                       </span>
 
-                      {/* 🔹 Status integrado sem quebrar layout */}
+                      {/* STATUS */}
                       <div
                         className={`ml-2 flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-medium ${status.badge}`}
                       >
@@ -291,7 +291,7 @@ export function OccurrencesList() {
         })}
       </div>
 
-      {/* FOOTER ORIGINAL */}
+      {/* FOOTER */}
       <div className="border-t border-[var(--eq-border)] bg-[var(--eq-bg-surface-soft)] p-3">
         <div className="flex items-center justify-between text-xs">
           <div className="flex items-center gap-4">

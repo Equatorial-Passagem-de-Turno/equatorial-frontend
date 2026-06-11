@@ -66,7 +66,7 @@ export const ShiftControlPage = () => {
   // Estado para armazenar o snapshot do turno encerrado localmente
   const [finishedShiftState, setFinishedShiftState] = useState<any | null>(null);
 
-  // === Estados para envio de E-mail (Multi-select) ===
+  // Envio de e-mail
     const [selectedRecipients, setSelectedRecipients] = useState<number[]>([]);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isEmailDropdownOpen, setIsEmailDropdownOpen] = useState(false);
@@ -209,7 +209,7 @@ export const ShiftControlPage = () => {
         }
     };
 
-  // === Ação real de encerramento com a API ===
+  // Encerramento com a API
     const handleConfirmFinish = async () => {
         try {
         setIsFinishing(true);
@@ -430,7 +430,7 @@ export const ShiftControlPage = () => {
   const dadosRelatorio = turnoAtual ? { ...turnoAtual, briefing } : finishedShiftState;
   const isAnyModalOpen = isHistoryOpen || isDetailModalOpen || isFinishModalOpen;
 
-  // --- TELA: TURNO ENCERRADO (Exibida se finishedShiftState existe) ---
+  // Turno encerrado
   if (finishedShiftState) {
         const durationString = String(
             finishedShiftState?.workedDuration
@@ -721,7 +721,7 @@ export const ShiftControlPage = () => {
     );
   }
 
-  // --- TELA NORMAL (TURNO EM ANDAMENTO) ---
+  // Turno em andamento
   return (
     <>
       {dadosRelatorio && (

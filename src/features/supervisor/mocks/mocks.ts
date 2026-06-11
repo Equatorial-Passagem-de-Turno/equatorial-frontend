@@ -255,7 +255,7 @@ export const BASE_PENDINGS: Pending[] = [
   },
 ];
 // ========================
-// MOCKS - OCORRÊNCIAS ATUALIZADOS
+// MOCKS - OCORRÊNCIAS
 // ========================
 
 export const OCCURRENCES: Occurrence[] = [

@@ -14,18 +14,18 @@ export default {
           input: 'var(--bg-input)',
           text: 'var(--text-main)',
           muted: 'var(--text-muted)',
-          border: 'var(--border-color)', // Essa é a mágica
+          border: 'var(--border-color)',
           'border-input': 'var(--border-input)',
           accent: 'var(--accent)',
           'accent-fg': 'var(--accent-fg)',
         },
-        // Atalho para High Contrast direto se precisar
+        // Atalho para alto contraste
         hc: {
-          DEFAULT: '#ffff00', // Amarelo Neon
+          DEFAULT: '#ffff00', // amarelo neon
           bg: '#000000',
         }
       },
-      // Estende a opacidade da borda e cores padrão
+      // Opacidade de borda e cores padrão
       borderColor: {
         DEFAULT: 'var(--border-color)', 
         theme: 'var(--border-color)',

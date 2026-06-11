@@ -6,7 +6,7 @@ export const useOccurrenceDetails = () => {
   const params = useParams();
   const { occurrences, fetchOccurrences, isLoading } = useOccurrenceStore();
 
-  // 1. Normalização dos parâmetros de URL
+  // Parâmetros de URL
   const rawParam = params.id ?? params.occurrenceId ?? '';
   
   const normalize = (s?: string) => decodeURIComponent((s ?? '').toString()).trim();
@@ -15,7 +15,7 @@ export const useOccurrenceDetails = () => {
   const paramNormalized = normalize(rawParam);
   const paramClean = clean(paramNormalized);
 
-  // 2. Buscar dados se ainda não estiverem carregados
+  // Busca os dados se ainda não estiverem carregados
   useEffect(() => {
     // Se a função existir na store, garantimos que os dados mais recentes sejam buscados
     if (fetchOccurrences) {
@@ -23,7 +23,7 @@ export const useOccurrenceDetails = () => {
     }
   }, [fetchOccurrences]);
 
-  // 3. Encontrar a ocorrência específica
+  // Ocorrência selecionada
   // Usamos useMemo para não recalcular toda vez que o componente renderizar se as dependências não mudarem
   const occurrence = useMemo(() => {
     return occurrences.find(o => {

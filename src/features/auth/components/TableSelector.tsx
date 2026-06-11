@@ -106,7 +106,7 @@ export function TableSelector() {
       return;
     }
 
-    // 1. Encontramos o objeto COMPLETO da mesa dentro do array 'mesas'
+    // Mesa selecionada
     const mesaCompleta = mesas.find((mesa) => String(mesa.id) === String(selectedMesa));
     
     // Verificação de segurança
@@ -115,7 +115,7 @@ export function TableSelector() {
       return;
     }
 
-    // 2. Pré-montamos o objeto para uso local/fallback
+    // Objeto local para fallback
     const mesaParaSalvarBase = {
       id: String(mesaCompleta.id),
       name: mesaCompleta.name,
@@ -127,7 +127,7 @@ export function TableSelector() {
       setStartConfirmation(null);
       const startedShift = await startShiftApi(String(selectedMesa), String(role));
 
-      // 3. Se o backend retornar a mesa do turno, priorizamos esse payload para manter consistência
+      // Prioriza a mesa retornada pelo backend
       const mesaParaSalvar = startedShift?.desk
         ? {
             id: String(startedShift.desk.id ?? mesaParaSalvarBase.id),
@@ -151,7 +151,7 @@ export function TableSelector() {
         selectTable(mesaParaSalvar as any); // (o 'as any' previne erros se o TS ainda estiver lendo o cache antigo)
       }, 1200);
       
-      // 4. Só liberamos o app após confirmar início de turno com sucesso.
+      // Libera o app após confirmar o início do turno.
       
     } catch (error: any) {
       const errorMessage = error?.response?.data?.error || error?.response?.data?.message || "";
@@ -230,7 +230,7 @@ export function TableSelector() {
           <p>Nenhuma mesa de operação ativa encontrada no sistema.</p>
         </div>
       ) : (
-        /* Grid of Mesas vindo do Banco */
+        /* Mesas vindas do banco */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl w-full mb-10">
           {mesas.map((mesa) => {
             const isSelected = selectedMesa === mesa.id;

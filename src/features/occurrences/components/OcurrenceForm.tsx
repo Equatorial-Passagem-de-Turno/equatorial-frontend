@@ -35,8 +35,7 @@ type ViewerState = {
   name?: string;
 } | null;
 
-// --- CONFIGURAÇÕES VISUAIS (MOVIDAS PARA FORA DO COMPONENTE) ---
-// Isso evita recriação a cada render e melhora performance
+// Configurações visuais
 const priorityConfig: any = {
   'baixa':   { label: 'Baixa',   icon: Signal,   color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
   'média':   { label: 'Média',   icon: Zap,      color: 'text-amber-600',   bg: 'bg-amber-50 dark:bg-amber-900/20' },
@@ -53,12 +52,10 @@ const statusConfig: any = {
 const categorias = ['Atendimento ao Cliente', 'Manobra Programada', 'Incidente de Rede', 'Falta de Energia', 'Segurança do Trabalho'];
 const zonas = ['Urbana', 'Rural', 'Industrial', 'Expansão']; 
 
-// --- COMPONENTE ITEM DE PREVIEW (MEMOIZADO) ---
-// O React.memo impede re-renderização desnecessária da lista de arquivos ao digitar no form
+// Item de preview
 const FilePreviewItem = React.memo(({ url, name, index, onRemove, onView }: { url: string, name: string, index: number, onRemove?: (i: number) => void, onView: (url: string, type: 'image'|'pdf'|'video', name: string) => void }) => {
   const [loadError, setLoadError] = useState(false);
   
-  // Memoizando cálculos pesados de string
   const { isPdf, isVideo, showIcon } = useMemo(() => {
       const lowerUrl = url.toLowerCase();
       const lowerName = name.toLowerCase();
@@ -95,7 +92,7 @@ const FilePreviewItem = React.memo(({ url, name, index, onRemove, onView }: { ur
                   src={url} 
                   className="w-full h-full object-cover opacity-90 transition-transform duration-500 group-hover:scale-105"
                   muted
-                  preload="metadata" // CRUCIAL: Carrega apenas metadados para não travar o scroll
+                  preload="metadata"
                   playsInline
                 />
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/10 group-hover:bg-black/20 transition-colors">
@@ -114,7 +111,7 @@ const FilePreviewItem = React.memo(({ url, name, index, onRemove, onView }: { ur
                 <img 
                   src={url} 
                   alt={name} 
-                  loading="lazy" // Performance: carrega imagem só quando visível
+                  loading="lazy"
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   onError={() => setLoadError(true)} 
                 />
@@ -175,7 +172,6 @@ export const OccurrenceForm = () => {
     handleFileAdd(files);
   };
 
-  // useCallback para evitar recriação da função e re-render dos filhos
   const onFileRemove = useCallback((index: number) => {
     setFileNames(prev => prev.filter((_, i) => i !== index));
     if(handleRemoveFile) handleRemoveFile(index);
@@ -237,7 +233,7 @@ export const OccurrenceForm = () => {
         <input type="text" required value={formData.title} onChange={e => handleChange('title', e.target.value)} className={inputClass} placeholder="Ex: Falha no religador R-1234" />
       </div>
 
-      {/* --- GRID DE SELEÇÃO (CUSTOM DROPDOWNS) --- */}
+      {/* SELEÇÃO */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-20">
         
         {/* CATEGORIA */}
@@ -533,7 +529,7 @@ export const OccurrenceForm = () => {
          </div>
       </div>
 
-      {/* BOTÕES DE AÇÃO - PREMIUM UI */}
+      {/* BOTÕES DE AÇÃO */}
       <div className="flex flex-col md:flex-row gap-4 pt-8 border-t border-slate-200 dark:border-slate-800">
         <button 
             type="button" 

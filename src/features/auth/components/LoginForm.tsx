@@ -32,7 +32,7 @@ export const LoginForm = ({ onForgotPassword }: LoginFormProps) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
 
-  // Simplificado: Agora repassa a mensagem limpa que vem do Laravel
+  // Repassa a mensagem limpa que vem do Laravel
   const getFriendlyErrorMessage = (error: unknown) => {
     if (error instanceof Error) {
       return error.message; 
@@ -43,7 +43,7 @@ export const LoginForm = ({ onForgotPassword }: LoginFormProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 1. Validação de campos vazios
+    // Campos vazios
     if (!email || !password) {
       toast.warning('Campos incompletos', {
         description: 'Por favor, preencha seu e-mail e senha para continuar.'
@@ -51,7 +51,7 @@ export const LoginForm = ({ onForgotPassword }: LoginFormProps) => {
       return;
     }
 
-    // 2. Validação de formato de e-mail
+    // Formato de e-mail
     if (!isValidEmail(email)) {
       toast.warning('E-mail inválido', {
         description: 'Por favor, verifique se digitou o endereço corretamente (ex: nome@empresa.com).'
@@ -71,7 +71,7 @@ export const LoginForm = ({ onForgotPassword }: LoginFormProps) => {
         description: 'Login realizado com sucesso.'
       });
     } catch (error: unknown) { 
-      // 3. Tratamento de erros do servidor (Ex: 401 do Laravel)
+      // Erros do servidor
       const friendlyMessage = getFriendlyErrorMessage(error);
       
       toast.error('Falha no acesso', {

@@ -72,14 +72,14 @@ export const useAuth = create<AuthState>()(
       logout: async () => {
         const { user } = get();
 
-        // 1. Invalida o token no Laravel
+        // Invalida o token
         try {
           await api.post('/logout');
         } catch (e) {
           console.error('Erro ao comunicar logout ao servidor:', e);
         }
 
-        // 2. Limpa a "memória" de que o usuário já viu o modal
+        // Limpa o controle do modal de passagem
         if (user?.id) {
             sessionStorage.removeItem(`handover_viewed_${user.id}`);
             sessionStorage.removeItem(`inherited_viewed_${user.id}`);
@@ -88,10 +88,10 @@ export const useAuth = create<AuthState>()(
           window.dispatchEvent(new Event('shift-lock-changed'));
         }
 
-        // 3. Limpa as ocorrências herdadas
+        // Limpa as ocorrências herdadas
         useOccurrenceStore.getState().reset();
 
-        // 4. Limpa o estado de Autenticação no Zustand
+        // Limpa o estado de autenticação
         set({ 
           user: null, 
           token: null,
@@ -100,7 +100,7 @@ export const useAuth = create<AuthState>()(
           isAuthenticated: false,
         });
         
-        // 5. Limpa o LocalStorage
+        // Limpa o armazenamento local
         localStorage.removeItem('auth-storage');
       },
     }),

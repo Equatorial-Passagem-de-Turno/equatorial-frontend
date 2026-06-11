@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import type { Comment } from '../types';
 
-// --- 1. CONFIGURAÇÃO VISUAL DOS TIPOS ---
+// Configuração visual dos tipos
 const commentTypesConfig: Record<string, { label: string, icon: any, color: string, bg: string, border: string }> = {
   "Geral": { 
     label: "Geral", 
@@ -44,13 +44,11 @@ const commentTypesConfig: Record<string, { label: string, icon: any, color: stri
 
 interface CommentsSectionProps {
   comments: Comment[];
-  // --- 2. ATUALIZAÇÃO NA PROP: Agora aceita (text, type) ---
   onPostComment: (text: string, type: string) => Promise<void>; 
 }
 
 export const CommentsSection = ({ comments, onPostComment }: CommentsSectionProps) => {
   const [commentText, setCommentText] = useState('');
-  // --- 3. NOVO ESTADO PARA O TIPO ---
   const [selectedType, setSelectedType] = useState('Geral'); 
   const [isPosting, setIsPosting] = useState(false);
 
@@ -59,11 +57,10 @@ export const CommentsSection = ({ comments, onPostComment }: CommentsSectionProp
     
     setIsPosting(true);
     try {
-      // Passa o texto E o tipo selecionado
       await onPostComment(commentText.trim(), selectedType);
       
       setCommentText('');
-      setSelectedType('Geral'); // Reseta para o padrão após enviar
+      setSelectedType('Geral');
     } catch (error) {
       console.error("Erro ao postar comentário", error);
     } finally {
@@ -71,7 +68,7 @@ export const CommentsSection = ({ comments, onPostComment }: CommentsSectionProp
     }
   };
 
-  // Pega a configuração do tipo selecionado para usar nas cores da UI
+  // Configuração visual do tipo selecionado
   const currentTypeConfig = commentTypesConfig[selectedType];
 
   return (
@@ -115,7 +112,7 @@ export const CommentsSection = ({ comments, onPostComment }: CommentsSectionProp
       {/* ÁREA DE INPUT */}
       <div className="relative bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
         
-        {/* --- 4. SELETOR DE TIPOS (CHIPS) --- */}
+        {/* SELETOR DE TIPOS */}
         <div className="flex flex-wrap gap-2 mb-3">
           {Object.keys(commentTypesConfig).map((typeKey) => {
             const config = commentTypesConfig[typeKey];

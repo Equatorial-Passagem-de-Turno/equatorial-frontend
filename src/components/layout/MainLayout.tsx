@@ -53,7 +53,7 @@ export const MainLayout = () => {
   };
 
   return (
-    // AJUSTE 1: Cores de fundo dinâmicas (Light: bg-slate-100 / Dark: bg-slate-950)
+    // Fundo conforme o tema atual
     <div className="flex h-screen bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-white overflow-hidden transition-colors duration-300">
       
       <Sidebar 
@@ -62,9 +62,8 @@ export const MainLayout = () => {
         onLogout={handleLogout} 
       />
       
-      {/* AJUSTE 2: Padding Top no Mobile 
-          - pt-20: Dá espaço para o botão flutuante no mobile
-          - lg:pt-0: Remove o espaço no desktop (lado a lado)
+      {/*
+          Espaço para a topbar fixa no mobile.
       */}
       <main className="flex-1 overflow-y-auto custom-scrollbar relative pt-20 lg:pt-0">
         <Outlet />

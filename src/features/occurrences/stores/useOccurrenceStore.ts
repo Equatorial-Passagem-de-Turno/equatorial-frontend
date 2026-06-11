@@ -22,9 +22,9 @@ interface OccurrenceState {
   isLoading: boolean;
   hydratedAt: number | null;
   fetchOccurrences: (options?: { force?: boolean; silent?: boolean }) => Promise<void>;
-  createOccurrence: (data: Partial<Occurrence>) => Promise<void>; // NOVO
-  updateOccurrence: (id: string, patch: Partial<Occurrence>) => Promise<void>; // ATUALIZADO
-  deleteOccurrence: (id: string) => Promise<void>; // NOVO
+  createOccurrence: (data: Partial<Occurrence>) => Promise<void>;
+  updateOccurrence: (id: string, patch: Partial<Occurrence>) => Promise<void>;
+  deleteOccurrence: (id: string) => Promise<void>;
   addOccurrences: (newItems: Occurrence[]) => void;
   upsertOccurrence: (item: Occurrence) => void;
   reset: () => void;
@@ -194,7 +194,7 @@ export const useOccurrenceStore = create<OccurrenceState>((set) => ({
     });
   },
 
-  // CRIAR (POST)
+  // Criar
   createOccurrence: async (data) => {
     try {
       const response = await api.post('/occurrences', data);
@@ -231,10 +231,10 @@ export const useOccurrenceStore = create<OccurrenceState>((set) => ({
     }
   },
 
-  // ATUALIZAR (PUT)
+  // Atualizar
   updateOccurrence: async (id, patch) => {
     try {
-      // 1. Atualiza no Banco
+      // Atualiza no banco
       const response = await api.put(`/occurrences/${id}`, patch);
       const updatedOccurrence =
         (response.data?.success && response.data?.data) ||
@@ -274,7 +274,7 @@ export const useOccurrenceStore = create<OccurrenceState>((set) => ({
     }
   },
 
-  // EXCLUIR (DELETE)
+  // Excluir
   deleteOccurrence: async (id) => {
     try {
       await api.delete(`/occurrences/${id}`);
